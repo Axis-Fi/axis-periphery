@@ -1,3 +1,7 @@
 @forge-std-1.9.1=dependencies/forge-std-1.9.1/src
 @axis-core-0.5.1=dependencies/axis-core-0.5.1/src
 @axis-core-0.5.1-script=dependencies/axis-core-0.5.1/script
+@openzeppelin-contracts-4.9.2=dependencies/@openzeppelin-contracts-4.9.2
+@openzeppelin-contracts-upgradeable-4.9.2=dependencies/@openzeppelin-contracts-upgradeable-4.9.2
+@uniswap-v2-core-1.0.1=dependencies/@uniswap-v2-core-1.0.1/contracts
+@uniswap-v3-core-1.0.1-solc-0.8-simulate=dependencies/@uniswap-v3-core-1.0.1-solc-0.8-simulate/contracts

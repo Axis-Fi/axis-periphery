@@ -8,3 +8,7 @@ libs = ["lib"]
 [dependencies]
 forge-std = { version = "1.9.1" }
 axis-core = { version = "0.5.1", url = "git@github.com:Axis-Fi/axis-core.git", commit = "c7c46a3d045c4818c08567c4c530f1c7670eb0ac" }
+"@openzeppelin-contracts" = { version = "4.9.2" }
+"@openzeppelin-contracts-upgradeable" = { version = "4.9.2" }
+"@uniswap-v2-core" = { version = "1.0.1" }
+"@uniswap-v3-core" = { version = "1.0.1-solc-0.8-simulate" }
