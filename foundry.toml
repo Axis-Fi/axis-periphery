@@ -7,3 +7,4 @@ libs = ["lib"]
 
 [dependencies]
 forge-std = { version = "1.9.1" }
+axis-core = { version = "v0.5.1", url = "git@github.com:Axis-Fi/axis-core.git", commit = "c7c46a3d045c4818c08567c4c530f1c7670eb0ac" }
