@@ -1,0 +1,18 @@
+{
+  "cSpell.words": [
+    "ECIES",
+    "IPFS",
+    "keypairs"
+  ],
+  "[json]": {
+    "editor.tabSize": 2
+  },
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/script/deploy/sequences/*.json"
+      ],
+      "url": "/script/deploy/sequence_schema.json"
+    }
+  ]
+}
