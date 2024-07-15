@@ -14,5 +14,7 @@
       ],
       "url": "/script/deploy/sequence_schema.json"
     }
-  ]
+  ],
+  "solidity.packageDefaultDependenciesContractsDirectory": "src",
+  "solidity.packageDefaultDependenciesDirectory": "lib"
 }
