@@ -52,3 +52,9 @@ name = "solmate"
 version = "6.7.0"
 source = "git@github.com:transmissions11/solmate.git"
 checksum = "c892309933b25c03d32b1b0d674df7ae292ba925"
+
+[[dependencies]]
+name = "clones-with-immutable-args"
+version = "1.1.1"
+source = "git@github.com:wighawag/clones-with-immutable-args.git"
+checksum = "f5ca191afea933d50a36d101009b5644dc28bc99"
