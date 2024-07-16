@@ -7,6 +7,14 @@ import {stdJson} from "@forge-std-1.9.1/StdJson.sol";
 import {WithEnvironment} from "script/deploy/WithEnvironment.s.sol";
 import {WithSalts} from "script/salts/WithSalts.s.sol";
 
+// axis-core
+import {Keycode, keycodeFromVeecode} from "@axis-core-0.5.1/modules/Keycode.sol";
+import {Module} from "@axis-core-0.5.1/modules/Modules.sol";
+import {AtomicAuctionHouse} from "@axis-core-0.5.1/AtomicAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-0.5.1/BatchAuctionHouse.sol";
+import {IFeeManager} from "@axis-core-0.5.1/interfaces/IFeeManager.sol";
+import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+
 // Callbacks
 import {UniswapV2DirectToLiquidity} from "src/callbacks/liquidity/UniswapV2DTL.sol";
 import {UniswapV3DirectToLiquidity} from "src/callbacks/liquidity/UniswapV3DTL.sol";
