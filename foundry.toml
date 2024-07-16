@@ -7,7 +7,7 @@ libs = ["lib"]
 
 [dependencies]
 forge-std = { version = "1.9.1" }
-axis-core = { version = "0.5.1", git = "git@github.com:Axis-Fi/axis-core.git", rev = "e553691fb7fd12e03aef7e8af576862da4f4df4f" }
+axis-core = { version = "0.5.1", git = "git@github.com:Axis-Fi/axis-core.git", rev = "020c8a931ffa4c91f344d7fcbafdae779e4dcd3e" }
 "@openzeppelin-contracts" = { version = "4.9.2" }
 "@openzeppelin-contracts-upgradeable" = { version = "4.9.2" }
 "@uniswap-v2-core" = { version = "1.0.1" }
