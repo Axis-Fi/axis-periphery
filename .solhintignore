@@ -1,2 +1,5 @@
 lib/**
 dependencies/**
+
+test/lib/uniswap-v2/**
+test/lib/uniswap-v3/**
