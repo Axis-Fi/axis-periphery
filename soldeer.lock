@@ -9,7 +9,7 @@ checksum = "110b35ad3604d91a919c521c71206c18cd07b29c750bd90b5cbbaf37288c9636"
 name = "axis-core"
 version = "0.5.1"
 source = "git@github.com:Axis-Fi/axis-core.git"
-checksum = "020c8a931ffa4c91f344d7fcbafdae779e4dcd3e"
+checksum = "d07b3311771ea3162d99aa68689e40f4f4bd8135"
 
 [[dependencies]]
 name = "@openzeppelin-contracts"
