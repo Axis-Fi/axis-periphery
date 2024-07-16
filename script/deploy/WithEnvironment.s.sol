@@ -42,7 +42,7 @@ abstract contract WithEnvironment is Script {
                 addr = envAxisCore.readAddress(fullKey);
                 console2.log("    %s: %s (from axis-core/env.json)", key_, addr);
             } else {
-                console2.log("    %s: %s (not found)", key_, addr);
+                console2.log("    %s: *** NOT FOUND ***", key_);
             }
         }
 
