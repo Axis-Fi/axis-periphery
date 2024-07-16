@@ -45,7 +45,7 @@ checksum = "d6bcb6e811e86d36bc836c002eb2e9a2c73d29ca"
 name = "@uniswap-v2-periphery"
 version = "1.0.1"
 source = "git@github.com:Axis-Fi/uniswap-v2-periphery.git"
-checksum = "b643a2589ea219ac662a6447048f604dc5a3a7bb"
+checksum = "19be650786731dfe43cac3aac7a2d1f0731d18e2"
 
 [[dependencies]]
 name = "solmate"

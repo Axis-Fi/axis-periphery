@@ -13,5 +13,5 @@ axis-core = { version = "0.5.1", git = "git@github.com:Axis-Fi/axis-core.git", r
 "@uniswap-v2-core" = { version = "1.0.1" }
 "@uniswap-v3-core" = { version = "1.0.1-solc-0.8-simulate" }
 g-uni-v1-core = { version = "0.9.9", git = "git@github.com:Axis-Fi/g-uni-v1-core.git", rev = "d6bcb6e811e86d36bc836c002eb2e9a2c73d29ca" }
-"@uniswap-v2-periphery" = { version = "1.0.1", git = "git@github.com:Axis-Fi/uniswap-v2-periphery.git", rev = "b643a2589ea219ac662a6447048f604dc5a3a7bb" }
+"@uniswap-v2-periphery" = { version = "1.0.1", git = "git@github.com:Axis-Fi/uniswap-v2-periphery.git", rev = "19be650786731dfe43cac3aac7a2d1f0731d18e2" }
 solmate = { version = "6.7.0", git = "git@github.com:transmissions11/solmate.git", rev = "c892309933b25c03d32b1b0d674df7ae292ba925" }
