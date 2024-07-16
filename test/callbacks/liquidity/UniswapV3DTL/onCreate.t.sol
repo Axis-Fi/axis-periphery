@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 import {UniswapV3DirectToLiquidityTest} from "./UniswapV3DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
-import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV3DirectToLiquidity} from "src/callbacks/liquidity/UniswapV3DTL.sol";
+import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 
 contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTest {
     // ============ Modifiers ============ //

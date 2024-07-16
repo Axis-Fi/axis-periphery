@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 // Scripting libraries
 import {Script, console2} from "@forge-std-1.9.1/Script.sol";
 import {stdJson} from "@forge-std-1.9.1/StdJson.sol";
-import {WithEnvironment} from "script/deploy/WithEnvironment.s.sol";
-import {WithSalts} from "script/salts/WithSalts.s.sol";
+import {WithEnvironment} from "./WithEnvironment.s.sol";
+import {WithSalts} from "../salts/WithSalts.s.sol";
 
 // axis-core
 import {Keycode, keycodeFromVeecode} from "@axis-core-0.5.1/modules/Keycode.sol";
@@ -16,12 +16,12 @@ import {IFeeManager} from "@axis-core-0.5.1/interfaces/IFeeManager.sol";
 import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
 
 // Callbacks
-import {UniswapV2DirectToLiquidity} from "src/callbacks/liquidity/UniswapV2DTL.sol";
-import {UniswapV3DirectToLiquidity} from "src/callbacks/liquidity/UniswapV3DTL.sol";
-import {CappedMerkleAllowlist} from "src/callbacks/allowlists/CappedMerkleAllowlist.sol";
-import {MerkleAllowlist} from "src/callbacks/allowlists/MerkleAllowlist.sol";
-import {TokenAllowlist} from "src/callbacks/allowlists/TokenAllowlist.sol";
-import {AllocatedMerkleAllowlist} from "src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
+import {UniswapV2DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV3DTL.sol";
+import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
+import {MerkleAllowlist} from "../../src/callbacks/allowlists/MerkleAllowlist.sol";
+import {TokenAllowlist} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
+import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
 
 /// @notice Declarative deployment script that reads a deployment sequence (with constructor args)
 ///         and a configured environment file to deploy and install contracts in the Axis protocol.

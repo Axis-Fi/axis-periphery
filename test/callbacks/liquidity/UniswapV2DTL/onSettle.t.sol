@@ -12,8 +12,8 @@ import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.s
 
 // AuctionHouse
 import {ILinearVesting} from "@axis-core-0.5.1/interfaces/modules/derivatives/ILinearVesting.sol";
-import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV2DirectToLiquidity} from "src/callbacks/liquidity/UniswapV2DTL.sol";
+import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
 
 contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;

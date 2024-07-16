@@ -10,10 +10,10 @@ import {BatchAuctionHouse} from "@axis-core-0.5.1/BatchAuctionHouse.sol";
 
 import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
 
-import {AllocatedMerkleAllowlist} from "src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
+import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
 
 import {toVeecode} from "@axis-core-0.5.1/modules/Keycode.sol";
-import {WithSalts} from "test/lib/WithSalts.sol";
+import {WithSalts} from "../lib/WithSalts.sol";
 
 contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts {
     using Callbacks for AllocatedMerkleAllowlist;

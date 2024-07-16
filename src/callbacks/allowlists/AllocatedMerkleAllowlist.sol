@@ -6,7 +6,7 @@ import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/Merk
 import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
 import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
 
-import {MerkleAllowlist} from "src/callbacks/allowlists/MerkleAllowlist.sol";
+import {MerkleAllowlist} from "./MerkleAllowlist.sol";
 
 /// @title  AllocatedMerkleAllowlist
 /// @notice This contract extends the MerkleAllowlist contract to implement a merkle tree-based allowlist for buyers to participate in an auction.

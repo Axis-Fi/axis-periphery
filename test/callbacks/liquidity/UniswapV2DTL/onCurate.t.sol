@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {UniswapV2DirectToLiquidityTest} from "./UniswapV2DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
-import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
+import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
 contract UniswapV2DirectToLiquidityOnCurateTest is UniswapV2DirectToLiquidityTest {
     uint96 internal constant _PAYOUT_AMOUNT = 1e18;

@@ -4,7 +4,7 @@ pragma solidity >=0.8.12;
 import {IUniswapV3PoolDeployer} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3PoolDeployer.sol";
 
-import {UniswapV3Pool} from "test/lib/uniswap-v3/UniswapV3Pool.sol";
+import {UniswapV3Pool} from "./UniswapV3Pool.sol";
 
 /// @dev    Changed pragma to >=0.8.12
 contract UniswapV3PoolDeployer is IUniswapV3PoolDeployer {

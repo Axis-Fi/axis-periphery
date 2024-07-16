@@ -3,24 +3,29 @@ pragma solidity 0.8.19;
 
 // Scripting libraries
 import {Script} from "@forge-std-1.9.1/Script.sol";
-import {WithEnvironment} from "script/deploy/WithEnvironment.s.sol";
-import {Permit2User} from "@axis-core-0.5.1-test/lib/permit2/Permit2User.sol";
-import {WithSalts} from "script/salts/WithSalts.s.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
+import {WithEnvironment} from "../../deploy/WithEnvironment.s.sol";
+import {WithSalts} from "../WithSalts.s.sol";
+import {TestConstants} from "../../../test/Constants.sol";
 
+// Libraries
+import {Permit2User} from "@axis-core-0.5.1-test/lib/permit2/Permit2User.sol";
 import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
-import {CappedMerkleAllowlist} from "src/callbacks/allowlists/CappedMerkleAllowlist.sol";
-import {AllocatedMerkleAllowlist} from "src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
-import {TokenAllowlist} from "src/callbacks/allowlists/TokenAllowlist.sol";
-import {UniswapV2DirectToLiquidity} from "src/callbacks/liquidity/UniswapV2DTL.sol";
-import {UniswapV3DirectToLiquidity} from "src/callbacks/liquidity/UniswapV3DTL.sol";
-import {UniswapV3Factory} from "test/lib/uniswap-v3/UniswapV3Factory.sol";
+
+// Uniswap
+import {UniswapV3Factory} from "../../../test/lib/uniswap-v3/UniswapV3Factory.sol";
 import {GUniFactory} from "@g-uni-v1-core-0.9.9/GUniFactory.sol";
 import {UniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/UniswapV2Router02.sol";
 
-import {TestConstantsPeriphery} from "test/Constants.sol";
+// Callbacks
+import {CappedMerkleAllowlist} from "../../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
+import {AllocatedMerkleAllowlist} from
+    "../../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
+import {TokenAllowlist} from "../../../src/callbacks/allowlists/TokenAllowlist.sol";
+import {UniswapV2DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 
-contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConstantsPeriphery {
+contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConstants {
     string internal constant _CAPPED_MERKLE_ALLOWLIST = "CappedMerkleAllowlist";
     string internal constant _ALLOCATED_MERKLE_ALLOWLIST = "AllocatedMerkleAllowlist";
     string internal constant _TOKEN_ALLOWLIST = "TokenAllowlist";

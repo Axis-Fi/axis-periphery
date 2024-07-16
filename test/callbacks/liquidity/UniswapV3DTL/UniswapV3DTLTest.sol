@@ -14,10 +14,10 @@ import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
 
-import {UniswapV3Factory} from "test/lib/uniswap-v3/UniswapV3Factory.sol";
+import {UniswapV3Factory} from "../../../lib/uniswap-v3/UniswapV3Factory.sol";
 
-import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV3DirectToLiquidity} from "src/callbacks/liquidity/UniswapV3DTL.sol";
+import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-0.5.1/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-0.5.1-test/modules/Auction/MockBatchAuctionModule.sol";
@@ -26,16 +26,11 @@ import {keycodeFromVeecode, toKeycode} from "@axis-core-0.5.1/modules/Keycode.so
 
 import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
 
-import {WithSalts} from "test/lib/WithSalts.sol";
+import {WithSalts} from "../../../lib/WithSalts.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
-import {TestConstantsPeriphery} from "test/Constants.sol";
+import {TestConstants} from "../../../Constants.sol";
 
-abstract contract UniswapV3DirectToLiquidityTest is
-    Test,
-    Permit2User,
-    WithSalts,
-    TestConstantsPeriphery
-{
+abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV3DirectToLiquidity;
 
     address internal constant _SELLER = address(0x2);

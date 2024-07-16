@@ -10,7 +10,7 @@ import {
     IUniswapV3Pool
 } from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
 
-import {NoDelegateCall} from "test/lib/uniswap-v3/NoDelegateCall.sol";
+import {NoDelegateCall} from "./NoDelegateCall.sol";
 
 import {SafeCast} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/SafeCast.sol";
 import {Tick} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/Tick.sol";

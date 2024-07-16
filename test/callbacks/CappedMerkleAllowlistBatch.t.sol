@@ -9,9 +9,9 @@ import {BatchAuctionHouse} from "@axis-core-0.5.1/BatchAuctionHouse.sol";
 
 import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
 
-import {CappedMerkleAllowlist} from "src/callbacks/allowlists/CappedMerkleAllowlist.sol";
+import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
 
-import {WithSalts} from "test/lib/WithSalts.sol";
+import {WithSalts} from "../lib/WithSalts.sol";
 
 contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts {
     using Callbacks for CappedMerkleAllowlist;

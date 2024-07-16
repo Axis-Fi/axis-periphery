@@ -1,16 +1,16 @@
 /// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {TestConstants} from "@axis-core-0.5.1-test/Constants.sol";
+import {TestConstants as TestConstantsCore} from "@axis-core-0.5.1-test/Constants.sol";
 
-abstract contract TestConstantsPeriphery is TestConstants {
+abstract contract TestConstants is TestConstantsCore {
     address internal constant _UNISWAP_V2_FACTORY =
         address(0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f);
     address internal constant _UNISWAP_V2_ROUTER =
-        address(0xAA9d46fFaA451Bc33E9A2722296656B7353255E9);
+        address(0xAAC26e617eEeDce14ca384b3EDAce4dC688cE08A);
     address internal constant _UNISWAP_V3_FACTORY =
-        address(0xAAb39D61dfaDdac33747628FCcd808848dF67f54);
-    address internal constant _GUNI_FACTORY = address(0xAA02c3B670819c4f85F04d6aCB7c560135E0Ff99);
+        address(0xAAa6edD3Ef4354C30415687584288A518B7FfBA8);
+    address internal constant _GUNI_FACTORY = address(0xAAE2A775Ac2F1F1D423262Ed7b537d4f82ED255b);
     address internal constant _BASELINE_KERNEL = address(0xBB);
     address internal constant _BASELINE_QUOTE_TOKEN =
         address(0xAA58516d932C482469914260268EEA7611BF0eb4);

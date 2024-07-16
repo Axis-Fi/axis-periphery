@@ -3,11 +3,12 @@ pragma solidity 0.8.19;
 
 // Scripting libraries
 import {Script, console2} from "@forge-std-1.9.1/Script.sol";
-import {WithEnvironment} from "script/deploy/WithEnvironment.s.sol";
-import {WithSalts} from "script/salts/WithSalts.s.sol";
+import {WithEnvironment} from "../../deploy/WithEnvironment.s.sol";
+import {WithSalts} from "../WithSalts.s.sol";
 
-import {UniswapV2DirectToLiquidity} from "src/callbacks/liquidity/UniswapV2DTL.sol";
-import {UniswapV3DirectToLiquidity} from "src/callbacks/liquidity/UniswapV3DTL.sol";
+// Uniswap
+import {UniswapV2DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 
 contract UniswapDTLSalts is Script, WithEnvironment, WithSalts {
     string internal constant _ADDRESS_PREFIX = "E6";

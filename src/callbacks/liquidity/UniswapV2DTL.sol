@@ -9,7 +9,7 @@ import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Fac
 import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";
 
 // Callbacks
-import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
+import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 
 /// @title      UniswapV2DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V2 pool
