@@ -1,17 +1,5 @@
 
 [[dependencies]]
-name = "forge-std"
-version = "1.9.1"
-source = "https://soldeer-revisions.s3.amazonaws.com/forge-std/v1_9_1_03-07-2024_14:44:59_forge-std-v1.9.1.zip"
-checksum = "110b35ad3604d91a919c521c71206c18cd07b29c750bd90b5cbbaf37288c9636"
-
-[[dependencies]]
-name = "axis-core"
-version = "0.5.1"
-source = "git@github.com:Axis-Fi/axis-core.git"
-checksum = "c7c46a3d045c4818c08567c4c530f1c7670eb0ac"
-
-[[dependencies]]
 name = "@openzeppelin-contracts"
 version = "4.9.2"
 source = "https://soldeer-revisions.s3.amazonaws.com/@openzeppelin-contracts/4_9_2_22-01-2024_13:13:52_contracts.zip"
@@ -36,7 +24,19 @@ source = "https://soldeer-revisions.s3.amazonaws.com/@uniswap-v3-core/1_0_1-solc
 checksum = "566fc479fe846f41b211a0ddd66f875cd37e2ccb86b3fc4f7fa18bd55266ec7d"
 
 [[dependencies]]
+name = "axis-core"
+version = "0.5.1"
+source = "git@github.com:Axis-Fi/axis-core.git"
+checksum = "76e4b84ea91c1923d060d8c90eee29c8ab5f45c5"
+
+[[dependencies]]
+name = "forge-std"
+version = "1.9.1"
+source = "https://soldeer-revisions.s3.amazonaws.com/forge-std/v1_9_1_03-07-2024_14:44:59_forge-std-v1.9.1.zip"
+checksum = "110b35ad3604d91a919c521c71206c18cd07b29c750bd90b5cbbaf37288c9636"
+
+[[dependencies]]
 name = "g-uni-v1-core"
 version = "0.9.9"
 source = "git@github.com:Axis-Fi/g-uni-v1-core.git"
-checksum = "aa63e0d19b1ffb663a0c61a8f149f253db3717db"
+checksum = "d6bcb6e811e86d36bc836c002eb2e9a2c73d29ca"

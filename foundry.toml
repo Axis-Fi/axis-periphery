@@ -12,4 +12,4 @@ axis-core = { version = "0.5.1", url = "git@github.com:Axis-Fi/axis-core.git", c
 "@openzeppelin-contracts-upgradeable" = { version = "4.9.2" }
 "@uniswap-v2-core" = { version = "1.0.1" }
 "@uniswap-v3-core" = { version = "1.0.1-solc-0.8-simulate" }
-g-uni-v1-core = { version = "0.9.9", url = "git@github.com:Axis-Fi/g-uni-v1-core.git", commit = "aa63e0d19b1ffb663a0c61a8f149f253db3717db" }
+g-uni-v1-core = { version = "0.9.9", url = "git@github.com:Axis-Fi/g-uni-v1-core.git", commit = "d6bcb6e811e86d36bc836c002eb2e9a2c73d29ca" }
