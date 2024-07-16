@@ -2,7 +2,12 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-fs_permissions = [{access = "read-write", path = "./bytecode/"}, {access = "read", path = "./script/"}, {access = "read-write", path = "./deployments/"}]
+fs_permissions = [
+  {access = "read-write", path = "./bytecode/"},
+  {access = "read", path = "./script/"},
+  {access = "read-write", path = "./deployments/"},
+  {access = "read", path = "./dependencies/axis-core-0.5.1/script/env.json"},
+]
 ffi = true
 solc_version = "0.8.19"
 evm_version = "paris"
