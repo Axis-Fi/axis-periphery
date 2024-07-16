@@ -7,10 +7,10 @@ abstract contract TestConstantsPeriphery is TestConstants {
     address internal constant _UNISWAP_V2_FACTORY =
         address(0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f);
     address internal constant _UNISWAP_V2_ROUTER =
-        address(0xAA060467e63D0796E8Ef8dc030E9e41062F640Cf);
+        address(0xAA9d46fFaA451Bc33E9A2722296656B7353255E9);
     address internal constant _UNISWAP_V3_FACTORY =
-        address(0xAA87607802bF920dF9456cfE2a39A0545844ABc6);
-    address internal constant _GUNI_FACTORY = address(0xAAa7f66D711841D06a5ac0ACC454b9893f553738);
+        address(0xAAb39D61dfaDdac33747628FCcd808848dF67f54);
+    address internal constant _GUNI_FACTORY = address(0xAA02c3B670819c4f85F04d6aCB7c560135E0Ff99);
     address internal constant _BASELINE_KERNEL = address(0xBB);
     address internal constant _BASELINE_QUOTE_TOKEN =
         address(0xAA58516d932C482469914260268EEA7611BF0eb4);
