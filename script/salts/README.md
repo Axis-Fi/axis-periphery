@@ -12,10 +12,10 @@ Many of the tests use salts to deploy callbacks at addresses with a specific pre
 ./script/salts/test/test_salts.sh --saltKey <SALT_KEY>
 ```
 
-For example, if re-generating salts for the `MockCallback` contract, make the following call:
+For example, if re-generating salts for the `CappedMerkleAllowlist` contract, make the following call:
 
 ```bash
-./script/salts/test/test_salts.sh --saltKey MockCallback
+./script/salts/test/test_salts.sh --saltKey CappedMerkleAllowlist
 ```
 
 The resulting salts will be written to the `./script/salts/salts.json` file, which the test cases will read from.
@@ -59,12 +59,12 @@ For aesthetic, gas or other reasons, certain contracts will need to be deployed 
 
 The following steps need to be followed to generate the salt:
 
-1. Generate the bytecode file and write it to disk. See `AuctionHouseSalts.s.sol` for an example.
+1. Generate the bytecode file and write it to disk. See `AllowlistSalts.s.sol` for an example.
 
 1. Run the salts script with the desired prefix, salt key and bytecode hash. For example:
 
 ```bash
-./scripts/salts/write_salt.sh ./bytecode/MockCallback98.bin 98 MockCallback 0x5080f4a157b896da527e936ac326bc3742c5d0239c63823b4d5c9939cc19ccb1
+./scripts/salts/write_salt.sh ./bytecode/CappedMerkleAllowlist98.bin 98 CappedMerkleAllowlist 0x5080f4a157b896da527e936ac326bc3742c5d0239c63823b4d5c9939cc19ccb1
 ```
 
 Provided the contract bytecode (contract code and constructor arguments) is the same, the saved salt will be used during deployment.
