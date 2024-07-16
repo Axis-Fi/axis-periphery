@@ -21,18 +21,40 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+            version: 9
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
+      - name: Install Dependencies
+        run: |
+          pnpm install
+        id: install
+
+      - name: Run lint check
+        run: pnpm run lint:check
+
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes
+          forge build
         id: build
 
       - name: Run Forge tests
         run: |
           forge test -vvv
         id: test
+
+      - name: Contract Sizes
+        run: |
+          forge --version
+          pnpm run size
+        id: sizes
