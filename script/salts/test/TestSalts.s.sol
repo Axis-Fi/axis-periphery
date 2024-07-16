@@ -8,8 +8,6 @@ import {Permit2User} from "@axis-core-0.5.1-test/lib/permit2/Permit2User.sol";
 import {WithSalts} from "script/salts/WithSalts.s.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
-import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
-import {MockCallback} from "@axis-core-0.5.1-test/callbacks/MockCallback.sol";
 import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
 import {CappedMerkleAllowlist} from "src/callbacks/allowlists/CappedMerkleAllowlist.sol";
 import {AllocatedMerkleAllowlist} from "src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
@@ -230,44 +228,4 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
         UniswapV3Factory uniswapV3Factory = new UniswapV3Factory{salt: uniswapV3FactorySalt}();
         console2.log("UniswapV3Factory address: ", address(uniswapV3Factory));
     }
-
-    // function generateBaselineQuoteToken() public {
-    //     // Generate a salt for a MockERC20 quote token
-    //     bytes memory qtArgs = abi.encode("Quote Token", "QT", 18);
-    //     bytes memory qtContractCode = type(MockERC20).creationCode;
-    //     (string memory qtBytecodePath, bytes32 qtBytecodeHash) =
-    //         _writeBytecode("QuoteToken", qtContractCode, qtArgs);
-    //     _setTestSaltWithDeployer(
-    //         qtBytecodePath, "AA", "QuoteToken", qtBytecodeHash, _CREATE2_DEPLOYER
-    //     );
-
-    //     // Fetch the salt that was set
-    //     bytes32 quoteTokenSalt = _getSalt("Test_QuoteToken", qtContractCode, qtArgs);
-
-    //     // Get the address of the quote token
-    //     // Update the `_BASELINE_QUOTE_TOKEN` constants with this value
-    //     vm.prank(_CREATE2_DEPLOYER);
-    //     MockERC20 quoteToken = new MockERC20{salt: quoteTokenSalt}("Quote Token", "QT", 18);
-    //     console2.log("Quote Token address: ", address(quoteToken));
-    // }
-
-    // function generateBaselineAxisLaunch() public {
-    //     // Get the salt
-    //     bytes memory callbackArgs =
-    //         abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
-    //     (string memory callbackBytecodePath, bytes32 callbackBytecodeHash) = _writeBytecode(
-    //         "BaselineAxisLaunch", type(BaselineAxisLaunch).creationCode, callbackArgs
-    //     );
-    //     _setTestSalt(callbackBytecodePath, "EF", "BaselineAxisLaunch", callbackBytecodeHash);
-    // }
-
-    // function generateBaselineAllocatedAllowlist() public {
-    //     // Get the salt
-    //     bytes memory callbackArgs =
-    //         abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
-    //     (string memory callbackBytecodePath, bytes32 callbackBytecodeHash) = _writeBytecode(
-    //         "BaselineAllocatedAllowlist", type(BALwithAllocatedAllowlist).creationCode, callbackArgs
-    //     );
-    //     _setTestSalt(callbackBytecodePath, "EF", "BaselineAllocatedAllowlist", callbackBytecodeHash);
-    // }
 }

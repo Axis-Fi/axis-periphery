@@ -19,7 +19,8 @@ import {UniswapV3Factory} from "test/lib/uniswap-v3/UniswapV3Factory.sol";
 import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
 import {UniswapV3DirectToLiquidity} from "src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-0.5.1/modules/derivatives/LinearVesting.sol";
-import {MockBatchAuctionModule} from "@axis-core-0.5.1-test/modules/Auction/MockBatchAuctionModule.sol";
+import {MockBatchAuctionModule} from
+    "@axis-core-0.5.1-test/modules/Auction/MockBatchAuctionModule.sol";
 
 import {keycodeFromVeecode, toKeycode} from "@axis-core-0.5.1/modules/Keycode.sol";
 
@@ -29,7 +30,12 @@ import {WithSalts} from "test/lib/WithSalts.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
 import {TestConstantsPeriphery} from "test/Constants.sol";
 
-abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstantsPeriphery {
+abstract contract UniswapV3DirectToLiquidityTest is
+    Test,
+    Permit2User,
+    WithSalts,
+    TestConstantsPeriphery
+{
     using Callbacks for UniswapV3DirectToLiquidity;
 
     address internal constant _SELLER = address(0x2);
