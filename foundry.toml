@@ -2,6 +2,28 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+fs_permissions = [{access = "read-write", path = "./bytecode/"}, {access = "read", path = "./script/"}, {access = "read-write", path = "./deployments/"}]
+ffi = true
+solc_version = "0.8.19"
+evm_version = "paris"
+
+[fuzz]
+runs = 1024
+
+# Remappings are setup using remappings.txt, since forge seems to ignore remappings here
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+multiline_func_header = "params_first"
+quote_style = "double"
+number_underscore = "thousands"
+wrap_comments = false
+ignore = [
+  "lib/**",
+  "src/lib/**",
+]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
