@@ -7,7 +7,7 @@ import {WithEnvironment} from "../../deploy/WithEnvironment.s.sol";
 import {WithSalts} from "../WithSalts.s.sol";
 
 // Libraries
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
 
 // Callbacks
 import {MerkleAllowlist} from "../../../src/callbacks/allowlists/MerkleAllowlist.sol";

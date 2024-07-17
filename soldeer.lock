@@ -7,9 +7,9 @@ checksum = "110b35ad3604d91a919c521c71206c18cd07b29c750bd90b5cbbaf37288c9636"
 
 [[dependencies]]
 name = "axis-core"
-version = "0.5.1"
-source = "git@github.com:Axis-Fi/axis-core.git"
-checksum = "d07b3311771ea3162d99aa68689e40f4f4bd8135"
+version = "0.9.0"
+source = "https://soldeer-revisions.s3.amazonaws.com/axis-core/0_9_0_17-07-2024_16:24:50_axis-core.zip"
+checksum = "bbec2e103a93c4b40201f94732f9ce444378b4baf728f15cc934ff9950779dc3"
 
 [[dependencies]]
 name = "@openzeppelin-contracts"

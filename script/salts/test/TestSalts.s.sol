@@ -9,8 +9,8 @@ import {WithSalts} from "../WithSalts.s.sol";
 import {TestConstants} from "../../../test/Constants.sol";
 
 // Libraries
-import {Permit2User} from "@axis-core-0.5.1-test/lib/permit2/Permit2User.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-0.9.0-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
 
 // Uniswap
 import {UniswapV3Factory} from "../../../test/lib/uniswap-v3/UniswapV3Factory.sol";

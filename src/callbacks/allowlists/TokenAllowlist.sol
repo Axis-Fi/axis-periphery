@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {BaseCallback} from "@axis-core-0.9.0/callbacks/BaseCallback.sol";
+import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
 
 /// @notice Generic interface for tokens that implement a balanceOf function (includes ERC-20 and ERC-721)
 interface ITokenBalance {

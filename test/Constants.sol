@@ -1,7 +1,7 @@
 /// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {TestConstants as TestConstantsCore} from "@axis-core-0.5.1-test/Constants.sol";
+import {TestConstants as TestConstantsCore} from "@axis-core-0.9.0-test/Constants.sol";
 
 abstract contract TestConstants is TestConstantsCore {
     address internal constant _UNISWAP_V2_FACTORY =
