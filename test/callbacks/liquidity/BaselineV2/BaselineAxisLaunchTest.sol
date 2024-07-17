@@ -2,34 +2,37 @@
 pragma solidity 0.8.19;
 
 // Test scaffolding
-import {Test} from "forge-std/Test.sol";
-import {console2} from "forge-std/console2.sol";
-import {Permit2User} from "test/lib/permit2/Permit2User.sol";
-import {WithSalts} from "test/lib/WithSalts.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import {MockBPOOL} from "test/callbacks/liquidity/BaselineV2/mocks/MockBPOOL.sol";
-import {IUniswapV3Factory} from "uniswap-v3-core/interfaces/IUniswapV3Factory.sol";
-import {UniswapV3Factory} from "test/lib/uniswap-v3/UniswapV3Factory.sol";
-import {ComputeAddress} from "test/lib/ComputeAddress.sol";
-import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
-import {TestConstants} from "test/Constants.sol";
-import {SqrtPriceMath} from "src/lib/uniswap-v3/SqrtPriceMath.sol";
-import {TickMath} from "uniswap-v3-core/libraries/TickMath.sol";
+import {Test} from "@forge-std-1.9.1/Test.sol";
+import {console2} from "@forge-std-1.9.1/console2.sol";
+import {Permit2User} from "@axis-core-0.5.1-test/lib/permit2/Permit2User.sol";
+import {WithSalts} from "../../../lib/WithSalts.sol";
+import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
+import {MockBPOOL} from "../../../callbacks/liquidity/BaselineV2/mocks/MockBPOOL.sol";
+import {IUniswapV3Factory} from
+    "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
+import {UniswapV3Factory} from "../../../lib/uniswap-v3/UniswapV3Factory.sol";
+import {ComputeAddress} from "../../../lib/ComputeAddress.sol";
+import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
+import {TestConstants} from "../../../Constants.sol";
+import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 // Axis core
-import {IAuction} from "src/interfaces/modules/IAuction.sol";
-import {IAuctionHouse} from "src/interfaces/IAuctionHouse.sol";
-import {BatchAuctionHouse} from "src/BatchAuctionHouse.sol";
-import {EncryptedMarginalPrice} from "src/modules/auctions/batch/EMP.sol";
-import {IFixedPriceBatch} from "src/interfaces/modules/auctions/IFixedPriceBatch.sol";
-import {FixedPriceBatch} from "src/modules/auctions/batch/FPB.sol";
+import {IAuction} from "@axis-core-0.5.1/interfaces/modules/IAuction.sol";
+import {IAuctionHouse} from "@axis-core-0.5.1/interfaces/IAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-0.5.1/BatchAuctionHouse.sol";
+import {EncryptedMarginalPrice} from "@axis-core-0.5.1/modules/auctions/batch/EMP.sol";
+import {IFixedPriceBatch} from "@axis-core-0.5.1/interfaces/modules/auctions/IFixedPriceBatch.sol";
+import {FixedPriceBatch} from "@axis-core-0.5.1/modules/auctions/batch/FPB.sol";
 
 // Callbacks
-import {Callbacks} from "src/lib/Callbacks.sol";
-import {BaselineAxisLaunch} from "src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {BaselineAxisLaunch} from
+    "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 
 // Baseline
-import {toKeycode as toBaselineKeycode} from "src/callbacks/liquidity/BaselineV2/lib/Kernel.sol";
+import {toKeycode as toBaselineKeycode} from
+    "../../../../src/callbacks/liquidity/BaselineV2/lib/Kernel.sol";
 
 abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for BaselineAxisLaunch;

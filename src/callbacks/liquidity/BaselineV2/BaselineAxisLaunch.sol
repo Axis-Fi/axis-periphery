@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 // Axis dependencies
-import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
-import {BaseCallback} from "src/callbacks/BaseCallback.sol";
-import {Callbacks} from "src/lib/Callbacks.sol";
-import {IAuctionHouse} from "src/interfaces/IAuctionHouse.sol";
+import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {IAuctionHouse} from "@axis-core-0.5.1/interfaces/IAuctionHouse.sol";
 import {
     Keycode as AxisKeycode,
     keycodeFromVeecode,
     fromKeycode as fromAxisKeycode
-} from "src/modules/Keycode.sol";
-import {Module as AxisModule} from "src/modules/Modules.sol";
-import {IFixedPriceBatch} from "src/interfaces/modules/auctions/IFixedPriceBatch.sol";
+} from "@axis-core-0.5.1/modules/Keycode.sol";
+import {Module as AxisModule} from "@axis-core-0.5.1/modules/Modules.sol";
+import {IFixedPriceBatch} from "@axis-core-0.5.1/interfaces/modules/auctions/IFixedPriceBatch.sol";
 
 // Baseline dependencies
 import {
@@ -21,15 +21,15 @@ import {
     Keycode as BaselineKeycode,
     toKeycode as toBaselineKeycode,
     Permissions as BaselinePermissions
-} from "src/callbacks/liquidity/BaselineV2/lib/Kernel.sol";
-import {Range, IBPOOLv1} from "src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
-import {TickMath} from "lib/uniswap-v3-core/contracts/libraries/TickMath.sol";
+} from "./lib/Kernel.sol";
+import {Range, IBPOOLv1} from "./lib/IBPOOL.sol";
+import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 // Other libraries
-import {Owned} from "lib/solmate/src/auth/Owned.sol";
-import {FixedPointMathLib} from "lib/solady/src/utils/FixedPointMathLib.sol";
-import {Transfer} from "src/lib/Transfer.sol";
-import {SqrtPriceMath} from "src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
+import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
+import {Transfer} from "@axis-core-0.5.1/lib/Transfer.sol";
+import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
 /// @notice     Axis auction callback to initialize a Baseline token using proceeds from a batch auction.
 /// @dev        This contract combines Baseline's InitializeProtocol Policy and Axis' Callback functionality to build an Axis auction callback specific to Baseline V2 token launches

@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {BaselineAxisLaunchTest} from
-    "test/callbacks/liquidity/BaselineV2/BaselineAxisLaunchTest.sol";
+import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
 contract BaselineWithdrawReservesTest is BaselineAxisLaunchTest {
     // ============ Tests ============ //

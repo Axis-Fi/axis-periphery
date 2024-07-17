@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {MerkleProof} from "lib/openzeppelin-contracts/contracts/utils/cryptography/MerkleProof.sol";
+import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/MerkleProof.sol";
 
-import {BaselineAxisLaunch} from "src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {BaselineAxisLaunch} from "./BaselineAxisLaunch.sol";
 
 /// @notice Allowlist version of the Baseline Axis Launch callback.
 /// @notice This version allows for a merkle tree to be used to determine which addresses are allowed to participate. However, the amount of quote tokens they can spend is not limited.

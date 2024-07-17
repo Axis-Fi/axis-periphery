@@ -2,11 +2,11 @@
 pragma solidity 0.8.19;
 
 // Test scaffolding
-import {BaselineAxisLaunchTest} from
-    "test/callbacks/liquidity/BaselineV2/BaselineAxisLaunchTest.sol";
+import {BaselineAxisLaunchTest} from "../BaselineAxisLaunchTest.sol";
 
 // Axis
-import {BALwithAllowlist} from "src/callbacks/liquidity/BaselineV2/BALwithAllowlist.sol";
+import {BALwithAllowlist} from
+    "../../../../../src/callbacks/liquidity/BaselineV2/BALwithAllowlist.sol";
 
 contract BaselineAllowlistTest is BaselineAxisLaunchTest {
     uint256 internal constant _BUYER_LIMIT = 5e18;

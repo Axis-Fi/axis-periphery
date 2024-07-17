@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {BaselineAxisLaunch} from "src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-import {BALwithAllowlist} from "src/callbacks/liquidity/BaselineV2/BALwithAllowlist.sol";
+import {BaselineAxisLaunch} from "./BaselineAxisLaunch.sol";
+import {BALwithAllowlist} from "./BALwithAllowlist.sol";
 
 /// @notice Capped allowlist version of the Baseline Axis Launch callback.
 /// @notice This version allows for each address in the Merkle tree to have a standard amount of quote tokens they can spend.

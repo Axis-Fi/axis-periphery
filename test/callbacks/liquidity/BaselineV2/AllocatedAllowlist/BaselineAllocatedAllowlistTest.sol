@@ -2,12 +2,11 @@
 pragma solidity 0.8.19;
 
 // Test scaffolding
-import {BaselineAxisLaunchTest} from
-    "test/callbacks/liquidity/BaselineV2/BaselineAxisLaunchTest.sol";
+import {BaselineAxisLaunchTest} from "../BaselineAxisLaunchTest.sol";
 
 // Axis
 import {BALwithAllocatedAllowlist} from
-    "src/callbacks/liquidity/BaselineV2/BALwithAllocatedAllowlist.sol";
+    "../../../../../src/callbacks/liquidity/BaselineV2/BALwithAllocatedAllowlist.sol";
 
 contract BaselineAllocatedAllowlistTest is BaselineAxisLaunchTest {
     // ========== MODIFIERS ========== //

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {BaselineCappedAllowlistTest} from
-    "test/callbacks/liquidity/BaselineV2/CappedAllowlist/BaselineCappedAllowlistTest.sol";
+import {BaselineCappedAllowlistTest} from "./BaselineCappedAllowlistTest.sol";
 
-import {BaseCallback} from "src/callbacks/BaseCallback.sol";
-import {BALwithCappedAllowlist} from "src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
+import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {BALwithCappedAllowlist} from
+    "../../../../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 
 contract BaselineCappedAllowlistOnCreateTest is BaselineCappedAllowlistTest {
     /// @dev This doesn't need to be valid at the moment

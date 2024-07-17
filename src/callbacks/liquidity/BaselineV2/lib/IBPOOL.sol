@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.0;
 
-import {IUniswapV3Pool} from "lib/uniswap-v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import {ERC20} from "lib/solmate/src/tokens/ERC20.sol";
+import {IUniswapV3Pool} from
+    "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
+import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 
 enum Range {
     FLOOR,

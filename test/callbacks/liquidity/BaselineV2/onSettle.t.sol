@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {BaselineAxisLaunchTest} from
-    "test/callbacks/liquidity/BaselineV2/BaselineAxisLaunchTest.sol";
+import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
-import {BaseCallback} from "src/callbacks/BaseCallback.sol";
-import {BaselineAxisLaunch} from "src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-import {Range} from "src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
-import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {BaselineAxisLaunch} from
+    "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {Range} from "../../../../src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
+import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 
 contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     using FixedPointMathLib for uint256;

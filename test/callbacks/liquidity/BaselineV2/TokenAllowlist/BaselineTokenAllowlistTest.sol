@@ -2,15 +2,14 @@
 pragma solidity 0.8.19;
 
 // Test scaffolding
-import {BaselineAxisLaunchTest} from
-    "test/callbacks/liquidity/BaselineV2/BaselineAxisLaunchTest.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import {BaselineAxisLaunchTest} from "../BaselineAxisLaunchTest.sol";
+import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
 
 // Axis
 import {
     BALwithTokenAllowlist,
     ITokenBalance
-} from "src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
+} from "../../../../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
 
 contract BaselineTokenAllowlistTest is BaselineAxisLaunchTest {
     uint96 internal constant _TOKEN_THRESHOLD = 5e18;

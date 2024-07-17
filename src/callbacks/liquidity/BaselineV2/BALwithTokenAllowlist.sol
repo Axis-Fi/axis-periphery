@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {BaselineAxisLaunch} from "src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {BaselineAxisLaunch} from "./BaselineAxisLaunch.sol";
 
 /// @notice Generic interface for tokens that implement a balanceOf function (includes ERC-20 and ERC-721)
 interface ITokenBalance {

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {BaselineAxisLaunchTest} from
-    "test/callbacks/liquidity/BaselineV2/BaselineAxisLaunchTest.sol";
+import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
-import {BaseCallback} from "src/callbacks/BaseCallback.sol";
-import {BaselineAxisLaunch} from "src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {BaselineAxisLaunch} from
+    "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 
 contract BaselineOnCancelTest is BaselineAxisLaunchTest {
     // ============ Modifiers ============ //

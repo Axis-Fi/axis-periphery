@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {BaselineTokenAllowlistTest} from
-    "test/callbacks/liquidity/BaselineV2/TokenAllowlist/BaselineTokenAllowlistTest.sol";
+import {BaselineTokenAllowlistTest} from "./BaselineTokenAllowlistTest.sol";
 
-import {BaseCallback} from "src/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
 
 contract BaselineTokenAllowlistOnBidTest is BaselineTokenAllowlistTest {
     uint64 internal constant _BID_ID = 1;

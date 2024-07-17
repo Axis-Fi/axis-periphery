@@ -30,7 +30,7 @@ This callbacks contract currently only supported the Fixed Price Batch auction f
     - Run the deployment script. See the [deployment README](/script/deploy/README.md#running-the-deployment) for instructions.
     - Each callbacks contract is single-use, specific to the auction and Baseline stack.
 3. Deploy the Axis auction, specifying the callbacks contract and parameters.
-    - See [TestData.s.sol:createAuction](/script/ops/test/FixedPriceBatch-Baseline/TestData.s.sol) for an example of this.
+    - See [TestData.s.sol:createAuction](/script/test/FixedPriceBatch-Baseline/TestData.s.sol) for an example of this.
     - Note that curator fees are not supported when using the Baseline-Axis callback.
     - `onCreate()` will be called on the callbacks contract. This results in:
         - The tick ranges on the Baseline `BPOOL` being configured

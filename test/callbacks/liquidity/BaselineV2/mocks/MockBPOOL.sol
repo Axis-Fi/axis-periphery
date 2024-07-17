@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {IBPOOLv1, Range, Position, Ticks} from "src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {IUniswapV3Pool} from "lib/uniswap-v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import {IUniswapV3Factory} from "lib/uniswap-v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import {TickMath} from "lib/uniswap-v3-core/contracts/libraries/TickMath.sol";
+import {
+    IBPOOLv1,
+    Range,
+    Position,
+    Ticks
+} from "../../../../../src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
+import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+import {IUniswapV3Pool} from
+    "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
+import {IUniswapV3Factory} from
+    "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
+import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 contract MockBPOOL is IBPOOLv1, ERC20 {
     int24 public immutable TICK_SPACING;

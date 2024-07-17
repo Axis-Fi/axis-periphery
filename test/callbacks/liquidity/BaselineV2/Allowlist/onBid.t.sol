@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {BaselineAllowlistTest} from
-    "test/callbacks/liquidity/BaselineV2/Allowlist/BaselineAllowlistTest.sol";
+import {BaselineAllowlistTest} from "./BaselineAllowlistTest.sol";
 
-import {BaseCallback} from "src/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
 
 contract BaselineAllowlistOnBidTest is BaselineAllowlistTest {
     // Use the @openzeppelin/merkle-tree package or the scripts in axis-utils to generate the merkle tree
