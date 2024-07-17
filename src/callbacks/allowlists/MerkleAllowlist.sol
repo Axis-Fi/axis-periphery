@@ -3,10 +3,10 @@ pragma solidity 0.8.19;
 
 import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/MerkleProof.sol";
 
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
+import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
 
-import {IAuctionHouse} from "@axis-core-0.5.1/interfaces/IAuctionHouse.sol";
+import {IAuctionHouse} from "@axis-core-0.9.0/interfaces/IAuctionHouse.sol";
 
 /// @title  MerkleAllowlist
 /// @notice This contract implements a merkle tree-based allowlist for buyers to participate in an auction.

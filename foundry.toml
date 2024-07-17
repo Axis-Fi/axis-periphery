@@ -2,7 +2,12 @@
 src = "src"
 out = "out"
 libs = ["lib"]
-fs_permissions = [{access = "read-write", path = "./bytecode/"}, {access = "read", path = "./script/"}, {access = "read-write", path = "./deployments/"}]
+fs_permissions = [
+  {access = "read-write", path = "./bytecode/"},
+  {access = "read", path = "./script/"},
+  {access = "read-write", path = "./deployments/"},
+  {access = "read", path = "./dependencies/axis-core-0.9.0/script/env.json"},
+]
 ffi = true
 solc_version = "0.8.19"
 evm_version = "paris"
@@ -29,7 +34,7 @@ ignore = [
 
 [dependencies]
 forge-std = { version = "1.9.1" }
-axis-core = { version = "0.5.1", git = "git@github.com:Axis-Fi/axis-core.git", rev = "020c8a931ffa4c91f344d7fcbafdae779e4dcd3e" }
+axis-core = { version = "0.9.0" }
 "@openzeppelin-contracts" = { version = "4.9.2" }
 "@openzeppelin-contracts-upgradeable" = { version = "4.9.2" }
 "@uniswap-v2-core" = { version = "1.0.1" }

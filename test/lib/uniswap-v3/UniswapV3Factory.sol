@@ -4,10 +4,9 @@ pragma solidity >=0.8.12;
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
 
-import {UniswapV3PoolDeployer} from "test/lib/uniswap-v3/UniswapV3PoolDeployer.sol";
-import {NoDelegateCall} from "test/lib/uniswap-v3/NoDelegateCall.sol";
-
-import {UniswapV3Pool} from "test/lib/uniswap-v3/UniswapV3Pool.sol";
+import {UniswapV3PoolDeployer} from "./UniswapV3PoolDeployer.sol";
+import {NoDelegateCall} from "./NoDelegateCall.sol";
+import {UniswapV3Pool} from "./UniswapV3Pool.sol";
 
 /// @title Canonical Uniswap V3 factory
 /// @notice Deploys Uniswap V3 pools and manages ownership and control over pool protocol fees

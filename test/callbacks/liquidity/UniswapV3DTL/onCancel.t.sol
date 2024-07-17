@@ -3,8 +3,8 @@ pragma solidity 0.8.19;
 
 import {UniswapV3DirectToLiquidityTest} from "./UniswapV3DTLTest.sol";
 
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
-import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
+import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
 contract UniswapV3DirectToLiquidityOnCancelTest is UniswapV3DirectToLiquidityTest {
     uint96 internal constant _REFUND_AMOUNT = 2e18;

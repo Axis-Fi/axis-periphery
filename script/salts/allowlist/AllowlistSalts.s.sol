@@ -3,14 +3,18 @@ pragma solidity 0.8.19;
 
 // Scripting libraries
 import {Script, console2} from "@forge-std-1.9.1/Script.sol";
-import {WithEnvironment} from "script/deploy/WithEnvironment.s.sol";
-import {WithSalts} from "script/salts/WithSalts.s.sol";
+import {WithEnvironment} from "../../deploy/WithEnvironment.s.sol";
+import {WithSalts} from "../WithSalts.s.sol";
 
-import {MerkleAllowlist} from "src/callbacks/allowlists/MerkleAllowlist.sol";
-import {CappedMerkleAllowlist} from "src/callbacks/allowlists/CappedMerkleAllowlist.sol";
-import {TokenAllowlist} from "src/callbacks/allowlists/TokenAllowlist.sol";
-import {AllocatedMerkleAllowlist} from "src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+// Libraries
+import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
+
+// Callbacks
+import {MerkleAllowlist} from "../../../src/callbacks/allowlists/MerkleAllowlist.sol";
+import {CappedMerkleAllowlist} from "../../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
+import {TokenAllowlist} from "../../../src/callbacks/allowlists/TokenAllowlist.sol";
+import {AllocatedMerkleAllowlist} from
+    "../../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
 
 contract AllowlistSalts is Script, WithEnvironment, WithSalts {
     string internal constant _ADDRESS_PREFIX = "98";

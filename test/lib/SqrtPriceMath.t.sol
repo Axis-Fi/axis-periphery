@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
 
-import {SqrtPriceMath} from "src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {SqrtPriceMath} from "../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 contract SqrtPriceMathTest is Test {
     address internal constant _TOKEN0 = 0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5;

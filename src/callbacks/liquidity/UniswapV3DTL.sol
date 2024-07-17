@@ -3,7 +3,6 @@ pragma solidity ^0.8.19;
 
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
-import {SqrtPriceMath} from "src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 // Uniswap
 import {IUniswapV3Pool} from
@@ -11,13 +10,14 @@ import {IUniswapV3Pool} from
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
+import {SqrtPriceMath} from "../../lib/uniswap-v3/SqrtPriceMath.sol";
 
 // G-UNI
 import {IGUniFactory} from "@g-uni-v1-core-0.9.9/interfaces/IGUniFactory.sol";
 import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
 
 // Callbacks
-import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
+import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 
 /// @title      UniswapV3DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V3 pool

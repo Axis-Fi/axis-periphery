@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-0.5.1-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-0.9.0-test/lib/permit2/Permit2User.sol";
 
-import {BatchAuctionHouse} from "@axis-core-0.5.1/BatchAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-0.9.0/BatchAuctionHouse.sol";
 
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
 
-import {TokenAllowlist, ITokenBalance} from "src/callbacks/allowlists/TokenAllowlist.sol";
+import {TokenAllowlist, ITokenBalance} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
 
-import {WithSalts} from "test/lib/WithSalts.sol";
-import {TestConstants} from "test/Constants.sol";
+import {WithSalts} from "../lib/WithSalts.sol";
+import {TestConstants} from "../Constants.sol";
 import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
 
 contract TokenAllowlistBatchTest is Test, Permit2User, WithSalts, TestConstants {
