@@ -6,7 +6,7 @@ import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 
 // Callbacks
-import {BaseCallback} from "@axis-core-0.9.0/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
 import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
 
 // AuctionHouse

@@ -7,7 +7,7 @@ import {Permit2User} from "@axis-core-0.9.0-test/lib/permit2/Permit2User.sol";
 
 import {AtomicAuctionHouse} from "@axis-core-0.9.0/AtomicAuctionHouse.sol";
 
-import {BaseCallback} from "@axis-core-0.9.0/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
 
 import {TokenAllowlist, ITokenBalance} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
 

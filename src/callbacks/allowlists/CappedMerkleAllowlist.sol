@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {BaseCallback} from "@axis-core-0.9.0/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
 import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
 
 import {MerkleAllowlist} from "./MerkleAllowlist.sol";

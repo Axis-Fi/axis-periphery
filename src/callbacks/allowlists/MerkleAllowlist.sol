@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/MerkleProof.sol";
 
-import {BaseCallback} from "@axis-core-0.9.0/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
 import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
 
 import {IAuctionHouse} from "@axis-core-0.9.0/interfaces/IAuctionHouse.sol";

@@ -8,7 +8,7 @@ import {Permit2User} from "@axis-core-0.9.0-test/lib/permit2/Permit2User.sol";
 import {IAuctionHouse} from "@axis-core-0.9.0/interfaces/IAuctionHouse.sol";
 import {BatchAuctionHouse} from "@axis-core-0.9.0/BatchAuctionHouse.sol";
 
-import {BaseCallback} from "@axis-core-0.9.0/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
 
 import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
 
