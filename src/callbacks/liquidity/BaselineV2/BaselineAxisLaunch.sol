@@ -263,10 +263,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         }
 
         // Validate that the floor reserves percent is between 0% and 100%
-        if (cbData.floorReservesPercent > ONE_HUNDRED_PERCENT) {
+        if (cbData.floorReservesPercent > 99e2) {
             revert Callback_Params_InvalidFloorReservesPercent();
         }
-        // TODO floorReservesPercent <= 99%
 
         // Auction must be prefunded for batch auctions (which is the only type supported with this callback),
         // this can't fail because it's checked in the AH as well, but including for completeness
