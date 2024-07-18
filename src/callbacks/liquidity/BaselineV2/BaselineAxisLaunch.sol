@@ -519,7 +519,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         BPOOL.addReservesTo(Range.ANCHOR, proceeds_ - floorReserves);
 
         // Add proportional liquidity to the Discovery range
-        BPOOL.addLiquidityTo(Range.DISCOVERY, BPOOL.getLiquidity(Range.ANCHOR) * 11 / 10);
+        BPOOL.addLiquidityTo(
+            Range.DISCOVERY,
+            (BPOOL.getLiquidity(Range.ANCHOR) + BPOOL.getLiquidity(Range.FLOOR)) * 11 / 10
+        );
 
         //// Step 3: Verify Solvency ////
         uint256 totalCapacity = BPOOL.getPosition(Range.FLOOR).capacity
