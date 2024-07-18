@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
-import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-0.9.0-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
 
-import {IAuctionHouse} from "@axis-core-0.9.0/interfaces/IAuctionHouse.sol";
-import {AtomicAuctionHouse} from "@axis-core-0.9.0/AtomicAuctionHouse.sol";
+import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
+import {AtomicAuctionHouse} from "@axis-core-1.0.0/AtomicAuctionHouse.sol";
 
-import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
 import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
 
-import {toVeecode} from "@axis-core-0.9.0/modules/Keycode.sol";
+import {toVeecode} from "@axis-core-1.0.0/modules/Keycode.sol";
 import {WithSalts} from "../lib/WithSalts.sol";
 
 contract AllocatedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts {

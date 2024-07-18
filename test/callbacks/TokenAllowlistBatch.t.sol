@@ -2,12 +2,12 @@
 pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
-import {Callbacks} from "@axis-core-0.9.0/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-0.9.0-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
 
-import {BatchAuctionHouse} from "@axis-core-0.9.0/BatchAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
 
-import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
 import {TokenAllowlist, ITokenBalance} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
 

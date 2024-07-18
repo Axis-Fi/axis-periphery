@@ -7,9 +7,9 @@ checksum = "110b35ad3604d91a919c521c71206c18cd07b29c750bd90b5cbbaf37288c9636"
 
 [[dependencies]]
 name = "axis-core"
-version = "0.9.0"
-source = "https://soldeer-revisions.s3.amazonaws.com/axis-core/0_9_0_17-07-2024_16:24:50_axis-core.zip"
-checksum = "bbec2e103a93c4b40201f94732f9ce444378b4baf728f15cc934ff9950779dc3"
+version = "1.0.0"
+source = "https://soldeer-revisions.s3.amazonaws.com/axis-core/1_0_0_18-07-2024_01:46:16_axis-core.zip"
+checksum = "9b5716ade218b4064bba7cca7d31065e6aa66574ad92386aaf2cc71b5c21bbb4"
 
 [[dependencies]]
 name = "@openzeppelin-contracts"

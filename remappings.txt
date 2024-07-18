@@ -1,7 +1,7 @@
 @forge-std-1.9.1=dependencies/forge-std-1.9.1/src
-@axis-core-0.9.0=dependencies/axis-core-0.9.0/src
-@axis-core-0.9.0-script=dependencies/axis-core-0.9.0/script
-@axis-core-0.9.0-test=dependencies/axis-core-0.9.0/test
+@axis-core-1.0.0=dependencies/axis-core-1.0.0/src
+@axis-core-1.0.0-script=dependencies/axis-core-1.0.0/script
+@axis-core-1.0.0-test=dependencies/axis-core-1.0.0/test
 @solmate-6.7.0=dependencies/solmate-6.7.0/src
 @clones-with-immutable-args-1.1.1=dependencies/clones-with-immutable-args-1.1.1/src
 @openzeppelin-contracts-4.9.2=dependencies/@openzeppelin-contracts-4.9.2

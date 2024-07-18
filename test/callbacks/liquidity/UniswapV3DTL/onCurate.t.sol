@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {UniswapV3DirectToLiquidityTest} from "./UniswapV3DTLTest.sol";
 
-import {BaseCallback} from "@axis-core-0.9.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
 contract UniswapV3DirectToLiquidityOnCurateTest is UniswapV3DirectToLiquidityTest {
