@@ -266,6 +266,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         if (cbData.floorReservesPercent > ONE_HUNDRED_PERCENT) {
             revert Callback_Params_InvalidFloorReservesPercent();
         }
+        // TODO floorReservesPercent <= 99%
 
         // Auction must be prefunded for batch auctions (which is the only type supported with this callback),
         // this can't fail because it's checked in the AH as well, but including for completeness
@@ -519,6 +520,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         BPOOL.addReservesTo(Range.ANCHOR, proceeds_ - floorReserves);
 
         // Add proportional liquidity to the Discovery range
+        // TODO note why we use anchor only
         BPOOL.addLiquidityTo(Range.DISCOVERY, BPOOL.getLiquidity(Range.ANCHOR) * 11 / 10);
 
         //// Step 3: Verify Solvency ////
