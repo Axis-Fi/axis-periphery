@@ -191,6 +191,130 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
     }
 
+    function test_floorReservesPercent_zero()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        uint24 floorReservesPercent = 0;
+
+        // Update the callback parameters
+        _createData.floorReservesPercent = floorReservesPercent;
+
+        // Call onCreate
+        _onCreate();
+
+        // Mint tokens
+        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
+        _baseToken.mint(_dtlAddress, _REFUND_AMOUNT);
+
+        // Perform callback
+        _onSettle();
+
+        // Assert quote token balances
+        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
+        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
+        assertEq(
+            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
+        );
+
+        // Assert base token balances
+        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
+        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
+        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), 0, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
+
+        // Circulating supply
+        assertEq(
+            _dtl.initialCirculatingSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply"
+        );
+
+        // Auction marked as complete
+        assertEq(_dtl.auctionComplete(), true, "auction completed");
+
+        // Reserves deployed into the pool
+        assertEq(
+            _baseToken.rangeReserves(Range.FLOOR),
+            _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
+            "reserves: floor"
+        );
+        assertEq(
+            _baseToken.rangeReserves(Range.ANCHOR),
+            _PROCEEDS_AMOUNT.mulDivDown(
+                _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
+            ),
+            "reserves: anchor"
+        );
+        assertEq(_baseToken.rangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+
+        // Liquidity
+        assertEq(_baseToken.rangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
+        assertEq(_baseToken.rangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
+        assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
+    }
+
+    function test_floorReservesPercent_oneHundredPercent()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        uint24 floorReservesPercent = _ONE_HUNDRED_PERCENT;
+
+        // Update the callback parameters
+        _createData.floorReservesPercent = floorReservesPercent;
+
+        // Call onCreate
+        _onCreate();
+
+        // Mint tokens
+        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
+        _baseToken.mint(_dtlAddress, _REFUND_AMOUNT);
+
+        // Perform callback
+        _onSettle();
+
+        // Assert quote token balances
+        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
+        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
+        assertEq(
+            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
+        );
+
+        // Assert base token balances
+        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
+        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
+        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), 0, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
+
+        // Circulating supply
+        assertEq(
+            _dtl.initialCirculatingSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply"
+        );
+
+        // Auction marked as complete
+        assertEq(_dtl.auctionComplete(), true, "auction completed");
+
+        // Reserves deployed into the pool
+        assertEq(
+            _baseToken.rangeReserves(Range.FLOOR),
+            _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
+            "reserves: floor"
+        );
+        assertEq(
+            _baseToken.rangeReserves(Range.ANCHOR),
+            _PROCEEDS_AMOUNT.mulDivDown(
+                _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
+            ),
+            "reserves: anchor"
+        );
+        assertEq(_baseToken.rangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+
+        // Liquidity
+        assertEq(_baseToken.rangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
+        assertEq(_baseToken.rangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
+        assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
+    }
+
     function test_floorReservesPercent_fuzz(uint24 floorReservesPercent_)
         public
         givenBPoolIsCreated
