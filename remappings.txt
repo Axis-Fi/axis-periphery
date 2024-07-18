@@ -14,3 +14,4 @@
 @uniswap/v3-core/contracts=dependencies/@uniswap-v3-core-1.0.1-solc-0.8-simulate/contracts
 @openzeppelin/contracts=dependencies/@openzeppelin-contracts-4.9.2
 @openzeppelin/contracts-upgradeable=dependencies/@openzeppelin-contracts-upgradeable-4.9.2
+@solady-0.0.124=dependencies/solady-0.0.124/src
