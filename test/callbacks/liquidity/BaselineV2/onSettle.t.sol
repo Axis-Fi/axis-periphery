@@ -253,13 +253,13 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
     }
 
-    function test_floorReservesPercent_oneHundredPercent()
+    function test_floorReservesPercent_ninetyNinePercent()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        uint24 floorReservesPercent = _ONE_HUNDRED_PERCENT;
+        uint24 floorReservesPercent = _NINETY_NINE_PERCENT;
 
         // Update the callback parameters
         _createData.floorReservesPercent = floorReservesPercent;
@@ -321,7 +321,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        uint24 floorReservesPercent = uint24(bound(floorReservesPercent_, 0, _ONE_HUNDRED_PERCENT));
+        uint24 floorReservesPercent = uint24(bound(floorReservesPercent_, 0, _NINETY_NINE_PERCENT));
 
         // Update the callback parameters
         _createData.floorReservesPercent = floorReservesPercent;

@@ -176,7 +176,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the quote token is not the reserve
     //  [X] it reverts
-    // [X] when the floorReservesPercent is not between 0 and 100%
+    // [X] when the floorReservesPercent is not between 0 and 99%
     //  [X] it reverts
     // [X] when the anchorTickWidth is <= 0
     //  [X] it reverts
@@ -188,7 +188,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the auction price does not match the pool active tick
     //  [X] it reverts
-    // [X] when the floorReservesPercent is 0-100%
+    // [X] when the floorReservesPercent is 0-99%
     //  [X] it correctly records the allocation
     // [X] when the tick spacing is narrow
     //  [X] the ticks do not overlap
@@ -328,7 +328,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
     {
         uint24 floorReservesPercent =
-            uint24(bound(floorReservesPercent_, _ONE_HUNDRED_PERCENT + 1, type(uint24).max));
+            uint24(bound(floorReservesPercent_, _NINETY_NINE_PERCENT + 1, type(uint24).max));
         _createData.floorReservesPercent = floorReservesPercent;
 
         // Expect revert
@@ -473,7 +473,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        uint24 floorReservesPercent = uint24(bound(floorReservesPercent_, 0, _ONE_HUNDRED_PERCENT));
+        uint24 floorReservesPercent = uint24(bound(floorReservesPercent_, 0, _NINETY_NINE_PERCENT));
         _createData.floorReservesPercent = floorReservesPercent;
 
         // Perform the call
