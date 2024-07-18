@@ -518,8 +518,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Add the remainder of the proceeds to the Anchor range
         BPOOL.addReservesTo(Range.ANCHOR, proceeds_ - floorReserves);
 
-        // Add proportional liquidity to the Discovery range
-        // TODO note why we use anchor only
+        // Add proportional liquidity to the Discovery range.
+        // Only the anchor range is used, otherwise the liquidity would be too thick.
+        // The anchor range is guranteed to have a tick spacing width
+        // and to have reserves of at least 1% of the proceeds.
         BPOOL.addLiquidityTo(Range.DISCOVERY, BPOOL.getLiquidity(Range.ANCHOR) * 11 / 10);
 
         //// Step 3: Verify Solvency ////
