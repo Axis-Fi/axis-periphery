@@ -113,3 +113,4 @@ Apart from first-party deployments, the `script/env.json` file contains the addr
     - Arbitrum Sepolia and Blast Sepolia are custom deployments by Axis Finance alongside the G-UNI deployment.
 - G-UNI
   - All of the addresses mentioned are custom deployments by Axis Finance. This is because the addresses from the deployments recorded in the [g-uni-v1-core repository](https://github.com/gelatodigital/g-uni-v1-core/tree/bea63422e2155242b051896b635508b7a99d2a1a/deployments) point to proxies, which have since been upgraded to point to Arrakis contracts that have different interfaces.
+  - Axis Finance maintains a [fork](https://github.com/Axis-Fi/g-uni-v1-core) of the repository.
