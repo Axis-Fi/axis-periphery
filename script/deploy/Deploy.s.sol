@@ -15,6 +15,10 @@ import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
 import {IFeeManager} from "@axis-core-1.0.0/interfaces/IFeeManager.sol";
 import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
 
+// Uniswap
+import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";
+import {GUniFactory} from "@g-uni-v1-core-0.9.9/GUniFactory.sol";
+
 // Callbacks
 import {UniswapV2DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV2DTL.sol";
 import {UniswapV3DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV3DTL.sol";
@@ -281,6 +285,12 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         address uniswapV2Factory = _getAddressNotZero("constants.uniswapV2.factory");
         address uniswapV2Router = _getAddressNotZero("constants.uniswapV2.router");
 
+        // Check that the router and factory match
+        require(
+            IUniswapV2Router02(uniswapV2Router).factory() == uniswapV2Factory,
+            "UniswapV2Router.factory() does not match given Uniswap V2 factory address"
+        );
+
         // Get the salt
         bytes32 salt_ = _getSalt(
             "UniswapV2DirectToLiquidity",
@@ -317,6 +327,12 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address uniswapV2Factory = _getAddressNotZero("constants.uniswapV2.factory");
         address uniswapV2Router = _getAddressNotZero("constants.uniswapV2.router");
+
+        // Check that the router and factory match
+        require(
+            IUniswapV2Router02(uniswapV2Router).factory() == uniswapV2Factory,
+            "UniswapV2Router.factory() does not match given Uniswap V2 factory address"
+        );
 
         // Get the salt
         bytes32 salt_ = _getSalt(
@@ -355,6 +371,12 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         address uniswapV3Factory = _getAddressNotZero("constants.uniswapV3.factory");
         address gUniFactory = _getAddressNotZero("constants.gUni.factory");
 
+        // Check that the GUni factory and Uniswap V3 factory are consistent
+        require(
+            GUniFactory(gUniFactory).factory() == uniswapV3Factory,
+            "GUniFactory.factory() does not match given Uniswap V3 factory address"
+        );
+
         // Get the salt
         bytes32 salt_ = _getSalt(
             "UniswapV3DirectToLiquidity",
@@ -391,6 +413,12 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address uniswapV3Factory = _getAddressNotZero("constants.uniswapV3.factory");
         address gUniFactory = _getAddressNotZero("constants.gUni.factory");
+
+        // Check that the GUni factory and Uniswap V3 factory are consistent
+        require(
+            GUniFactory(gUniFactory).factory() == uniswapV3Factory,
+            "GUniFactory.factory() does not match given Uniswap V3 factory address"
+        );
 
         // Get the salt
         bytes32 salt_ = _getSalt(
