@@ -6,14 +6,14 @@ import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 
 // Callbacks
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
 
 // AuctionHouse
-import {ILinearVesting} from "@axis-core-0.5.1/interfaces/modules/derivatives/ILinearVesting.sol";
-import {LinearVesting} from "@axis-core-0.5.1/modules/derivatives/LinearVesting.sol";
-import {AuctionHouse} from "@axis-core-0.5.1/bases/AuctionHouse.sol";
-import {Keycode, wrapVeecode} from "@axis-core-0.5.1/modules/Modules.sol";
+import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
+import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.sol";
+import {AuctionHouse} from "@axis-core-1.0.0/bases/AuctionHouse.sol";
+import {Keycode, wrapVeecode} from "@axis-core-1.0.0/modules/Modules.sol";
 
 abstract contract BaseDirectToLiquidity is BaseCallback {
     using SafeTransferLib for ERC20;

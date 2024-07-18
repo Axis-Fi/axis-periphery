@@ -5,7 +5,7 @@ import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {Range} from "../../../../src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";

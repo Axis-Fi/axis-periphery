@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {BaselineAllowlistTest} from "./BaselineAllowlistTest.sol";
 
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
 contract BaselineAllowlistOnBidTest is BaselineAllowlistTest {
     // Use the @openzeppelin/merkle-tree package or the scripts in axis-utils to generate the merkle tree

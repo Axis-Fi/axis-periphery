@@ -2,12 +2,12 @@
 pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-0.5.1-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
 
-import {IAuction} from "@axis-core-0.5.1/interfaces/modules/IAuction.sol";
-import {IAuctionHouse} from "@axis-core-0.5.1/interfaces/IAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-0.5.1/BatchAuctionHouse.sol";
+import {IAuction} from "@axis-core-1.0.0/interfaces/modules/IAuction.sol";
+import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
 
 import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
 import {UniswapV2FactoryClone} from "../../../lib/uniswap-v2/UniswapV2FactoryClone.sol";
@@ -17,11 +17,11 @@ import {UniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/UniswapV2Router02.s
 
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
-import {LinearVesting} from "@axis-core-0.5.1/modules/derivatives/LinearVesting.sol";
+import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
-    "@axis-core-0.5.1-test/modules/Auction/MockBatchAuctionModule.sol";
+    "@axis-core-1.0.0-test/modules/Auction/MockBatchAuctionModule.sol";
 
-import {keycodeFromVeecode, toKeycode} from "@axis-core-0.5.1/modules/Keycode.sol";
+import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.0/modules/Keycode.sol";
 
 import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
 

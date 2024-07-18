@@ -16,7 +16,7 @@ import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
 
 // AuctionHouse
-import {ILinearVesting} from "@axis-core-0.5.1/interfaces/modules/derivatives/ILinearVesting.sol";
+import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 

@@ -8,12 +8,12 @@ import {WithEnvironment} from "./WithEnvironment.s.sol";
 import {WithSalts} from "../salts/WithSalts.s.sol";
 
 // axis-core
-import {Keycode, keycodeFromVeecode} from "@axis-core-0.5.1/modules/Keycode.sol";
-import {Module} from "@axis-core-0.5.1/modules/Modules.sol";
-import {AtomicAuctionHouse} from "@axis-core-0.5.1/AtomicAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-0.5.1/BatchAuctionHouse.sol";
-import {IFeeManager} from "@axis-core-0.5.1/interfaces/IFeeManager.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
+import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.0/modules/Keycode.sol";
+import {Module} from "@axis-core-1.0.0/modules/Modules.sol";
+import {AtomicAuctionHouse} from "@axis-core-1.0.0/AtomicAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
+import {IFeeManager} from "@axis-core-1.0.0/interfaces/IFeeManager.sol";
+import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
 
 // Callbacks
 import {UniswapV2DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV2DTL.sol";

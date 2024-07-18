@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
 contract BaselineOnCurateTest is BaselineAxisLaunchTest {
     // ============ Modifiers ============ //

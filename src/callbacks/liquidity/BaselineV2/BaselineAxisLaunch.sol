@@ -3,16 +3,16 @@ pragma solidity 0.8.19;
 
 // Axis dependencies
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
-import {BaseCallback} from "@axis-core-0.5.1/callbacks/BaseCallback.sol";
-import {Callbacks} from "@axis-core-0.5.1/lib/Callbacks.sol";
-import {IAuctionHouse} from "@axis-core-0.5.1/interfaces/IAuctionHouse.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
+import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
 import {
     Keycode as AxisKeycode,
     keycodeFromVeecode,
     fromKeycode as fromAxisKeycode
-} from "@axis-core-0.5.1/modules/Keycode.sol";
-import {Module as AxisModule} from "@axis-core-0.5.1/modules/Modules.sol";
-import {IFixedPriceBatch} from "@axis-core-0.5.1/interfaces/modules/auctions/IFixedPriceBatch.sol";
+} from "@axis-core-1.0.0/modules/Keycode.sol";
+import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
+import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
 
 // Baseline dependencies
 import {
@@ -28,7 +28,7 @@ import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickM
 // Other libraries
 import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
-import {Transfer} from "@axis-core-0.5.1/lib/Transfer.sol";
+import {Transfer} from "@axis-core-1.0.0/lib/Transfer.sol";
 import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
 /// @notice     Axis auction callback to initialize a Baseline token using proceeds from a batch auction.

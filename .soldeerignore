@@ -1,0 +1,25 @@
+# Compiler files
+out/
+cache/
+
+# Ignores development broadcast logs
+broadcast/
+
+# Docs
+docs/
+
+# Dotenv file
+.env
+.env.*
+!.env.example
+
+node_modules/
+
+# Bytecode
+bytecode/
+
+# soldeer
+dependencies/
+
+# git
+.git/
