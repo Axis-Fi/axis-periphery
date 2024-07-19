@@ -56,6 +56,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     bytes internal constant _BLAST_BATCH_AUCTION_HOUSE_NAME = "BlastBatchAuctionHouse";
 
     // Deploy system storage
+    string internal _sequenceJson;
     mapping(string => bytes) public argsMap;
     mapping(string => bool) public installAtomicAuctionHouseMap;
     mapping(string => bool) public installBatchAuctionHouseMap;
@@ -71,10 +72,10 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         _loadEnv(chain_);
 
         // Load deployment data
-        string memory data = vm.readFile(deployFilePath_);
+        _sequenceJson = vm.readFile(deployFilePath_);
 
         // Parse deployment sequence and names
-        bytes memory sequence = abi.decode(data.parseRaw(".sequence"), (bytes));
+        bytes memory sequence = abi.decode(_sequenceJson.parseRaw(".sequence"), (bytes));
         uint256 len = sequence.length;
         console2.log("Contracts to be deployed:", len);
 
@@ -82,18 +83,19 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             return;
         } else if (len == 1) {
             // Only one deployment
-            string memory name = abi.decode(data.parseRaw(".sequence..name"), (string));
+            string memory name = abi.decode(_sequenceJson.parseRaw(".sequence..name"), (string));
             deployments.push(name);
 
-            _configureDeployment(data, name);
+            _configureDeployment(_sequenceJson, name);
         } else {
             // More than one deployment
-            string[] memory names = abi.decode(data.parseRaw(".sequence..name"), (string[]));
+            string[] memory names =
+                abi.decode(_sequenceJson.parseRaw(".sequence..name"), (string[]));
             for (uint256 i = 0; i < len; i++) {
                 string memory name = names[i];
                 deployments.push(name);
 
-                _configureDeployment(data, name);
+                _configureDeployment(_sequenceJson, name);
             }
         }
     }
@@ -114,19 +116,23 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         for (uint256 i; i < len; i++) {
             // Get deploy deploy args from contract name
             string memory name = deployments[i];
-            // e.g. a deployment named EncryptedMarginalPrice would require the following function: deployEncryptedMarginalPrice(bytes)
-            bytes4 selector = bytes4(keccak256(bytes(string.concat("deploy", name, "(bytes)"))));
-            bytes memory args = argsMap[name];
+            // e.g. a deployment named EncryptedMarginalPrice would require the following function: deployEncryptedMarginalPrice(string memory)
+            bytes4 selector = bytes4(keccak256(bytes(string.concat("deploy", name, "(string)"))));
+
+            console2.log("");
+            console2.log("Deploying ", name);
 
             // Call the deploy function for the contract
             (bool success, bytes memory data) =
-                address(this).call(abi.encodeWithSelector(selector, args));
+                address(this).call(abi.encodeWithSelector(selector, name));
             require(success, string.concat("Failed to deploy ", deployments[i]));
 
             // Store the deployed contract address for logging
-            (address deploymentAddress, string memory keyPrefix) =
-                abi.decode(data, (address, string));
-            string memory deployedToKey = string.concat(keyPrefix, ".", name);
+            (address deploymentAddress, string memory keyPrefix, string memory deploymentKey) =
+                abi.decode(data, (address, string, string));
+            // e.g. "callbacks.EncryptedMarginalPrice"
+            // The deployment functions allow the deployment key to be overridden by the sequence or arguments
+            string memory deployedToKey = string.concat(keyPrefix, ".", deploymentKey);
 
             deployedToKeys.push(deployedToKey);
             deployedTo[deployedToKey] = deploymentAddress;
@@ -273,17 +279,19 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
     // ========== DEPLOYMENTS ========== //
 
-    function deployAtomicUniswapV2DirectToLiquidity(bytes memory)
+    function deployAtomicUniswapV2DirectToLiquidity(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying UniswapV2DirectToLiquidity (Atomic)");
-
+        // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
-        address uniswapV2Factory = _getAddressNotZero("constants.uniswapV2.factory");
-        address uniswapV2Router = _getAddressNotZero("constants.uniswapV2.router");
+        address uniswapV2Factory =
+            _getEnvAddressOrOverride("constants.uniswapV2.factory", sequenceName_, "args.factory");
+        address uniswapV2Router =
+            _getEnvAddressOrOverride("constants.uniswapV2.router", sequenceName_, "args.router");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the router and factory match
         require(
@@ -293,7 +301,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "UniswapV2DirectToLiquidity",
+            sequenceName_,
             type(UniswapV2DirectToLiquidity).creationCode,
             abi.encode(atomicAuctionHouse, uniswapV2Factory, uniswapV2Router)
         );
@@ -309,24 +317,24 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             salt: salt_
         }(atomicAuctionHouse, uniswapV2Factory, uniswapV2Router);
         console2.log("");
-        console2.log(
-            "    UniswapV2DirectToLiquidity (Atomic) deployed at:", address(cbAtomicUniswapV2Dtl)
-        );
+        console2.log("    deployed at:", address(cbAtomicUniswapV2Dtl));
 
-        return (address(cbAtomicUniswapV2Dtl), _PREFIX_CALLBACKS);
+        return (address(cbAtomicUniswapV2Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchUniswapV2DirectToLiquidity(bytes memory)
+    function deployBatchUniswapV2DirectToLiquidity(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying UniswapV2DirectToLiquidity (Batch)");
-
+        // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        address uniswapV2Factory = _getAddressNotZero("constants.uniswapV2.factory");
-        address uniswapV2Router = _getAddressNotZero("constants.uniswapV2.router");
+        address uniswapV2Factory =
+            _getEnvAddressOrOverride("constants.uniswapV2.factory", sequenceName_, "args.factory");
+        address uniswapV2Router =
+            _getEnvAddressOrOverride("constants.uniswapV2.router", sequenceName_, "args.router");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the router and factory match
         require(
@@ -336,7 +344,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "UniswapV2DirectToLiquidity",
+            deploymentKey,
             type(UniswapV2DirectToLiquidity).creationCode,
             abi.encode(batchAuctionHouse, uniswapV2Factory, uniswapV2Router)
         );
@@ -352,24 +360,25 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             batchAuctionHouse, uniswapV2Factory, uniswapV2Router
         );
         console2.log("");
-        console2.log(
-            "    UniswapV2DirectToLiquidity (Batch) deployed at:", address(cbBatchUniswapV2Dtl)
-        );
+        console2.log("    deployed at:", address(cbBatchUniswapV2Dtl));
 
-        return (address(cbBatchUniswapV2Dtl), _PREFIX_CALLBACKS);
+        return (address(cbBatchUniswapV2Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicUniswapV3DirectToLiquidity(bytes memory)
+    function deployAtomicUniswapV3DirectToLiquidity(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying UniswapV3DirectToLiquidity (Atomic)");
-
+        // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
-        address uniswapV3Factory = _getAddressNotZero("constants.uniswapV3.factory");
-        address gUniFactory = _getAddressNotZero("constants.gUni.factory");
+        address uniswapV3Factory = _getEnvAddressOrOverride(
+            "constants.uniswapV3.factory", sequenceName_, "args.uniswapV3Factory"
+        );
+        address gUniFactory =
+            _getEnvAddressOrOverride("constants.gUni.factory", sequenceName_, "args.gUniFactory");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the GUni factory and Uniswap V3 factory are consistent
         require(
@@ -379,7 +388,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "UniswapV3DirectToLiquidity",
+            deploymentKey,
             type(UniswapV3DirectToLiquidity).creationCode,
             abi.encode(atomicAuctionHouse, uniswapV3Factory, gUniFactory)
         );
@@ -395,24 +404,25 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             salt: salt_
         }(atomicAuctionHouse, uniswapV3Factory, gUniFactory);
         console2.log("");
-        console2.log(
-            "    UniswapV3DirectToLiquidity (Atomic) deployed at:", address(cbAtomicUniswapV3Dtl)
-        );
+        console2.log("    deployed at:", address(cbAtomicUniswapV3Dtl));
 
-        return (address(cbAtomicUniswapV3Dtl), _PREFIX_CALLBACKS);
+        return (address(cbAtomicUniswapV3Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchUniswapV3DirectToLiquidity(bytes memory)
+    function deployBatchUniswapV3DirectToLiquidity(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying UniswapV3DirectToLiquidity (Batch)");
-
+        // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        address uniswapV3Factory = _getAddressNotZero("constants.uniswapV3.factory");
-        address gUniFactory = _getAddressNotZero("constants.gUni.factory");
+        address uniswapV3Factory = _getEnvAddressOrOverride(
+            "constants.uniswapV3.factory", sequenceName_, "args.uniswapV3Factory"
+        );
+        address gUniFactory =
+            _getEnvAddressOrOverride("constants.gUni.factory", sequenceName_, "args.gUniFactory");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the GUni factory and Uniswap V3 factory are consistent
         require(
@@ -422,7 +432,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "UniswapV3DirectToLiquidity",
+            deploymentKey,
             type(UniswapV3DirectToLiquidity).creationCode,
             abi.encode(batchAuctionHouse, uniswapV3Factory, gUniFactory)
         );
@@ -438,22 +448,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             batchAuctionHouse, uniswapV3Factory, gUniFactory
         );
         console2.log("");
-        console2.log(
-            "    UniswapV3DirectToLiquidity (Batch) deployed at:", address(cbBatchUniswapV3Dtl)
-        );
+        console2.log("    deployed at:", address(cbBatchUniswapV3Dtl));
 
-        return (address(cbBatchUniswapV3Dtl), _PREFIX_CALLBACKS);
+        return (address(cbBatchUniswapV3Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicCappedMerkleAllowlist(bytes memory)
+    function deployAtomicCappedMerkleAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying CappedMerkleAllowlist (Atomic)");
-
+        // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -467,7 +475,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "CappedMerkleAllowlist",
+            deploymentKey,
             type(CappedMerkleAllowlist).creationCode,
             abi.encode(atomicAuctionHouse, permissions)
         );
@@ -482,23 +490,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         CappedMerkleAllowlist cbAtomicCappedMerkleAllowlist =
             new CappedMerkleAllowlist{salt: salt_}(atomicAuctionHouse, permissions);
         console2.log("");
-        console2.log(
-            "    CappedMerkleAllowlist (Atomic) deployed at:",
-            address(cbAtomicCappedMerkleAllowlist)
-        );
+        console2.log("    deployed at:", address(cbAtomicCappedMerkleAllowlist));
 
-        return (address(cbAtomicCappedMerkleAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbAtomicCappedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchCappedMerkleAllowlist(bytes memory)
+    function deployBatchCappedMerkleAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying CappedMerkleAllowlist (Batch)");
-
+        // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -512,7 +517,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "CappedMerkleAllowlist",
+            deploymentKey,
             type(CappedMerkleAllowlist).creationCode,
             abi.encode(batchAuctionHouse, permissions)
         );
@@ -527,19 +532,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         CappedMerkleAllowlist cbBatchCappedMerkleAllowlist =
             new CappedMerkleAllowlist{salt: salt_}(batchAuctionHouse, permissions);
         console2.log("");
-        console2.log(
-            "    CappedMerkleAllowlist (Batch) deployed at:", address(cbBatchCappedMerkleAllowlist)
-        );
+        console2.log("    deployed at:", address(cbBatchCappedMerkleAllowlist));
 
-        return (address(cbBatchCappedMerkleAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbBatchCappedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicMerkleAllowlist(bytes memory) public returns (address, string memory) {
-        // No args used
-        console2.log("");
-        console2.log("Deploying MerkleAllowlist (Atomic)");
-
+    function deployAtomicMerkleAllowlist(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -553,7 +559,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "MerkleAllowlist",
+            deploymentKey,
             type(MerkleAllowlist).creationCode,
             abi.encode(atomicAuctionHouse, permissions)
         );
@@ -568,17 +574,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         MerkleAllowlist cbAtomicMerkleAllowlist =
             new MerkleAllowlist{salt: salt_}(atomicAuctionHouse, permissions);
         console2.log("");
-        console2.log("    MerkleAllowlist (Atomic) deployed at:", address(cbAtomicMerkleAllowlist));
+        console2.log("    deployed at:", address(cbAtomicMerkleAllowlist));
 
-        return (address(cbAtomicMerkleAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbAtomicMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchMerkleAllowlist(bytes memory) public returns (address, string memory) {
-        // No args used
-        console2.log("");
-        console2.log("Deploying MerkleAllowlist (Batch)");
-
+    function deployBatchMerkleAllowlist(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -592,7 +601,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "MerkleAllowlist",
+            deploymentKey,
             type(MerkleAllowlist).creationCode,
             abi.encode(batchAuctionHouse, permissions)
         );
@@ -607,17 +616,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         MerkleAllowlist cbBatchMerkleAllowlist =
             new MerkleAllowlist{salt: salt_}(batchAuctionHouse, permissions);
         console2.log("");
-        console2.log("    MerkleAllowlist (Batch) deployed at:", address(cbBatchMerkleAllowlist));
+        console2.log("    deployed at:", address(cbBatchMerkleAllowlist));
 
-        return (address(cbBatchMerkleAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbBatchMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicTokenAllowlist(bytes memory) public returns (address, string memory) {
-        // No args used
-        console2.log("");
-        console2.log("Deploying TokenAllowlist (Atomic)");
-
+    function deployAtomicTokenAllowlist(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -631,7 +643,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "TokenAllowlist",
+            deploymentKey,
             type(TokenAllowlist).creationCode,
             abi.encode(atomicAuctionHouse, permissions)
         );
@@ -646,17 +658,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         TokenAllowlist cbAtomicTokenAllowlist =
             new TokenAllowlist{salt: salt_}(atomicAuctionHouse, permissions);
         console2.log("");
-        console2.log("    TokenAllowlist (Atomic) deployed at:", address(cbAtomicTokenAllowlist));
+        console2.log("    deployed at:", address(cbAtomicTokenAllowlist));
 
-        return (address(cbAtomicTokenAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbAtomicTokenAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchTokenAllowlist(bytes memory) public returns (address, string memory) {
-        // No args used
-        console2.log("");
-        console2.log("Deploying TokenAllowlist (Batch)");
-
+    function deployBatchTokenAllowlist(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -670,7 +685,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "TokenAllowlist",
+            deploymentKey,
             type(TokenAllowlist).creationCode,
             abi.encode(batchAuctionHouse, permissions)
         );
@@ -685,20 +700,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         TokenAllowlist cbBatchTokenAllowlist =
             new TokenAllowlist{salt: salt_}(batchAuctionHouse, permissions);
         console2.log("");
-        console2.log("    TokenAllowlist (Batch) deployed at:", address(cbBatchTokenAllowlist));
+        console2.log("    deployed at:", address(cbBatchTokenAllowlist));
 
-        return (address(cbBatchTokenAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbBatchTokenAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicAllocatedMerkleAllowlist(bytes memory)
+    function deployAtomicAllocatedMerkleAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying AllocatedMerkleAllowlist (Atomic)");
-
+        // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -712,7 +727,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "AllocatedMerkleAllowlist",
+            deploymentKey,
             type(AllocatedMerkleAllowlist).creationCode,
             abi.encode(atomicAuctionHouse, permissions)
         );
@@ -727,23 +742,20 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         AllocatedMerkleAllowlist cbAtomicAllocatedMerkleAllowlist =
             new AllocatedMerkleAllowlist{salt: salt_}(atomicAuctionHouse, permissions);
         console2.log("");
-        console2.log(
-            "    AllocatedMerkleAllowlist (Atomic) deployed at:",
-            address(cbAtomicAllocatedMerkleAllowlist)
-        );
+        console2.log("    deployed at:", address(cbAtomicAllocatedMerkleAllowlist));
 
-        return (address(cbAtomicAllocatedMerkleAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbAtomicAllocatedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchAllocatedMerkleAllowlist(bytes memory)
+    function deployBatchAllocatedMerkleAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // No args used
-        console2.log("");
-        console2.log("Deploying AllocatedMerkleAllowlist (Batch)");
-
+        // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -757,7 +769,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         // Get the salt
         bytes32 salt_ = _getSalt(
-            "AllocatedMerkleAllowlist",
+            deploymentKey,
             type(AllocatedMerkleAllowlist).creationCode,
             abi.encode(batchAuctionHouse, permissions)
         );
@@ -772,40 +784,34 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         AllocatedMerkleAllowlist cbBatchAllocatedMerkleAllowlist =
             new AllocatedMerkleAllowlist{salt: salt_}(batchAuctionHouse, permissions);
         console2.log("");
-        console2.log(
-            "    AllocatedMerkleAllowlist (Batch) deployed at:",
-            address(cbBatchAllocatedMerkleAllowlist)
-        );
+        console2.log("    deployed at:", address(cbBatchAllocatedMerkleAllowlist));
 
-        return (address(cbBatchAllocatedMerkleAllowlist), _PREFIX_CALLBACKS);
+        return (address(cbBatchAllocatedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineAllocatedAllowlist(bytes memory args_)
+    function deployBatchBaselineAllocatedAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // Decode arguments
-        (address baselineKernel, address baselineOwner, address reserveToken) =
-            abi.decode(args_, (address, address, address));
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
         require(baselineKernel != address(0), "baselineKernel not set");
         require(baselineOwner != address(0), "baselineOwner not set");
         require(reserveToken != address(0), "reserveToken not set");
 
-        console2.log("");
-        console2.log("Deploying BaselineAllocatedAllowlist (Batch)");
-        console2.log("    Kernel", baselineKernel);
-        console2.log("    Owner", baselineOwner);
-        console2.log("    ReserveToken", reserveToken);
-
-        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-
         // Get the salt
         // This supports an arbitrary salt key, which can be set in the deployment sequence
         // This is required as each callback is single-use
         bytes32 salt_ = _getSalt(
-            "BaselineAllocatedAllowlist",
+            deploymentKey,
             type(BALwithAllocatedAllowlist).creationCode,
             abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
         );
@@ -821,7 +827,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
         );
         console2.log("");
-        console2.log("    BaselineAllocatedAllowlist (Batch) deployed at:", address(batchAllowlist));
+        console2.log("    deployed at:", address(batchAllowlist));
 
         // Install the module as a policy in the Baseline kernel
         vm.broadcast();
@@ -831,35 +837,32 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         console2.log("    Policy activated in Baseline Kernel");
 
-        return (address(batchAllowlist), _PREFIX_CALLBACKS);
+        return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineAllowlist(bytes memory args_)
+    function deployBatchBaselineAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // Decode arguments
-        (address baselineKernel, address baselineOwner, address reserveToken) =
-            abi.decode(args_, (address, address, address));
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
         require(baselineKernel != address(0), "baselineKernel not set");
         require(baselineOwner != address(0), "baselineOwner not set");
         require(reserveToken != address(0), "reserveToken not set");
 
-        console2.log("");
-        console2.log("Deploying BaselineAllowlist (Batch)");
-        console2.log("    Kernel", baselineKernel);
-        console2.log("    Owner", baselineOwner);
-        console2.log("    ReserveToken", reserveToken);
-
-        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-
         // Get the salt
         // This supports an arbitrary salt key, which can be set in the deployment sequence
         // This is required as each callback is single-use
         bytes32 salt_ = _getSalt(
-            "BaselineAllowlist",
+            deploymentKey,
             type(BALwithAllowlist).creationCode,
             abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
         );
@@ -875,7 +878,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
         );
         console2.log("");
-        console2.log("    BaselineAllowlist (Batch) deployed at:", address(batchAllowlist));
+        console2.log("    deployed at:", address(batchAllowlist));
 
         // Install the module as a policy in the Baseline kernel
         vm.broadcast();
@@ -885,35 +888,32 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         console2.log("    Policy activated in Baseline Kernel");
 
-        return (address(batchAllowlist), _PREFIX_CALLBACKS);
+        return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineCappedAllowlist(bytes memory args_)
+    function deployBatchBaselineCappedAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // Decode arguments
-        (address baselineKernel, address baselineOwner, address reserveToken) =
-            abi.decode(args_, (address, address, address));
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
         require(baselineKernel != address(0), "baselineKernel not set");
         require(baselineOwner != address(0), "baselineOwner not set");
         require(reserveToken != address(0), "reserveToken not set");
 
-        console2.log("");
-        console2.log("Deploying BaselineCappedAllowlist (Batch)");
-        console2.log("    Kernel", baselineKernel);
-        console2.log("    Owner", baselineOwner);
-        console2.log("    ReserveToken", reserveToken);
-
-        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-
         // Get the salt
         // This supports an arbitrary salt key, which can be set in the deployment sequence
         // This is required as each callback is single-use
         bytes32 salt_ = _getSalt(
-            "BaselineCappedAllowlist",
+            deploymentKey,
             type(BALwithCappedAllowlist).creationCode,
             abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
         );
@@ -929,7 +929,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
         );
         console2.log("");
-        console2.log("    BaselineCappedAllowlist (Batch) deployed at:", address(batchAllowlist));
+        console2.log("    deployed at:", address(batchAllowlist));
 
         // Install the module as a policy in the Baseline kernel
         vm.broadcast();
@@ -939,35 +939,32 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         console2.log("    Policy activated in Baseline Kernel");
 
-        return (address(batchAllowlist), _PREFIX_CALLBACKS);
+        return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineTokenAllowlist(bytes memory args_)
+    function deployBatchBaselineTokenAllowlist(string memory sequenceName_)
         public
-        returns (address, string memory)
+        returns (address, string memory, string memory)
     {
-        // Decode arguments
-        (address baselineKernel, address baselineOwner, address reserveToken) =
-            abi.decode(args_, (address, address, address));
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        string memory deploymentKey =
+            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
         require(baselineKernel != address(0), "baselineKernel not set");
         require(baselineOwner != address(0), "baselineOwner not set");
         require(reserveToken != address(0), "reserveToken not set");
 
-        console2.log("");
-        console2.log("Deploying BaselineTokenAllowlist (Batch)");
-        console2.log("    Kernel", baselineKernel);
-        console2.log("    Owner", baselineOwner);
-        console2.log("    ReserveToken", reserveToken);
-
-        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-
         // Get the salt
         // This supports an arbitrary salt key, which can be set in the deployment sequence
         // This is required as each callback is single-use
         bytes32 salt_ = _getSalt(
-            "BaselineTokenAllowlist",
+            deploymentKey,
             type(BALwithTokenAllowlist).creationCode,
             abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
         );
@@ -983,7 +980,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
         );
         console2.log("");
-        console2.log("    BaselineTokenAllowlist (Batch) deployed at:", address(batchAllowlist));
+        console2.log("    deployed at:", address(batchAllowlist));
 
         // Install the module as a policy in the Baseline kernel
         vm.broadcast();
@@ -993,27 +990,35 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
         console2.log("    Policy activated in Baseline Kernel");
 
-        return (address(batchAllowlist), _PREFIX_CALLBACKS);
+        return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
     // ========== HELPER FUNCTIONS ========== //
 
     function _configureDeployment(string memory data_, string memory name_) internal {
+        console2.log("");
         console2.log("    Configuring", name_);
 
-        // Parse and store args
-        // Note: constructor args need to be provided in alphabetical order
-        // due to changes with forge-std or a struct needs to be used
-        argsMap[name_] = _readDataValue(data_, name_, "args");
-
         // Check if it should be installed in the AtomicAuctionHouse
-        if (_readDataBoolean(data_, name_, "installAtomicAuctionHouse")) {
+        if (
+            _sequenceKeyExists(name_, "installAtomicAuctionHouse")
+                && _getSequenceBool(name_, "installAtomicAuctionHouse")
+        ) {
             installAtomicAuctionHouseMap[name_] = true;
+            console2.log("    Queueing for installation in AtomicAuctionHouse");
+        } else {
+            console2.log("    Skipping installation in AtomicAuctionHouse");
         }
 
         // Check if it should be installed in the BatchAuctionHouse
-        if (_readDataBoolean(data_, name_, "installBatchAuctionHouse")) {
+        if (
+            _sequenceKeyExists(name_, "installBatchAuctionHouse")
+                && _getSequenceBool(name_, "installBatchAuctionHouse")
+        ) {
             installBatchAuctionHouseMap[name_] = true;
+            console2.log("    Queueing for installation in BatchAuctionHouse");
+        } else {
+            console2.log("    Skipping installation in BatchAuctionHouse");
         }
 
         // Check if max fees need to be initialized
@@ -1053,38 +1058,88 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return _envAddressNotZero(key_);
     }
 
+    /// @notice Construct a key to access a value in the deployment sequence
+    function _getSequenceKey(
+        string memory name_,
+        string memory key_
+    ) internal pure returns (string memory) {
+        return string.concat(".sequence[?(@.name == '", name_, "')].", key_);
+    }
+
+    /// @notice Determines if a key exists in the deployment sequence
+    function _sequenceKeyExists(
+        string memory name_,
+        string memory key_
+    ) internal view returns (bool) {
+        return vm.keyExists(_sequenceJson, _getSequenceKey(name_, key_));
+    }
+
+    /// @notice Obtains a string value from the given key in the deployment sequence
+    /// @dev    This will revert if the key does not exist
+    function _getSequenceString(
+        string memory name_,
+        string memory key_
+    ) internal view returns (string memory) {
+        return vm.parseJsonString(_sequenceJson, _getSequenceKey(name_, key_));
+    }
+
+    /// @notice Obtains an address value from the given key in the deployment sequence
+    /// @dev    This will revert if the key does not exist
+    function _getSequenceAddress(
+        string memory name_,
+        string memory key_
+    ) internal view returns (address) {
+        return vm.parseJsonAddress(_sequenceJson, _getSequenceKey(name_, key_));
+    }
+
+    /// @notice Obtains an bool value from the given key in the deployment sequence
+    /// @dev    This will revert if the key does not exist
+    function _getSequenceBool(
+        string memory name_,
+        string memory key_
+    ) internal view returns (bool) {
+        return vm.parseJsonBool(_sequenceJson, _getSequenceKey(name_, key_));
+    }
+
+    /// @notice Obtains an address value from the deployment sequence (if it exists), or the env.json as a fallback
+    function _getEnvAddressOrOverride(
+        string memory envKey_,
+        string memory sequenceName_,
+        string memory key_
+    ) internal view returns (address) {
+        // Check if the key is set in the deployment sequence
+        if (_sequenceKeyExists(sequenceName_, key_)) {
+            address sequenceAddress = _getSequenceAddress(sequenceName_, key_);
+            console2.log("    %s: %s (from deployment sequence)", envKey_, sequenceAddress);
+            return sequenceAddress;
+        }
+
+        // Otherwsie return from the environment variables
+        return _envAddressNotZero(envKey_);
+    }
+
+    /// @notice Obtains a string value from the deployment sequence (if it exists), or a fallback value
+    function _getSequenceStringOrFallback(
+        string memory name_,
+        string memory key_,
+        string memory fallbackValue_
+    ) internal view returns (string memory) {
+        // Check if the key is set in the deployment sequence
+        if (_sequenceKeyExists(name_, key_)) {
+            return _getSequenceString(name_, key_);
+        }
+
+        // Otherwise, return the fallback value
+        return fallbackValue_;
+    }
+
+    /// @notice Reads a raw bytes value from the deployment sequence
     function _readDataValue(
         string memory data_,
         string memory name_,
         string memory key_
     ) internal pure returns (bytes memory) {
         // This will return "0x" if the key doesn't exist
-        return data_.parseRaw(string.concat(".sequence[?(@.name == '", name_, "')].", key_));
-    }
-
-    function _readStringValue(
-        string memory data_,
-        string memory name_,
-        string memory key_
-    ) internal pure returns (string memory) {
-        bytes memory dataValue = _readDataValue(data_, name_, key_);
-
-        // If the key is not set, return an empty string
-        if (dataValue.length == 0) {
-            return "";
-        }
-
-        return abi.decode(dataValue, (string));
-    }
-
-    function _readDataBoolean(
-        string memory data_,
-        string memory name_,
-        string memory key_
-    ) internal pure returns (bool) {
-        bytes memory dataValue = _readDataValue(data_, name_, key_);
-
-        // Comparing `bytes memory` directly doesn't work, so we need to convert to `bytes32`
-        return bytes32(dataValue) == bytes32(abi.encodePacked(uint256(1)));
+        return data_.parseRaw(_getSequenceKey(name_, key_));
     }
 }

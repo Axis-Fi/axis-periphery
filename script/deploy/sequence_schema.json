@@ -16,6 +16,11 @@
             "description": "The name of the module to deploy",
             "exclusiveMinimum": 0
           },
+          "deploymentKey": {
+            "type": "string",
+            "description": "The key to use when storing the deployment address",
+            "exclusiveMinimum": 0
+          },
           "installAtomicAuctionHouse": {
             "type": "boolean",
             "description": "Whether to install the module into the Atomic Auction House",
