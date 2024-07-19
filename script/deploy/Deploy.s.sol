@@ -796,8 +796,11 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        console2.log("    baselineKernel:", baselineKernel);
         address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        console2.log("    reserveToken:", reserveToken);
         string memory deploymentKey =
             _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
@@ -847,8 +850,11 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        console2.log("    baselineKernel:", baselineKernel);
         address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        console2.log("    reserveToken:", reserveToken);
         string memory deploymentKey =
             _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
@@ -898,8 +904,11 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        console2.log("    baselineKernel:", baselineKernel);
         address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        console2.log("    reserveToken:", reserveToken);
         string memory deploymentKey =
             _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
@@ -949,8 +958,11 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        console2.log("    baselineKernel:", baselineKernel);
         address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        console2.log("    reserveToken:", reserveToken);
         string memory deploymentKey =
             _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
