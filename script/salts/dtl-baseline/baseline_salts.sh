@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# ./baseline_allocated_allowlist_salts.sh --kernel <kernel> --owner <owner> --reserveToken <reserve token> --envFile <.env>
+# ./baseline_allocated_allowlist_salts.sh --variant <variant> --kernel <kernel> --owner <owner> --reserveToken <reserve token> --deploymentKeySuffix <key> --envFile <.env>
 #
 # Expects the following environment variables:
 # CHAIN: The chain to deploy to, based on values from the ./script/env.json file.
@@ -17,6 +17,9 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# Set default for deployment key suffix
+DEPLOYMENT_KEY_SUFFIX=${deploymentKeySuffix:-"DEFAULT"}
+
 # Get the name of the .env file or use the default
 ENV_FILE=${envFile:-".env"}
 echo "Sourcing environment variables from $ENV_FILE"
@@ -30,6 +33,13 @@ set +a  # Disable automatic export
 if [ -z "$CHAIN" ]
 then
   echo "CHAIN environment variable is not set. Please set it in the .env file or provide it as an environment variable."
+  exit 1
+fi
+
+# Check that the variant is set
+if [ -z "$variant" ]
+then
+  echo "Variant not set. Please provide a variant after the --variant flag."
   exit 1
 fi
 
@@ -56,8 +66,10 @@ fi
 
 echo "Using chain: $CHAIN"
 echo "Using RPC at URL: $RPC_URL"
+echo "Using variant: $variant"
 echo "Using kernel: $kernel"
 echo "Using owner: $owner"
 echo "Using reserve token: $reserveToken"
+echo "Using deployment key suffix (or DEFAULT): $DEPLOYMENT_KEY_SUFFIX"
 
-forge script ./script/salts/dtl-baseline/BaselineAllocatedAllowlistSalts.s.sol:BaselineAllocatedAllowlistSalts --sig "generate(string,string,string,string)()" $CHAIN $kernel $owner $reserveToken
+forge script ./script/salts/dtl-baseline/BaselineSalts.s.sol:BaselineSalts --sig "generate(string,string,string,string,string,string)()" $CHAIN $variant $kernel $owner $reserveToken $DEPLOYMENT_KEY_SUFFIX
