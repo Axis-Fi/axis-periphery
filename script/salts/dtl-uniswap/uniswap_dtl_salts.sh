@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# ./uniswap_dtl_salts.sh --version <2 | 3> --type <atomic | batch> --envFile <.env>
+# ./uniswap_dtl_salts.sh --version <2 | 3> --type <atomic | batch> --deploymentKey <key> --envFile <.env>
 #
 # Expects the following environment variables:
 # CHAIN: The chain to deploy to, based on values from the ./script/env.json file.
@@ -16,6 +16,9 @@ while [ $# -gt 0 ]; do
 
   shift
 done
+
+# Set default for deployment key
+DEPLOYMENT_KEY=${deploymentKey:-"DEFAULT"}
 
 # Get the name of the .env file or use the default
 ENV_FILE=${envFile:-".env"}
@@ -54,5 +57,6 @@ echo "Using chain: $CHAIN"
 echo "Using RPC at URL: $RPC_URL"
 echo "Using Uniswap version: $version"
 echo "Using auction type: $type"
+echo "Using deployment key (or DEFAULT): $DEPLOYMENT_KEY"
 
-forge script ./script/salts/dtl-uniswap/UniswapDTLSalts.s.sol:UniswapDTLSalts --sig "generate(string,string,bool)()" $CHAIN $version $ATOMIC
+forge script ./script/salts/dtl-uniswap/UniswapDTLSalts.s.sol:UniswapDTLSalts --sig "generate(string,string,string,bool)()" $CHAIN $version $DEPLOYMENT_KEY $ATOMIC
