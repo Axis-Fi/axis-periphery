@@ -108,9 +108,11 @@ Apart from first-party deployments, the `script/env.json` file contains the addr
 - [Uniswap V2](https://github.com/Uniswap/docs/blob/65d3f21e6cb2879b0672ad791563de0e54fcc089/docs/contracts/v2/reference/smart-contracts/08-deployment-addresses.md)
   - Exceptions
     - Arbitrum Sepolia, Base Sepolia, Blast Sepolia and Mode Sepolia are custom deployments, due to the unavailability of the Uniswap V2 contracts.
+    - The Blast deployment of UniswapV2DirectToLiquidity uses the Uniswap V2 Factory and Router deployed by Thruster.
 - [Uniswap V3](https://github.com/Uniswap/docs/tree/65d3f21e6cb2879b0672ad791563de0e54fcc089/docs/contracts/v3/reference/deployments)
   - Exceptions
     - Arbitrum Sepolia and Blast Sepolia are custom deployments by Axis Finance alongside the G-UNI deployment.
+    - The Blast deployment of UniswapV3DirectToLiquidity uses the Uniswap V3 Factory deployed by Thruster.
 - G-UNI
   - All of the addresses mentioned are custom deployments by Axis Finance. This is because the addresses from the deployments recorded in the [g-uni-v1-core repository](https://github.com/gelatodigital/g-uni-v1-core/tree/bea63422e2155242b051896b635508b7a99d2a1a/deployments) point to proxies, which have since been upgraded to point to Arrakis contracts that have different interfaces.
   - Axis Finance maintains a [fork](https://github.com/Axis-Fi/g-uni-v1-core) of the repository.
