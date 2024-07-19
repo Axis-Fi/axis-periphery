@@ -19,22 +19,33 @@ import {AllocatedMerkleAllowlist} from
 contract AllowlistSalts is Script, WithEnvironment, WithSalts {
     string internal constant _ADDRESS_PREFIX = "98";
 
+    function _isDefaultDeploymentKey(string memory str) internal pure returns (bool) {
+        // If the string is "DEFAULT", it's the default deployment key
+        return keccak256(abi.encode(str)) == keccak256(abi.encode("DEFAULT"));
+    }
+
     function _setUp(string calldata chain_) internal {
         _loadEnv(chain_);
         _createBytecodeDirectory();
     }
 
-    function generate(string calldata chain_, bool atomic_) public {
+    function generate(
+        string calldata chain_,
+        string calldata deploymentKeySuffix_,
+        bool atomic_
+    ) public {
         _setUp(chain_);
 
         address auctionHouse;
         if (atomic_) {
             auctionHouse = _envAddress("deployments.AtomicAuctionHouse");
-            console2.log("AtomicAuctionHouse:", auctionHouse);
         } else {
             auctionHouse = _envAddress("deployments.BatchAuctionHouse");
-            console2.log("BatchAuctionHouse:", auctionHouse);
         }
+
+        string memory deploymentKeySuffix =
+            _isDefaultDeploymentKey(deploymentKeySuffix_) ? "" : deploymentKeySuffix_;
+        console2.log("    deploymentKeySuffix: %s", deploymentKeySuffix);
 
         // All of these allowlists have the same permissions and constructor args
         string memory prefix = "98";
@@ -55,7 +66,7 @@ contract AllowlistSalts is Script, WithEnvironment, WithSalts {
         // Merkle Allowlist
         // 10011000 = 0x98
         bytes memory contractCode = type(MerkleAllowlist).creationCode;
-        string memory saltKey = "MerkleAllowlist";
+        string memory saltKey = string.concat("MerkleAllowlist", deploymentKeySuffix);
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
@@ -63,20 +74,20 @@ contract AllowlistSalts is Script, WithEnvironment, WithSalts {
         // Capped Merkle Allowlist
         // 10011000 = 0x98
         contractCode = type(CappedMerkleAllowlist).creationCode;
-        saltKey = "CappedMerkleAllowlist";
+        saltKey = string.concat("CappedMerkleAllowlist", deploymentKeySuffix);
         (bytecodePath, bytecodeHash) = _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
 
         // Token Allowlist
         // 10011000 = 0x98
         contractCode = type(TokenAllowlist).creationCode;
-        saltKey = "TokenAllowlist";
+        saltKey = string.concat("TokenAllowlist", deploymentKeySuffix);
         (bytecodePath, bytecodeHash) = _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
 
         // Allocated Allowlist
         contractCode = type(AllocatedMerkleAllowlist).creationCode;
-        saltKey = "AllocatedMerkleAllowlist";
+        saltKey = string.concat("AllocatedMerkleAllowlist", deploymentKeySuffix);
         (bytecodePath, bytecodeHash) = _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
     }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# ./allowlist_salts.sh --type <atomic | batch> --envFile <.env>
+# ./allowlist_salts.sh --type <atomic | batch> --deploymentKeySuffix <key> --envFile <.env>
 #
 # Expects the following environment variables:
 # CHAIN: The chain to deploy to, based on values from the ./script/env.json file.
@@ -16,6 +16,9 @@ while [ $# -gt 0 ]; do
 
   shift
 done
+
+# Set default for deployment key suffix
+DEPLOYMENT_KEY_SUFFIX=${deploymentKeySuffix:-"DEFAULT"}
 
 # Get the name of the .env file or use the default
 ENV_FILE=${envFile:-".env"}
@@ -46,5 +49,6 @@ ATOMIC=$( if [ "$type" == "atomic" ]; then echo "true"; else echo "false"; fi )
 echo "Using RPC at URL: $RPC_URL"
 echo "Using chain: $CHAIN"
 echo "Using type: $type"
+echo "Using deployment key suffix (or DEFAULT): $DEPLOYMENT_KEY_SUFFIX"
 
-forge script ./script/salts/allowlist/AllowListSalts.s.sol:AllowlistSalts --sig "generate(string,bool)()" $CHAIN $ATOMIC
+forge script ./script/salts/allowlist/AllowListSalts.s.sol:AllowlistSalts --sig "generate(string,string,bool)()" $CHAIN $DEPLOYMENT_KEY_SUFFIX $ATOMIC
