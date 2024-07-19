@@ -37,10 +37,13 @@ contract AllowlistSalts is Script, WithEnvironment, WithSalts {
         _setUp(chain_);
 
         address auctionHouse;
+        string memory deploymentKeyPrefix;
         if (atomic_) {
             auctionHouse = _envAddress("deployments.AtomicAuctionHouse");
+            deploymentKeyPrefix = "Atomic";
         } else {
             auctionHouse = _envAddress("deployments.BatchAuctionHouse");
+            deploymentKeyPrefix = "Batch";
         }
 
         string memory deploymentKeySuffix =
@@ -66,7 +69,8 @@ contract AllowlistSalts is Script, WithEnvironment, WithSalts {
         // Merkle Allowlist
         // 10011000 = 0x98
         bytes memory contractCode = type(MerkleAllowlist).creationCode;
-        string memory saltKey = string.concat("MerkleAllowlist", deploymentKeySuffix);
+        string memory saltKey =
+            string.concat(deploymentKeyPrefix, "MerkleAllowlist", deploymentKeySuffix);
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
@@ -74,20 +78,21 @@ contract AllowlistSalts is Script, WithEnvironment, WithSalts {
         // Capped Merkle Allowlist
         // 10011000 = 0x98
         contractCode = type(CappedMerkleAllowlist).creationCode;
-        saltKey = string.concat("CappedMerkleAllowlist", deploymentKeySuffix);
+        saltKey = string.concat(deploymentKeyPrefix, "CappedMerkleAllowlist", deploymentKeySuffix);
         (bytecodePath, bytecodeHash) = _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
 
         // Token Allowlist
         // 10011000 = 0x98
         contractCode = type(TokenAllowlist).creationCode;
-        saltKey = string.concat("TokenAllowlist", deploymentKeySuffix);
+        saltKey = string.concat(deploymentKeyPrefix, "TokenAllowlist", deploymentKeySuffix);
         (bytecodePath, bytecodeHash) = _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
 
         // Allocated Allowlist
         contractCode = type(AllocatedMerkleAllowlist).creationCode;
-        saltKey = string.concat("AllocatedMerkleAllowlist", deploymentKeySuffix);
+        saltKey =
+            string.concat(deploymentKeyPrefix, "AllocatedMerkleAllowlist", deploymentKeySuffix);
         (bytecodePath, bytecodeHash) = _writeBytecode(saltKey, contractCode, args);
         _setSalt(bytecodePath, prefix, saltKey, bytecodeHash);
     }
