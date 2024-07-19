@@ -67,14 +67,6 @@ fi
 DEPLOY_SCRIPT=${DEPLOY_SCRIPT:-"./script/deploy/Deploy.s.sol"}
 DEPLOY_CONTRACT=${DEPLOY_CONTRACT:-"Deploy"}
 
-# If the chain contains "blast", use the Blast-specific contracts to deploy
-if [[ $CHAIN == *"blast"* ]]
-then
-  echo "Using Blast-specific contracts"
-  DEPLOY_SCRIPT="./script/deploy/DeployBlast.s.sol"
-  DEPLOY_CONTRACT="DeployBlast"
-fi
-
 echo "Using deploy script and contract: $DEPLOY_SCRIPT:$DEPLOY_CONTRACT"
 echo "Using deployment configuration: $DEPLOY_FILE"
 echo "Using chain: $CHAIN"
@@ -146,4 +138,4 @@ $VERIFY_FLAG \
 $RESUME_FLAG
 
 # Insert for Mantle deployments
-# -g 4000000 --with-gas-price 20000000 --priority-gas-price 10000000 \
+# --legacy -g 1000000 --with-gas-price 20000000 \
