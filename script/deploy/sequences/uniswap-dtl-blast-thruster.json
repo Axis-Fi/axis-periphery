@@ -1,19 +1,19 @@
 {
-    "sequence": [
-        {
-            "name": "BatchUniswapV2DirectToLiquidity",
-            "deploymentKeySuffix": "Thruster",
-            "args": {
-                "factory": "0xb4A7D971D0ADea1c73198C97d7ab3f9CE4aaFA13",
-                "router": "0x98994a9A7a2570367554589189dC9772241650f6"
-            }
-        },
-        {
-            "name": "BatchUniswapV3DirectToLiquidity",
-            "deploymentKeySuffix": "Thruster",
-            "args": {
-                "factory": "0x71b08f13B3c3aF35aAdEb3949AFEb1ded1016127"
-            }
-        }
-    ]
+  "sequence": [
+    {
+      "name": "BatchUniswapV2DirectToLiquidity",
+      "deploymentKeySuffix": "Thruster",
+      "args": {
+        "factory": "0xb4A7D971D0ADea1c73198C97d7ab3f9CE4aaFA13",
+        "router": "0x98994a9A7a2570367554589189dC9772241650f6"
+      }
+    },
+    {
+      "name": "BatchUniswapV3DirectToLiquidity",
+      "deploymentKeySuffix": "Thruster",
+      "args": {
+        "factory": "0x71b08f13B3c3aF35aAdEb3949AFEb1ded1016127"
+      }
+    }
+  ]
 }
