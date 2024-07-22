@@ -2,7 +2,7 @@
 pragma solidity 0.8.19;
 
 // Scripting libraries
-import {Script, console2} from "@forge-std-1.9.1/Script.sol";
+import {Script} from "@forge-std-1.9.1/Script.sol";
 import {WithEnvironment} from "../../deploy/WithEnvironment.s.sol";
 import {WithSalts} from "../WithSalts.s.sol";
 
@@ -43,8 +43,11 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
         string calldata deploymentKeySuffix_
     ) public {
         _setUp(chain_);
-        string memory deploymentKeySuffix =
-            _isDefaultDeploymentKey(deploymentKeySuffix_) ? "" : deploymentKeySuffix_;
+        // Join the deployment key with the optional suffix
+        string memory deploymentKey = string.concat(
+            "BaselineAxisLaunch",
+            _isDefaultDeploymentKey(deploymentKeySuffix_) ? "" : deploymentKeySuffix_
+        );
         bytes memory contractArgs_ = abi.encode(
             _envBatchAuctionHouse,
             vm.parseAddress(baselineKernel_),
@@ -56,27 +59,27 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
             keccak256(abi.encodePacked(variant_))
                 == keccak256(abi.encodePacked("BaselineAxisLaunch"))
         ) {
-            _generateBaselineAxisLaunch(contractArgs_, deploymentKeySuffix);
+            _generateBaselineAxisLaunch(contractArgs_, deploymentKey);
         } else if (
             keccak256(abi.encodePacked(variant_))
                 == keccak256(abi.encodePacked("BaselineAllocatedAllowlist"))
         ) {
-            _generateBaselineAllocatedAllowlist(contractArgs_, deploymentKeySuffix);
+            _generateBaselineAllocatedAllowlist(contractArgs_, deploymentKey);
         } else if (
             keccak256(abi.encodePacked(variant_))
                 == keccak256(abi.encodePacked("BaselineAllowlist"))
         ) {
-            _generateBaselineAllowlist(contractArgs_, deploymentKeySuffix);
+            _generateBaselineAllowlist(contractArgs_, deploymentKey);
         } else if (
             keccak256(abi.encodePacked(variant_))
                 == keccak256(abi.encodePacked("BaselineCappedAllowlist"))
         ) {
-            _generateBaselineCappedAllowlist(contractArgs_, deploymentKeySuffix);
+            _generateBaselineCappedAllowlist(contractArgs_, deploymentKey);
         } else if (
             keccak256(abi.encodePacked(variant_))
                 == keccak256(abi.encodePacked("BaselineTokenAllowlist"))
         ) {
-            _generateBaselineTokenAllowlist(contractArgs_, deploymentKeySuffix);
+            _generateBaselineTokenAllowlist(contractArgs_, deploymentKey);
         } else {
             revert(
                 "Invalid variant: BaselineAxisLaunch or BaselineAllocatedAllowlist or BaselineAllowlist or BaselineCappedAllowlist or BaselineTokenAllowlist"
@@ -86,62 +89,56 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
 
     function _generateBaselineAxisLaunch(
         bytes memory contractArgs_,
-        string memory deploymentKeySuffix_
+        string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BaselineAxisLaunch).creationCode;
-        string memory deploymentKey = string.concat("BaselineAxisLaunch", deploymentKeySuffix_);
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode(deploymentKey, contractCode, contractArgs_);
-        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey, bytecodeHash);
+            _writeBytecode(deploymentKey_, contractCode, contractArgs_);
+        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
     }
 
     function _generateBaselineAllocatedAllowlist(
         bytes memory contractArgs_,
-        string memory deploymentKeySuffix_
+        string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithAllocatedAllowlist).creationCode;
-        string memory deploymentKey =
-            string.concat("BaselineAllocatedAllowlist", deploymentKeySuffix_);
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode(deploymentKey, contractCode, contractArgs_);
-        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey, bytecodeHash);
+            _writeBytecode(deploymentKey_, contractCode, contractArgs_);
+        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
     }
 
     function _generateBaselineAllowlist(
         bytes memory contractArgs_,
-        string memory deploymentKeySuffix_
+        string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithAllowlist).creationCode;
-        string memory deploymentKey = string.concat("BaselineAllowlist", deploymentKeySuffix_);
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode(deploymentKey, contractCode, contractArgs_);
-        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey, bytecodeHash);
+            _writeBytecode(deploymentKey_, contractCode, contractArgs_);
+        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
     }
 
     function _generateBaselineCappedAllowlist(
         bytes memory contractArgs_,
-        string memory deploymentKeySuffix_
+        string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithCappedAllowlist).creationCode;
-        string memory deploymentKey = string.concat("BaselineCappedAllowlist", deploymentKeySuffix_);
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode(deploymentKey, contractCode, contractArgs_);
-        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey, bytecodeHash);
+            _writeBytecode(deploymentKey_, contractCode, contractArgs_);
+        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
     }
 
     function _generateBaselineTokenAllowlist(
         bytes memory contractArgs_,
-        string memory deploymentKeySuffix_
+        string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithTokenAllowlist).creationCode;
-        string memory deploymentKey = string.concat("BaselineTokenAllowlist", deploymentKeySuffix_);
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode(deploymentKey, contractCode, contractArgs_);
-        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey, bytecodeHash);
+            _writeBytecode(deploymentKey_, contractCode, contractArgs_);
+        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
     }
 }

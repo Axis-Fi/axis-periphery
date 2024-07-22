@@ -37,22 +37,27 @@ contract UniswapDTLSalts is Script, WithEnvironment, WithSalts {
     function generate(
         string calldata chain_,
         string calldata uniswapVersion_,
-        string calldata deploymentKey_,
+        string calldata deploymentKeySuffix_,
         bool atomic_
     ) public {
         _setUp(chain_);
+        // Join the deployment key with the optional suffix
+        string memory deploymentKey = string.concat(
+            "BaselineAxisLaunch",
+            _isDefaultDeploymentKey(deploymentKeySuffix_) ? "" : deploymentKeySuffix_
+        );
 
         if (keccak256(abi.encodePacked(uniswapVersion_)) == keccak256(abi.encodePacked("2"))) {
-            _generateV2(atomic_, deploymentKey_);
+            _generateV2(atomic_, deploymentKey);
         } else if (keccak256(abi.encodePacked(uniswapVersion_)) == keccak256(abi.encodePacked("3")))
         {
-            _generateV3(atomic_, deploymentKey_);
+            _generateV3(atomic_, deploymentKey);
         } else {
             revert("Invalid Uniswap version: 2 or 3");
         }
     }
 
-    function _generateV2(bool atomic_, string calldata deploymentKey_) internal {
+    function _generateV2(bool atomic_, string memory deploymentKey_) internal {
         string memory deploymentKey =
             _isDefaultDeploymentKey(deploymentKey_) ? "UniswapV2DirectToLiquidity" : deploymentKey_;
         console2.log("    deploymentKey: %s", deploymentKey);
@@ -82,7 +87,7 @@ contract UniswapDTLSalts is Script, WithEnvironment, WithSalts {
         }
     }
 
-    function _generateV3(bool atomic_, string calldata deploymentKey_) internal {
+    function _generateV3(bool atomic_, string memory deploymentKey_) internal {
         string memory deploymentKey =
             _isDefaultDeploymentKey(deploymentKey_) ? "UniswapV2DirectToLiquidity" : deploymentKey_;
         console2.log("    deploymentKey: %s", deploymentKey);
