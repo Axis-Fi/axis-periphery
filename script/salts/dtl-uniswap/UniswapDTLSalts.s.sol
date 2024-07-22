@@ -13,11 +13,6 @@ import {UniswapV3DirectToLiquidity} from "../../../src/callbacks/liquidity/Unisw
 contract UniswapDTLSalts is Script, WithDeploySequence, WithSalts {
     string internal constant _ADDRESS_PREFIX = "E6";
 
-    function _isDefaultDeploymentKey(string memory str) internal pure returns (bool) {
-        // If the string is "DEFAULT", it's the default deployment key
-        return keccak256(abi.encode(str)) == keccak256(abi.encode("DEFAULT"));
-    }
-
     function _setUp(string calldata chain_, string calldata sequenceFilePath_) internal {
         _loadSequence(chain_, sequenceFilePath_);
         _createBytecodeDirectory();
@@ -33,14 +28,15 @@ contract UniswapDTLSalts is Script, WithDeploySequence, WithSalts {
             console2.log("");
             console2.log("Generating salt for :", sequenceName);
 
+            string memory deploymentKey = _getDeploymentKey(sequenceName);
+            console2.log("    deploymentKey: %s", deploymentKey);
+
             // Atomic Uniswap V2
             if (
                 keccak256(abi.encodePacked(sequenceName))
                     == keccak256(abi.encodePacked("AtomicUniswapV2DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.AtomicAuctionHouse");
-                string memory deploymentKey = _getDeploymentKey(sequenceName);
-                console2.log("    deploymentKey: %s", deploymentKey);
 
                 _generateV2(sequenceName, auctionHouse, deploymentKey);
             }
@@ -50,8 +46,6 @@ contract UniswapDTLSalts is Script, WithDeploySequence, WithSalts {
                     == keccak256(abi.encodePacked("BatchUniswapV2DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.BatchAuctionHouse");
-                string memory deploymentKey = _getDeploymentKey(sequenceName);
-                console2.log("    deploymentKey: %s", deploymentKey);
 
                 _generateV2(sequenceName, auctionHouse, deploymentKey);
             }
@@ -61,8 +55,6 @@ contract UniswapDTLSalts is Script, WithDeploySequence, WithSalts {
                     == keccak256(abi.encodePacked("AtomicUniswapV3DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.AtomicAuctionHouse");
-                string memory deploymentKey = _getDeploymentKey(sequenceName);
-                console2.log("    deploymentKey: %s", deploymentKey);
 
                 _generateV3(sequenceName, auctionHouse, deploymentKey);
             }
@@ -72,8 +64,6 @@ contract UniswapDTLSalts is Script, WithDeploySequence, WithSalts {
                     == keccak256(abi.encodePacked("BatchUniswapV3DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.BatchAuctionHouse");
-                string memory deploymentKey = _getDeploymentKey(sequenceName);
-                console2.log("    deploymentKey: %s", deploymentKey);
 
                 _generateV3(sequenceName, auctionHouse, deploymentKey);
             }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# ./baseline_allocated_allowlist_salts.sh --deployFile <path> --envFile <.env>
+# ./baseline_salts.sh --deployFile <path> --envFile <.env>
 #
 # Expects the following environment variables:
 # CHAIN: The chain to deploy to, based on values from the ./script/env.json file.

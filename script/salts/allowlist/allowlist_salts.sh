@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# ./allowlist_salts.sh --type <atomic | batch> --deploymentKeySuffix <key> --envFile <.env>
+# ./allowlist_salts.sh --deployFile <path> --envFile <.env>
 #
 # Expects the following environment variables:
 # CHAIN: The chain to deploy to, based on values from the ./script/env.json file.
@@ -17,8 +17,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# Set default for deployment key suffix
-DEPLOYMENT_KEY_SUFFIX=${deploymentKeySuffix:-"DEFAULT"}
+DEPLOY_FILE=$deployFile
 
 # Get the name of the .env file or use the default
 ENV_FILE=${envFile:-".env"}
@@ -36,19 +35,15 @@ then
   exit 1
 fi
 
-# Check that the mode is "atomic" or "batch"
-if [ "$type" != "atomic" ] && [ "$type" != "batch" ]
+# Check if DEPLOY_FILE is set
+if [ -z "$DEPLOY_FILE" ]
 then
-  echo "Invalid type specified. Provide 'atomic' or 'batch' after the --type flag."
+  echo "No deploy file specified. Provide the relative path after the --deployFile flag."
   exit 1
 fi
 
-# Set flag for atomic or batch auction
-ATOMIC=$( if [ "$type" == "atomic" ]; then echo "true"; else echo "false"; fi )
-
-echo "Using RPC at URL: $RPC_URL"
 echo "Using chain: $CHAIN"
-echo "Using type: $type"
-echo "Using deployment key suffix (or DEFAULT): $DEPLOYMENT_KEY_SUFFIX"
+echo "Using RPC at URL: $RPC_URL"
+echo "Using deploy file: $DEPLOY_FILE"
 
-forge script ./script/salts/allowlist/AllowListSalts.s.sol:AllowlistSalts --sig "generate(string,string,bool)()" $CHAIN $DEPLOYMENT_KEY_SUFFIX $ATOMIC
+forge script ./script/salts/allowlist/AllowListSalts.s.sol:AllowlistSalts --sig "generate(string,string)()" $CHAIN $DEPLOY_FILE

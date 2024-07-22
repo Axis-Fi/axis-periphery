@@ -21,11 +21,6 @@ contract BaselineSalts is Script, WithDeploySequence, WithSalts {
 
     address internal _envBatchAuctionHouse;
 
-    function _isDefaultDeploymentKey(string memory str) internal pure returns (bool) {
-        // If the string is "DEFAULT", it's the default deployment key
-        return keccak256(abi.encode(str)) == keccak256(abi.encode("DEFAULT"));
-    }
-
     function _setUp(string calldata chain_, string calldata sequenceFilePath_) internal {
         _loadSequence(chain_, sequenceFilePath_);
         _createBytecodeDirectory();
