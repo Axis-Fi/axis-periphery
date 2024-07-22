@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# ./baseline_allocated_allowlist_salts.sh --variant <variant> --kernel <kernel> --owner <owner> --reserveToken <reserve token> --deploymentKeySuffix <key> --envFile <.env>
+# ./baseline_allocated_allowlist_salts.sh --deployFile <path> --envFile <.env>
 #
 # Expects the following environment variables:
 # CHAIN: The chain to deploy to, based on values from the ./script/env.json file.
@@ -17,8 +17,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-# Set default for deployment key suffix
-DEPLOYMENT_KEY_SUFFIX=${deploymentKeySuffix:-"DEFAULT"}
+DEPLOY_FILE=$deployFile
 
 # Get the name of the .env file or use the default
 ENV_FILE=${envFile:-".env"}
@@ -36,40 +35,15 @@ then
   exit 1
 fi
 
-# Check that the variant is set
-if [ -z "$variant" ]
+# Check if DEPLOY_FILE is set
+if [ -z "$DEPLOY_FILE" ]
 then
-  echo "Variant not set. Please provide a variant after the --variant flag."
-  exit 1
-fi
-
-# Check that the kernel is a 40-byte address with a 0x prefix
-if [[ ! "$kernel" =~ ^0x[0-9a-fA-F]{40}$ ]]
-then
-  echo "Invalid kernel address specified. Provide a 40-byte address with a 0x prefix after the --kernel flag."
-  exit 1
-fi
-
-# Check that the owner is a 40-byte address with a 0x prefix
-if [[ ! "$owner" =~ ^0x[0-9a-fA-F]{40}$ ]]
-then
-  echo "Invalid owner address specified. Provide a 40-byte address with a 0x prefix after the --owner flag."
-  exit 1
-fi
-
-# Check that the reserve token is a 40-byte address with a 0x prefix
-if [[ ! "$reserveToken" =~ ^0x[0-9a-fA-F]{40}$ ]]
-then
-  echo "Invalid reserve token address specified. Provide a 40-byte address with a 0x prefix after the --reserveToken flag."
+  echo "No deploy file specified. Provide the relative path after the --deployFile flag."
   exit 1
 fi
 
 echo "Using chain: $CHAIN"
 echo "Using RPC at URL: $RPC_URL"
-echo "Using variant: $variant"
-echo "Using kernel: $kernel"
-echo "Using owner: $owner"
-echo "Using reserve token: $reserveToken"
-echo "Using deployment key suffix (or DEFAULT): $DEPLOYMENT_KEY_SUFFIX"
+echo "Using deploy file: $DEPLOY_FILE"
 
-forge script ./script/salts/dtl-baseline/BaselineSalts.s.sol:BaselineSalts --sig "generate(string,string,string,string,string,string)()" $CHAIN $variant $kernel $owner $reserveToken $DEPLOYMENT_KEY_SUFFIX
+forge script ./script/salts/dtl-baseline/BaselineSalts.s.sol:BaselineSalts --sig "generate(string,string)()" $CHAIN $DEPLOY_FILE

@@ -2,9 +2,9 @@
 pragma solidity 0.8.19;
 
 // Scripting libraries
-import {Script} from "@forge-std-1.9.1/Script.sol";
-import {WithEnvironment} from "../../deploy/WithEnvironment.s.sol";
+import {Script, console2} from "@forge-std-1.9.1/Script.sol";
 import {WithSalts} from "../WithSalts.s.sol";
+import {WithDeploySequence} from "../../deploy/WithDeploySequence.s.sol";
 
 import {BaselineAxisLaunch} from
     "../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
@@ -16,7 +16,7 @@ import {BALwithCappedAllowlist} from
 import {BALwithTokenAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
 
-contract BaselineSalts is Script, WithEnvironment, WithSalts {
+contract BaselineSalts is Script, WithDeploySequence, WithSalts {
     string internal constant _ADDRESS_PREFIX = "EF";
 
     address internal _envBatchAuctionHouse;
@@ -26,72 +26,80 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
         return keccak256(abi.encode(str)) == keccak256(abi.encode("DEFAULT"));
     }
 
-    function _setUp(string calldata chain_) internal {
-        _loadEnv(chain_);
+    function _setUp(string calldata chain_, string calldata sequenceFilePath_) internal {
+        _loadSequence(chain_, sequenceFilePath_);
         _createBytecodeDirectory();
 
         // Cache auction houses
         _envBatchAuctionHouse = _envAddressNotZero("deployments.BatchAuctionHouse");
     }
 
-    function generate(
-        string calldata chain_,
-        string calldata variant_,
-        string calldata baselineKernel_,
-        string calldata baselineOwner_,
-        string calldata reserveToken_,
-        string calldata deploymentKeySuffix_
-    ) public {
-        _setUp(chain_);
-        // Join the deployment key with the optional suffix
-        string memory deploymentKey = string.concat(
-            "BaselineAxisLaunch",
-            _isDefaultDeploymentKey(deploymentKeySuffix_) ? "" : deploymentKeySuffix_
-        );
-        bytes memory contractArgs_ = abi.encode(
-            _envBatchAuctionHouse,
-            vm.parseAddress(baselineKernel_),
-            vm.parseAddress(reserveToken_),
-            vm.parseAddress(baselineOwner_)
-        );
+    function generate(string calldata chain_, string calldata deployFilePath_) public {
+        _setUp(chain_, deployFilePath_);
 
-        if (
-            keccak256(abi.encodePacked(variant_))
-                == keccak256(abi.encodePacked("BaselineAxisLaunch"))
-        ) {
-            _generateBaselineAxisLaunch(contractArgs_, deploymentKey);
-        } else if (
-            keccak256(abi.encodePacked(variant_))
-                == keccak256(abi.encodePacked("BaselineAllocatedAllowlist"))
-        ) {
-            _generateBaselineAllocatedAllowlist(contractArgs_, deploymentKey);
-        } else if (
-            keccak256(abi.encodePacked(variant_))
-                == keccak256(abi.encodePacked("BaselineAllowlist"))
-        ) {
-            _generateBaselineAllowlist(contractArgs_, deploymentKey);
-        } else if (
-            keccak256(abi.encodePacked(variant_))
-                == keccak256(abi.encodePacked("BaselineCappedAllowlist"))
-        ) {
-            _generateBaselineCappedAllowlist(contractArgs_, deploymentKey);
-        } else if (
-            keccak256(abi.encodePacked(variant_))
-                == keccak256(abi.encodePacked("BaselineTokenAllowlist"))
-        ) {
-            _generateBaselineTokenAllowlist(contractArgs_, deploymentKey);
-        } else {
-            revert(
-                "Invalid variant: BaselineAxisLaunch or BaselineAllocatedAllowlist or BaselineAllowlist or BaselineCappedAllowlist or BaselineTokenAllowlist"
-            );
+        // Iterate over the deployment sequence
+        string[] memory sequenceNames = _getSequenceNames();
+        for (uint256 i; i < sequenceNames.length; i++) {
+            string memory sequenceName = sequenceNames[i];
+            console2.log("");
+            console2.log("Generating salt for :", sequenceName);
+
+            string memory deploymentKey = _getDeploymentKey(sequenceName);
+            console2.log("    deploymentKey: %s", deploymentKey);
+
+            // BaselineAxisLaunch
+            if (
+                keccak256(abi.encodePacked(sequenceName))
+                    == keccak256(abi.encodePacked("BatchBaselineAxisLaunch"))
+            ) {
+                _generateBaselineAxisLaunch(sequenceName, deploymentKey);
+            }
+            // BaselineAllocatedAllowlist
+            else if (
+                keccak256(abi.encodePacked(sequenceName))
+                    == keccak256(abi.encodePacked("BatchBaselineAllocatedAllowlist"))
+            ) {
+                _generateBaselineAllocatedAllowlist(sequenceName, deploymentKey);
+            }
+            // BaselineAllowlist
+            else if (
+                keccak256(abi.encodePacked(sequenceName))
+                    == keccak256(abi.encodePacked("BatchBaselineAllowlist"))
+            ) {
+                _generateBaselineAllowlist(sequenceName, deploymentKey);
+            }
+            // BaselineCappedAllowlist
+            else if (
+                keccak256(abi.encodePacked(sequenceName))
+                    == keccak256(abi.encodePacked("BatchBaselineCappedAllowlist"))
+            ) {
+                _generateBaselineCappedAllowlist(sequenceName, deploymentKey);
+            }
+            // BaselineTokenAllowlist
+            else if (
+                keccak256(abi.encodePacked(sequenceName))
+                    == keccak256(abi.encodePacked("BatchBaselineTokenAllowlist"))
+            ) {
+                _generateBaselineTokenAllowlist(sequenceName, deploymentKey);
+            }
+            // Something else
+            else {
+                console2.log("    Skipping unknown sequence: %s", sequenceName);
+            }
         }
     }
 
     function _generateBaselineAxisLaunch(
-        bytes memory contractArgs_,
+        string memory sequenceName_,
         string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BaselineAxisLaunch).creationCode;
+        bytes memory contractArgs_ = abi.encode(
+            _envBatchAuctionHouse,
+            _getSequenceAddress(sequenceName_, "args.baselineKernel"),
+            _getSequenceAddress(sequenceName_, "args.reserveToken"),
+            _getSequenceAddress(sequenceName_, "args.baselineOwner")
+        );
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode(deploymentKey_, contractCode, contractArgs_);
@@ -99,10 +107,16 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
     }
 
     function _generateBaselineAllocatedAllowlist(
-        bytes memory contractArgs_,
+        string memory sequenceName_,
         string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithAllocatedAllowlist).creationCode;
+        bytes memory contractArgs_ = abi.encode(
+            _envBatchAuctionHouse,
+            _getSequenceAddress(sequenceName_, "args.baselineKernel"),
+            _getSequenceAddress(sequenceName_, "args.reserveToken"),
+            _getSequenceAddress(sequenceName_, "args.baselineOwner")
+        );
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode(deploymentKey_, contractCode, contractArgs_);
@@ -110,10 +124,16 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
     }
 
     function _generateBaselineAllowlist(
-        bytes memory contractArgs_,
+        string memory sequenceName_,
         string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithAllowlist).creationCode;
+        bytes memory contractArgs_ = abi.encode(
+            _envBatchAuctionHouse,
+            _getSequenceAddress(sequenceName_, "args.baselineKernel"),
+            _getSequenceAddress(sequenceName_, "args.reserveToken"),
+            _getSequenceAddress(sequenceName_, "args.baselineOwner")
+        );
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode(deploymentKey_, contractCode, contractArgs_);
@@ -121,10 +141,16 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
     }
 
     function _generateBaselineCappedAllowlist(
-        bytes memory contractArgs_,
+        string memory sequenceName_,
         string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithCappedAllowlist).creationCode;
+        bytes memory contractArgs_ = abi.encode(
+            _envBatchAuctionHouse,
+            _getSequenceAddress(sequenceName_, "args.baselineKernel"),
+            _getSequenceAddress(sequenceName_, "args.reserveToken"),
+            _getSequenceAddress(sequenceName_, "args.baselineOwner")
+        );
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode(deploymentKey_, contractCode, contractArgs_);
@@ -132,10 +158,16 @@ contract BaselineSalts is Script, WithEnvironment, WithSalts {
     }
 
     function _generateBaselineTokenAllowlist(
-        bytes memory contractArgs_,
+        string memory sequenceName_,
         string memory deploymentKey_
     ) internal {
         bytes memory contractCode = type(BALwithTokenAllowlist).creationCode;
+        bytes memory contractArgs_ = abi.encode(
+            _envBatchAuctionHouse,
+            _getSequenceAddress(sequenceName_, "args.baselineKernel"),
+            _getSequenceAddress(sequenceName_, "args.reserveToken"),
+            _getSequenceAddress(sequenceName_, "args.baselineOwner")
+        );
 
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode(deploymentKey_, contractCode, contractArgs_);
