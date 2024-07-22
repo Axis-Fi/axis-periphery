@@ -49,6 +49,30 @@ abstract contract WithDeploySequence is Script, WithEnvironment {
         return _envAddressNotZero(envKey_);
     }
 
+    function _getSequenceNames() internal view returns (string[] memory) {
+        // Parse deployment sequence and names
+        bytes memory sequence = abi.decode(_sequenceJson.parseRaw(".sequence"), (bytes));
+        uint256 len = sequence.length;
+
+        if (len == 0) {
+            return new string[](0);
+        } else if (len == 1) {
+            // Only one deployment
+            string memory name = abi.decode(_sequenceJson.parseRaw(".sequence..name"), (string));
+
+            string[] memory names = new string[](1);
+            names[0] = name;
+
+            return names;
+        } else {
+            // More than one deployment
+            string[] memory names =
+                abi.decode(_sequenceJson.parseRaw(".sequence..name"), (string[]));
+
+            return names;
+        }
+    }
+
     // === Low-level JSON functions === //
 
     /// @notice Construct a key to access a value in the deployment sequence

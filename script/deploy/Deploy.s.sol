@@ -70,29 +70,16 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
     function _setUp(string calldata chain_, string calldata deployFilePath_) internal virtual {
         _loadSequence(chain_, deployFilePath_);
 
-        // Parse deployment sequence and names
-        bytes memory sequence = abi.decode(_sequenceJson.parseRaw(".sequence"), (bytes));
-        uint256 len = sequence.length;
-        console2.log("Contracts to be deployed:", len);
+        // Get the sequence names
+        string[] memory sequenceNames = _getSequenceNames();
+        console2.log("Contracts to be deployed:", sequenceNames.length);
 
-        if (len == 0) {
-            return;
-        } else if (len == 1) {
-            // Only one deployment
-            string memory name = abi.decode(_sequenceJson.parseRaw(".sequence..name"), (string));
-            deployments.push(name);
+        // Iterate through the sequence names and configure the deployments
+        for (uint256 i; i < sequenceNames.length; i++) {
+            string memory sequenceName = sequenceNames[i];
 
-            _configureDeployment(_sequenceJson, name);
-        } else {
-            // More than one deployment
-            string[] memory names =
-                abi.decode(_sequenceJson.parseRaw(".sequence..name"), (string[]));
-            for (uint256 i = 0; i < len; i++) {
-                string memory name = names[i];
-                deployments.push(name);
-
-                _configureDeployment(_sequenceJson, name);
-            }
+            deployments.push(sequenceName);
+            _configureDeployment(_sequenceJson, sequenceName);
         }
     }
 
