@@ -10,8 +10,8 @@
   "scripts": {
     "build": "forge build",
     "deploy": "./script/deploy/deploy.sh",
-    "fmt:check": "forge fmt --check",
-    "fmt": "forge fmt",
+    "fmt:check": "forge fmt --check && prettier . --check",
+    "fmt": "forge fmt && prettier . --write",
     "lint:all": "pnpm run fmt && pnpm run solhint:all",
     "lint:check": "pnpm run fmt:check && pnpm run solhint:check",
     "lint": "pnpm run fmt && pnpm run solhint",
@@ -29,5 +29,8 @@
   "license": "MIT",
   "dependencies": {
     "solhint-community": "^3.7.0"
+  },
+  "devDependencies": {
+    "prettier": "3.3.3"
   }
 }
