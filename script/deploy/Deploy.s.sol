@@ -289,8 +289,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             _getEnvAddressOrOverride("constants.uniswapV2.factory", sequenceName_, "args.factory");
         address uniswapV2Router =
             _getEnvAddressOrOverride("constants.uniswapV2.router", sequenceName_, "args.router");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the router and factory match
@@ -332,8 +331,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
             _getEnvAddressOrOverride("constants.uniswapV2.factory", sequenceName_, "args.factory");
         address uniswapV2Router =
             _getEnvAddressOrOverride("constants.uniswapV2.router", sequenceName_, "args.router");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the router and factory match
@@ -376,8 +374,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         );
         address gUniFactory =
             _getEnvAddressOrOverride("constants.gUni.factory", sequenceName_, "args.gUniFactory");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the GUni factory and Uniswap V3 factory are consistent
@@ -420,8 +417,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         );
         address gUniFactory =
             _getEnvAddressOrOverride("constants.gUni.factory", sequenceName_, "args.gUniFactory");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the GUni factory and Uniswap V3 factory are consistent
@@ -459,8 +455,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -501,8 +496,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -543,8 +537,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -585,8 +578,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -627,8 +619,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -669,8 +660,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -711,8 +701,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -753,8 +742,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
@@ -801,8 +789,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
         console2.log("    reserveToken:", reserveToken);
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
@@ -855,8 +842,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
         console2.log("    reserveToken:", reserveToken);
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
@@ -909,8 +895,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
         console2.log("    reserveToken:", reserveToken);
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
@@ -963,8 +948,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         console2.log("    baselineOwner:", baselineOwner);
         address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
         console2.log("    reserveToken:", reserveToken);
-        string memory deploymentKey =
-            _getSequenceStringOrFallback(sequenceName_, "deploymentKey", sequenceName_);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
@@ -1068,6 +1052,12 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         }
 
         return _envAddressNotZero(key_);
+    }
+
+    function _getDeploymentKey(string memory sequenceName_) internal view returns (string memory) {
+        return string.concat(
+            sequenceName_, _getSequenceStringOrFallback(sequenceName_, "deploymentKeySuffix", "")
+        );
     }
 
     /// @notice Construct a key to access a value in the deployment sequence
