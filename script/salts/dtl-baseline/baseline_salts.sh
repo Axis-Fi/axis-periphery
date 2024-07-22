@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Usage:
-# ./uniswap_dtl_salts.sh --deployFile <path> --envFile <.env>
+# ./baseline_salts.sh --deployFile <path> --envFile <.env>
 #
 # Expects the following environment variables:
 # CHAIN: The chain to deploy to, based on values from the ./script/env.json file.
@@ -46,4 +46,4 @@ echo "Using chain: $CHAIN"
 echo "Using RPC at URL: $RPC_URL"
 echo "Using deploy file: $DEPLOY_FILE"
 
-forge script ./script/salts/dtl-uniswap/UniswapDTLSalts.s.sol:UniswapDTLSalts --sig "generate(string,string)()" $CHAIN $DEPLOY_FILE
+forge script ./script/salts/dtl-baseline/BaselineSalts.s.sol:BaselineSalts --sig "generate(string,string)()" $CHAIN $DEPLOY_FILE

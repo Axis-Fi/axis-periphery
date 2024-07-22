@@ -34,7 +34,7 @@ Notes:
 
 First, support for the contract needs to be added in the deployment script, `./script/deploy/Deploy.s.sol`.
 
-This involves creating a function in the format of `function deploy<key>(bytes memory args_) public virtual returns (address, string memory)`.
+This involves creating a function in the format of `function deploy<key>(string memory sequenceName_) public virtual returns (address, string memory, string memory)`.
 
 For example, a deployment with `name` set to "AtomicLinearVesting" would require a function to be present in `Deploy.s.sol` with the name `deployAtomicLinearVesting`.
 
@@ -54,6 +54,8 @@ Notes:
             amEmp = new EncryptedMarginalPrice{salt: salt_}(address(batchAuctionHouse));
         }
 ```
+
+- If a contract deployment requires different variants with different configuration values, the standard deployment function (e.g. `deployBatchUniswapV2DirectToLiquidity()`) can be re-used. See the [uniswap-dtl-blast-thruster.json](/script/deploy/sequences/uniswap-dtl-blast-thruster.json) file for an example that uses the Thruster contracts on Blast (instead of the canonical Uniswap contracts) and saves the resulting contract address to a custom key in [env.json](/script/env.json).
 
 #### Running the Deployment
 
