@@ -4,8 +4,8 @@ pragma solidity 0.8.19;
 // Scripting libraries
 import {Script, console2} from "@forge-std-1.9.1/Script.sol";
 import {stdJson} from "@forge-std-1.9.1/StdJson.sol";
-import {WithEnvironment} from "./WithEnvironment.s.sol";
 import {WithSalts} from "../salts/WithSalts.s.sol";
+import {WithDeploySequence} from "./WithDeploySequence.s.sol";
 
 // axis-core
 import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.0/modules/Keycode.sol";
@@ -42,7 +42,7 @@ import {
 
 /// @notice Declarative deployment script that reads a deployment sequence (with constructor args)
 ///         and a configured environment file to deploy and install contracts in the Axis protocol.
-contract Deploy is Script, WithEnvironment, WithSalts {
+contract Deploy is Script, WithDeploySequence, WithSalts {
     using stdJson for string;
 
     string internal constant _PREFIX_DEPLOYMENT_ROOT = "deployments";
@@ -56,7 +56,6 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     bytes internal constant _BLAST_BATCH_AUCTION_HOUSE_NAME = "BlastBatchAuctionHouse";
 
     // Deploy system storage
-    string internal _sequenceJson;
     mapping(string => bytes) public argsMap;
     mapping(string => bool) public installAtomicAuctionHouseMap;
     mapping(string => bool) public installBatchAuctionHouseMap;
@@ -69,10 +68,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
     // ========== DEPLOY SYSTEM FUNCTIONS ========== //
 
     function _setUp(string calldata chain_, string calldata deployFilePath_) internal virtual {
-        _loadEnv(chain_);
-
-        // Load deployment data
-        _sequenceJson = vm.readFile(deployFilePath_);
+        _loadSequence(chain_, deployFilePath_);
 
         // Parse deployment sequence and names
         bytes memory sequence = abi.decode(_sequenceJson.parseRaw(".sequence"), (bytes));
@@ -1052,87 +1048,6 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         }
 
         return _envAddressNotZero(key_);
-    }
-
-    function _getDeploymentKey(string memory sequenceName_) internal view returns (string memory) {
-        return string.concat(
-            sequenceName_, _getSequenceStringOrFallback(sequenceName_, "deploymentKeySuffix", "")
-        );
-    }
-
-    /// @notice Construct a key to access a value in the deployment sequence
-    function _getSequenceKey(
-        string memory name_,
-        string memory key_
-    ) internal pure returns (string memory) {
-        return string.concat(".sequence[?(@.name == '", name_, "')].", key_);
-    }
-
-    /// @notice Determines if a key exists in the deployment sequence
-    function _sequenceKeyExists(
-        string memory name_,
-        string memory key_
-    ) internal view returns (bool) {
-        return vm.keyExists(_sequenceJson, _getSequenceKey(name_, key_));
-    }
-
-    /// @notice Obtains a string value from the given key in the deployment sequence
-    /// @dev    This will revert if the key does not exist
-    function _getSequenceString(
-        string memory name_,
-        string memory key_
-    ) internal view returns (string memory) {
-        return vm.parseJsonString(_sequenceJson, _getSequenceKey(name_, key_));
-    }
-
-    /// @notice Obtains an address value from the given key in the deployment sequence
-    /// @dev    This will revert if the key does not exist
-    function _getSequenceAddress(
-        string memory name_,
-        string memory key_
-    ) internal view returns (address) {
-        return vm.parseJsonAddress(_sequenceJson, _getSequenceKey(name_, key_));
-    }
-
-    /// @notice Obtains an bool value from the given key in the deployment sequence
-    /// @dev    This will revert if the key does not exist
-    function _getSequenceBool(
-        string memory name_,
-        string memory key_
-    ) internal view returns (bool) {
-        return vm.parseJsonBool(_sequenceJson, _getSequenceKey(name_, key_));
-    }
-
-    /// @notice Obtains an address value from the deployment sequence (if it exists), or the env.json as a fallback
-    function _getEnvAddressOrOverride(
-        string memory envKey_,
-        string memory sequenceName_,
-        string memory key_
-    ) internal view returns (address) {
-        // Check if the key is set in the deployment sequence
-        if (_sequenceKeyExists(sequenceName_, key_)) {
-            address sequenceAddress = _getSequenceAddress(sequenceName_, key_);
-            console2.log("    %s: %s (from deployment sequence)", envKey_, sequenceAddress);
-            return sequenceAddress;
-        }
-
-        // Otherwsie return from the environment variables
-        return _envAddressNotZero(envKey_);
-    }
-
-    /// @notice Obtains a string value from the deployment sequence (if it exists), or a fallback value
-    function _getSequenceStringOrFallback(
-        string memory name_,
-        string memory key_,
-        string memory fallbackValue_
-    ) internal view returns (string memory) {
-        // Check if the key is set in the deployment sequence
-        if (_sequenceKeyExists(name_, key_)) {
-            return _getSequenceString(name_, key_);
-        }
-
-        // Otherwise, return the fallback value
-        return fallbackValue_;
     }
 
     /// @notice Reads a raw bytes value from the deployment sequence
