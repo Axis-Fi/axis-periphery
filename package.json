@@ -19,9 +19,8 @@
     "publish": "./script/publish.sh",
     "salts": "./script/salts/write_salt.sh",
     "size": "forge clean && forge build --sizes --skip test --skip '*/Mock*.sol'",
-    "solhint:all": "solhint --fix --config ./.solhint.json 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'",
-    "solhint:check": "solhint --config ./.solhint.json 'src/**/*.sol'",
-    "solhint": "solhint --fix --config ./.solhint.json 'src/**/*.sol'",
+    "solhint:check": "solhint --config ./.solhint.json 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'",
+    "solhint": "solhint --fix --config ./.solhint.json 'src/**/*.sol' 'test/**/*.sol' 'script/**/*.sol'",
     "test": "forge test --nmt largeNumberOf -vvv"
   },
   "keywords": [],
