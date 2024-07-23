@@ -23,6 +23,7 @@ import {
     Permissions as BaselinePermissions
 } from "./lib/Kernel.sol";
 import {Range, IBPOOLv1} from "./lib/IBPOOL.sol";
+import {ICREDTv1} from "./lib/ICREDT.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 // Other libraries
@@ -60,6 +61,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The floor reserves percent is invalid
     error Callback_Params_InvalidFloorReservesPercent();
 
+    /// @notice The pool percent is invalid
+    error Callback_Params_InvalidPoolPercent();
+
     /// @notice The auction tied to this callbacks contract has already been completed
     error Callback_AlreadyComplete();
 
@@ -74,17 +78,21 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     // ========== EVENTS ========== //
 
-    event LiquidityDeployed(int24 tickLower, int24 tickUpper, uint128 liquidity);
+    event LiquidityDeployed(int24 floorTickLower, int24 anchorTickUpper, uint128 floorLiquidity, uint128 anchorLiquidity);
 
     // ========== DATA STRUCTURES ========== //
 
     /// @notice Data struct for the onCreate callback
     ///
-    /// @param  floorReservesPercent    The percentage of the proceeds to allocate to the floor range, in basis points (1% = 100). The remainder will be allocated to the anchor range.
+    /// @param  recipient               The address to receive proceeds that do not go to the pool
+    /// @param  poolPercent             The percentage of the proceeds to allocate to the pool, in basis points (1% = 100)
+    /// @param  floorReservesPercent    The percentage of the pool proceeds to allocate to the floor range, in basis points (1% = 100). The remainder will be allocated to the anchor range.
     /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
     /// @param  discoveryTickWidth      The width of the discovery tick range, as a multiple of the pool tick spacing.
     /// @param  allowlistParams         Additional parameters for an allowlist, passed to `__onCreate()` for further processing
     struct CreateData {
+        address recipient;
+        uint24 poolPercent;
         uint24 floorReservesPercent;
         int24 anchorTickWidth;
         int24 discoveryTickWidth;
@@ -94,11 +102,13 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     // ========== STATE VARIABLES ========== //
 
     // Baseline Modules
-    // solhint-disable-next-line var-name-mixedcase
+    // solhint-disable var-name-mixedcase
     IBPOOLv1 public BPOOL;
+    ICREDTv1 public CREDT;
 
     // Pool variables
     ERC20 public immutable RESERVE;
+    // solhint-enable var-name-mixedcase
     ERC20 public bAsset;
 
     // Accounting
@@ -115,9 +125,17 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @dev    This is used to prevent the callback from being called multiple times. It is set in the `onSettle()` callback.
     bool public auctionComplete;
 
+    /// @notice The percentage of the proceeds to allocate to the pool
+    /// @dev    This value is set in the `onCreate()` callback.
+    uint24 public poolPercent;
+
     /// @notice The percentage of the proceeds to allocate to the floor range
     /// @dev    This value is set in the `onCreate()` callback.
     uint24 public floorReservesPercent;
+
+    /// @notice The address to receive proceeds that do not go to the pool
+    /// @dev    This value is set in the `onCreate()` callback.
+    address public recipient;
 
     // solhint-disable-next-line private-vars-leading-underscore
     uint48 internal constant ONE_HUNDRED_PERCENT = 100e2;
@@ -168,14 +186,17 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         returns (BaselineKeycode[] memory dependencies)
     {
         BaselineKeycode bpool = toBaselineKeycode("BPOOL");
+        BaselineKeycode credt = toBaselineKeycode("CREDT");
 
         // Populate the dependencies array
-        dependencies = new BaselineKeycode[](1);
+        dependencies = new BaselineKeycode[](2);
         dependencies[0] = bpool;
+        dependencies[1] = credt;
 
         // Set local values
         BPOOL = IBPOOLv1(getModuleAddress(bpool));
         bAsset = ERC20(address(BPOOL));
+        CREDT = ICREDTv1(getModuleAddress(credt));
 
         // Require that the BPOOL's reserve token be the same as the callback's reserve token
         if (address(BPOOL.reserve()) != address(RESERVE)) revert InvalidModule();
@@ -252,6 +273,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Decode the provided callback data (must be correctly formatted even if not using parts of it)
         CreateData memory cbData = abi.decode(callbackData_, (CreateData));
 
+        // Validate that the recipient is not the zero address
+        if (cbData.recipient == address(0)) revert Callback_InvalidParams();
+
         // Validate that the anchor tick width is at least 1 tick spacing
         if (cbData.anchorTickWidth <= 0) {
             revert Callback_Params_InvalidAnchorTickWidth();
@@ -262,9 +286,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             revert Callback_Params_InvalidDiscoveryTickWidth();
         }
 
-        // Validate that the floor reserves percent is between 0% and 100%
+        // Validate that the floor reserves percent is between 0% and 99%
         if (cbData.floorReservesPercent > 99e2) {
             revert Callback_Params_InvalidFloorReservesPercent();
+        }
+
+        // Validate that the pool percent is at least 1% and at most 100%
+        if (cbData.poolPercent < 1e2 || cbData.poolPercent > 100e2) {
+            revert Callback_Params_InvalidPoolPercent();
         }
 
         // Auction must be prefunded for batch auctions (which is the only type supported with this callback),
@@ -273,6 +302,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Set the lot ID
         lotId = lotId_;
+
+        // Set the recipient
+        recipient = cbData.recipient;
+
+        // Set the pool percent
+        poolPercent = cbData.poolPercent;
 
         // Set the floor reserves percent
         floorReservesPercent = cbData.floorReservesPercent;
@@ -294,36 +329,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             lotId_, seller_, baseToken_, quoteToken_, capacity_, prefund_, cbData.allowlistParams
         );
 
-        // Calculate the initial active tick from the auction price without rounding
-        int24 activeTick;
-        {
-            IFixedPriceBatch auctionModule = IFixedPriceBatch(
-                address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))
-            );
-
-            // Get the fixed price from the auction module
-            // This value is in the number of reserve tokens per baseline token
-            uint256 auctionPrice = auctionModule.getAuctionData(lotId_).price;
-            (,,, uint8 baseTokenDecimals,,,,) = auctionModule.lotData(lotId_);
-
-            // Calculate the active tick from the auction price
-            // `getSqrtPriceX96` handles token ordering
-            // The resulting tick will incorporate any differences in decimals between the tokens
-            uint160 sqrtPriceX96 = SqrtPriceMath.getSqrtPriceX96(
-                address(RESERVE), address(bAsset), auctionPrice, 10 ** baseTokenDecimals
-            );
-            activeTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
-
-            // Check that the pool is initialized at the active tick
-            // This is to ensure that the pool is initialized at the tick closest to the auction price
-            (, int24 poolCurrentTick,,,,,) = BPOOL.pool().slot0();
-            if (poolCurrentTick != activeTick) {
-                revert Callback_Params_PoolTickMismatch(activeTick, poolCurrentTick);
-            }
-        }
-
-        int24 tickSpacing = BPOOL.TICK_SPACING();
-
         // Set the ticks for the Baseline pool initially with the following assumptions:
         // - The floor range is 1 tick spacing wide
         // - The anchor range is `anchorTickWidth` tick spacings wide, above the floor range
@@ -332,9 +337,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // - The anchor range upper tick is the active tick rounded up to the nearest tick spacing
         // - The other range boundaries are calculated accordingly
         {
-            // Initially, the anchor range upper is the active tick rounded up
-            int24 anchorRangeUpper = _roundUpTickToSpacing(activeTick, tickSpacing);
+            // Get the closest tick spacing boundary above the active tick
+            // The active tick was set when the BPOOL was deployed
+            // This is the top of the anchor range
+            int24 anchorRangeUpper = BPOOL.getActiveTS();
 
+            // Get the tick spacing from the pool
+            int24 tickSpacing = BPOOL.TICK_SPACING();
+            
             // Anchor range lower is the anchor tick width below the anchor range upper
             int24 anchorRangeLower = anchorRangeUpper - cbData.anchorTickWidth * tickSpacing;
 
@@ -507,16 +517,19 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         //// Step 2: Deploy liquidity to the Baseline pool ////
 
+        // Calculate the percent of proceeds to allocate to the pool
+        uint256 poolProceeds = proceeds_ * poolPercent / ONE_HUNDRED_PERCENT;
+
         // Approve spending of the reserve token
         // There should not be any dangling approvals left
         Transfer.approve(RESERVE, address(BPOOL), proceeds_);
 
         // Add the configured percentage of the proceeds to the Floor range
-        uint256 floorReserves = proceeds_ * floorReservesPercent / ONE_HUNDRED_PERCENT;
+        uint256 floorReserves = poolProceeds * floorReservesPercent / ONE_HUNDRED_PERCENT;
         BPOOL.addReservesTo(Range.FLOOR, floorReserves);
 
         // Add the remainder of the proceeds to the Anchor range
-        BPOOL.addReservesTo(Range.ANCHOR, proceeds_ - floorReserves);
+        BPOOL.addReservesTo(Range.ANCHOR, poolProceeds - floorReserves);
 
         // Add proportional liquidity to the Discovery range.
         // Only the anchor range is used, otherwise the liquidity would be too thick.
@@ -524,7 +537,11 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // and to have reserves of at least 1% of the proceeds.
         BPOOL.addLiquidityTo(Range.DISCOVERY, BPOOL.getLiquidity(Range.ANCHOR) * 11 / 10);
 
-        //// Step 3: Verify Solvency ////
+        //// Step 4: Send remaining proceeds (and any excess reserves) to the recipient ////
+        Transfer.transfer(RESERVE, recipient, RESERVE.balanceOf(address(this)), false);
+
+        //// Step 5: Verify Solvency ////
+        // TODO update solvency check to consider credit
         uint256 totalCapacity = BPOOL.getPosition(Range.FLOOR).capacity
             + BPOOL.getPosition(Range.ANCHOR).capacity + BPOOL.getPosition(Range.DISCOVERY).capacity;
 
@@ -534,26 +551,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Emit an event
         {
-            (int24 floorTickLower, int24 floorTickUpper) = BPOOL.getTicks(Range.FLOOR);
-            emit LiquidityDeployed(floorTickLower, floorTickUpper, BPOOL.getLiquidity(Range.FLOOR));
+            (int24 floorTickLower, ) = BPOOL.getTicks(Range.FLOOR);
+            (, int24 anchorTickUpper) = BPOOL.getTicks(Range.ANCHOR);
+            emit LiquidityDeployed(floorTickLower, anchorTickUpper, BPOOL.getLiquidity(Range.FLOOR), BPOOL.getLiquidity(Range.ANCHOR));
         }
-    }
-
-    // ========== HELPER FUNCTIONS ========== //
-
-    /// @notice Rounds up the provided tick to the nearest tick spacing
-    /// @dev    This function behaves differently to BPOOL.getActiveTS() in handling edge cases. In particular, if the tick is equal to the rounded tick, it will not be adjusted.
-    ///
-    /// @param  tick_           The tick to round
-    /// @param  tickSpacing_    The tick spacing to round to
-    function _roundUpTickToSpacing(int24 tick_, int24 tickSpacing_) internal pure returns (int24) {
-        int24 roundedTick = (tick_ / tickSpacing_) * tickSpacing_;
-
-        if (tick_ > roundedTick) {
-            roundedTick += tickSpacing_;
-        }
-
-        return roundedTick;
     }
 
     // ========== OWNER FUNCTIONS ========== //
