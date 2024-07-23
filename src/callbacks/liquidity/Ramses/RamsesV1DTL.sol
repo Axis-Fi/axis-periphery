@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 
 // Callbacks
 import {BaseDirectToLiquidity} from "../BaseDTL.sol";
@@ -24,6 +25,8 @@ import {IRamsesV1Router} from "./lib/IRamsesV1Router.sol";
 /// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
 ///             Transfers are performed within the same function that requires the balance.
 contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
+    using SafeTransferLib for ERC20;
+
     // ========== STRUCTS ========== //
 
     /// @notice     Parameters for the onCreate callback
@@ -54,6 +57,9 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
 
     /// @notice     Records whether a pool should be stable or volatile
     mapping(uint96 => bool) public lotIdToStable;
+
+    /// @notice     Mapping of lot ID to pool token
+    mapping(uint96 => address) public lotIdToPoolToken;
 
     // ========== CONSTRUCTOR ========== //
 
@@ -113,7 +119,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         address baseToken_,
         uint256 baseTokenAmount_,
         bytes memory callbackData_
-    ) internal virtual override returns (ERC20 poolToken) {
+    ) internal virtual override {
         // Decode the callback data
         RamsesV1OnSettleParams memory params = abi.decode(callbackData_, (RamsesV1OnSettleParams));
 
@@ -152,6 +158,38 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         ERC20(quoteToken_).approve(address(router), 0);
         ERC20(baseToken_).approve(address(router), 0);
 
-        return ERC20(pairAddress);
+        // Store the pool token for later
+        lotIdToPoolToken[lotId_] = pairAddress;
+    }
+
+    /// @inheritdoc BaseDirectToLiquidity
+    /// @dev        This function implements the following:
+    ///             - If LinearVesting is enabled, mints derivative tokens
+    ///             - Otherwise, transfers the pool tokens to the recipient
+    function _transferPoolToken(uint96 lotId_) internal virtual override {
+        address poolTokenAddress = lotIdToPoolToken[lotId_];
+        if (poolTokenAddress == address(0)) {
+            revert Callback_PoolTokenNotFound();
+        }
+
+        ERC20 poolToken = ERC20(poolTokenAddress);
+        uint256 poolTokenQuantity = poolToken.balanceOf(address(this));
+        DTLConfiguration memory config = lotConfiguration[lotId_];
+
+        // If vesting is enabled, create the vesting tokens
+        if (address(config.linearVestingModule) != address(0)) {
+            _mintVestingTokens(
+                poolToken,
+                poolTokenQuantity,
+                config.linearVestingModule,
+                config.recipient,
+                config.vestingStart,
+                config.vestingExpiry
+            );
+        }
+        // Otherwise, send the LP tokens to the seller
+        else {
+            poolToken.safeTransfer(config.recipient, poolTokenQuantity);
+        }
     }
 }
