@@ -22,7 +22,7 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 
 /// @title      UniswapV3DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V3 pool
-///             in order to create liquidity immediately.
+///             in order to create full-range liquidity immediately.
 ///
 ///             The Uniswap V3 position is tokenised as an ERC-20 using [G-UNI](https://github.com/gelatodigital/g-uni-v1-core).
 ///

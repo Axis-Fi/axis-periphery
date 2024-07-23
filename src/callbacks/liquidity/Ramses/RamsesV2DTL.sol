@@ -16,6 +16,18 @@ import {IRamsesV2PositionManager} from "./lib/IRamsesV2PositionManager.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
+/// @title      RamsesV2DirectToLiquidity
+/// @notice     This Callback contract deposits the proceeds from a batch auction into a Ramses V2 pool
+///             in order to create full-range liquidity immediately.
+///
+///             The LP tokens are transferred to `DTLConfiguration.recipient`, which must be an EOA or a contract that can receive ERC721 tokens.
+///
+///             An important risk to consider: if the auction's base token is available and liquid, a third-party
+///             could front-run the auction by creating the pool before the auction ends. This would allow them to
+///             manipulate the price of the pool and potentially profit from the eventual deposit of the auction proceeds.
+///
+/// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
+///             Transfers are performed within the same function that requires the balance.
 contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     // ========== ERRORS ========== //
 
