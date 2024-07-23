@@ -12,7 +12,6 @@ import {
     fromKeycode as fromAxisKeycode
 } from "@axis-core-1.0.0/modules/Keycode.sol";
 import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
-import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
 
 // Baseline dependencies
 import {
@@ -22,15 +21,12 @@ import {
     toKeycode as toBaselineKeycode,
     Permissions as BaselinePermissions
 } from "./lib/Kernel.sol";
-import {Range, IBPOOLv1} from "./lib/IBPOOL.sol";
+import {IBPOOLv1} from "./lib/IBPOOL.sol";
 import {CreditAccount, ICREDTv1} from "./lib/ICREDT.sol";
-import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 // Other libraries
 import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
-// import {Transfer, ERC20} from "@axis-core-1.0.0/lib/Transfer.sol";
-// import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
 /// @notice     Axis auction callback to sell credit positions in a Baseline token before it is launched
 /// @dev        This contract combines Baseline's InitializeProtocol Policy and Axis' Callback functionality to build an Axis auction callback specific to Baseline V2 token launches
@@ -48,7 +44,7 @@ contract BaselineCreditLaunch is BaseCallback, Policy, Owned, ERC20 {
 
     /// @notice The auction format is not supported
     error Callback_Params_UnsupportedAuctionFormat();
-    
+
     /// @notice The user has an insufficient balance to claim their credit position
     error Callback_InsufficientBalance();
 
@@ -81,12 +77,13 @@ contract BaselineCreditLaunch is BaseCallback, Policy, Owned, ERC20 {
     // ========== STATE VARIABLES ========== //
 
     // Baseline Modules
-    // solhint-disable-next-line var-name-mixedcase
+    // solhint-disable var-name-mixedcase
     IBPOOLv1 public BPOOL;
     ICREDTv1 public CREDT;
 
     // Pool variables
     ERC20 public immutable RESERVE;
+    // solhint-enable var-name-mixedcase
     ERC20 public bAsset;
 
     // Axis Auction Variables
@@ -450,7 +447,7 @@ contract BaselineCreditLaunch is BaseCallback, Policy, Owned, ERC20 {
         //// Step 3: Send proceeds to recipient ////
         RESERVE.transfer(recipient, proceeds_);
     }
-    
+
     // ========== CREDIT CLAIM ========== //
 
     /// @notice Allows a token holder to claim their credit position from this contract
@@ -474,10 +471,7 @@ contract BaselineCreditLaunch is BaseCallback, Policy, Owned, ERC20 {
 
         // This contract receives "collateral" bAssets on this call
         CREDT.updateCreditAccount(
-            address(this),
-            account.collateral - collateral,
-            account.credit - credit,
-            account.expiry
+            address(this), account.collateral - collateral, account.credit - credit, account.expiry
         );
 
         // Approve the credit account to transfer out the collateral
@@ -490,13 +484,9 @@ contract BaselineCreditLaunch is BaseCallback, Policy, Owned, ERC20 {
         uint256 newExpiry = account.expiry > expiry ? account.expiry : expiry;
 
         CREDT.updateCreditAccount(
-            msg.sender,
-            account.collateral + collateral,
-            account.credit + credit,
-            newExpiry
+            msg.sender, account.collateral + collateral, account.credit + credit, newExpiry
         );
     }
-
 
     // ========== OWNER FUNCTIONS ========== //
 
