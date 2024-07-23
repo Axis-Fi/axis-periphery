@@ -42,7 +42,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         vm.expectRevert(err);
     }
 
-    function _assertBaseTokenBalances() internal {
+    function _assertBaseTokenBalances() internal view {
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller balance");
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "dtl balance");

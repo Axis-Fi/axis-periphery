@@ -29,7 +29,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         vm.expectRevert(err);
     }
 
-    function _assertBaseTokenBalances() internal {
+    function _assertBaseTokenBalances() internal view {
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller balance");
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "dtl balance");
@@ -130,7 +130,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         return roundedTick;
     }
 
-    function _assertTicks(int24 fixedPriceTick_) internal {
+    function _assertTicks(int24 fixedPriceTick_) internal view {
         assertEq(_baseToken.activeTick(), fixedPriceTick_, "active tick");
         console2.log("Active tick: ", _baseToken.activeTick());
 

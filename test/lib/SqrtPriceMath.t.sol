@@ -28,12 +28,12 @@ contract SqrtPriceMathTest is Test {
     // [X] when tokenA decimals is less than tokenB decimals
     //  [X] it calculates the correct sqrtPriceX96
 
-    function test_whenTokenAIs_TOKEN0() public {
+    function test_whenTokenAIs_TOKEN0() public pure {
         uint160 sqrtPriceX96 = SqrtPriceMath.getSqrtPriceX96(_TOKEN0, _TOKEN1, _AMOUNT0, _AMOUNT1);
         assertEq(sqrtPriceX96, _SQRTPRICEX96, "SqrtPriceX96");
     }
 
-    function test_whenTokenAIs_TOKEN1() public {
+    function test_whenTokenAIs_TOKEN1() public pure {
         uint160 sqrtPriceX96 = SqrtPriceMath.getSqrtPriceX96(_TOKEN1, _TOKEN0, _AMOUNT1, _AMOUNT0);
         assertEq(sqrtPriceX96, _SQRTPRICEX96, "SqrtPriceX96");
     }

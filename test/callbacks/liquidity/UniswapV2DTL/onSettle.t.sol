@@ -54,7 +54,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     // ========== Assertions ========== //
 
-    function _assertLpTokenBalance() internal {
+    function _assertLpTokenBalance() internal view {
         // Get the pools deployed by the DTL callback
         IUniswapV2Pair pool = _getUniswapV2Pool();
 
@@ -122,15 +122,15 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         );
     }
 
-    function _assertQuoteTokenBalance() internal {
+    function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
     }
 
-    function _assertBaseTokenBalance() internal {
+    function _assertBaseTokenBalance() internal view {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "DTL: base token balance");
     }
 
-    function _assertApprovals() internal {
+    function _assertApprovals() internal view {
         // Ensure there are no dangling approvals
         assertEq(
             _quoteToken.allowance(_dtlAddress, address(_uniV2Router)),
