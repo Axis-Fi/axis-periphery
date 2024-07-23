@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 
 // Uniswap
 import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
@@ -24,9 +25,11 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 /// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
 ///             Transfers are performed within the same function that requires the balance.
 contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
+    using SafeTransferLib for ERC20;
+
     // ========== STRUCTS ========== //
 
-    /// @notice     Parameters for the onClaimProceeds callback
+    /// @notice     Parameters for the onSettle callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
     /// @param      maxSlippage             The maximum slippage allowed when adding liquidity (in terms of `ONE_HUNDRED_PERCENT`)
@@ -43,6 +46,10 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     /// @notice     The Uniswap V2 router
     /// @dev        This contract is used to add liquidity to Uniswap V2 pools
     IUniswapV2Router02 public uniV2Router;
+
+    /// @notice     Mapping of lot ID to pool token
+    /// @dev        This is used to track the pool token for each lot
+    mapping(uint96 lotId => address poolToken) public lotIdToPoolToken;
 
     // ========== CONSTRUCTOR ========== //
 
@@ -90,13 +97,13 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Creates the pool if necessary
     ///             - Deposits the tokens into the pool
     function _mintAndDeposit(
-        uint96,
+        uint96 lotId_,
         address quoteToken_,
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_,
         bytes memory callbackData_
-    ) internal virtual override returns (ERC20 poolToken) {
+    ) internal virtual override {
         // Decode the callback data
         OnSettleParams memory params = abi.decode(callbackData_, (OnSettleParams));
 
@@ -132,6 +139,38 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         ERC20(quoteToken_).approve(address(uniV2Router), 0);
         ERC20(baseToken_).approve(address(uniV2Router), 0);
 
-        return ERC20(pairAddress);
+        // Store the pool token for later
+        lotIdToPoolToken[lotId_] = pairAddress;
+    }
+
+    /// @inheritdoc BaseDirectToLiquidity
+    /// @dev        This function implements the following:
+    ///             - If LinearVesting is enabled, mints derivative tokens
+    ///             - Otherwise, transfers the pool tokens to the recipient
+    function _transferPoolToken(uint96 lotId_) internal virtual override {
+        address poolTokenAddress = lotIdToPoolToken[lotId_];
+        if (poolTokenAddress == address(0)) {
+            revert Callback_PoolTokenNotFound();
+        }
+
+        ERC20 poolToken = ERC20(poolTokenAddress);
+        uint256 poolTokenQuantity = poolToken.balanceOf(address(this));
+        DTLConfiguration memory config = lotConfiguration[lotId_];
+
+        // If vesting is enabled, create the vesting tokens
+        if (address(config.linearVestingModule) != address(0)) {
+            _mintVestingTokens(
+                poolToken,
+                poolTokenQuantity,
+                config.linearVestingModule,
+                config.recipient,
+                config.vestingStart,
+                config.vestingExpiry
+            );
+        }
+        // Otherwise, send the LP tokens to the seller
+        else {
+            poolToken.safeTransfer(config.recipient, poolTokenQuantity);
+        }
     }
 }
