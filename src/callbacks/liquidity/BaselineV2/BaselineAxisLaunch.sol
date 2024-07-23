@@ -431,9 +431,11 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Validate the lot ID
         if (lotId_ != lotId) revert Callback_InvalidParams();
 
-        // Require that the curator fee in the Auction House is zero
-        // We do this to not dilute the buyer's backing (and therefore the price that the Baseline pool is initialized at)
-        if (curatorFee_ > 0) revert Callback_InvalidParams();
+        // Mint tokens for curator fee if it's not zero
+        if (curatorFee_ > 0) {
+            initialCirculatingSupply += curatorFee_;
+            BPOOL.mint(msg.sender, curatorFee_);
+        }
     }
 
     /// @inheritdoc BaseCallback
