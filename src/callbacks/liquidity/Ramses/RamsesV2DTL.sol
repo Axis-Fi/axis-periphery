@@ -138,27 +138,9 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Mint the position and add liquidity
         {
-            IRamsesV2PositionManager.MintParams memory mintParams;
-            {
-                int24 tickSpacing = ramsesV2Factory.feeAmountTickSpacing(poolFee);
-                uint256 amount0 = quoteTokenIsToken0 ? quoteTokenAmount_ : baseTokenAmount_;
-                uint256 amount1 = quoteTokenIsToken0 ? baseTokenAmount_ : quoteTokenAmount_;
-
-                mintParams = IRamsesV2PositionManager.MintParams({
-                    token0: quoteTokenIsToken0 ? quoteToken_ : baseToken_,
-                    token1: quoteTokenIsToken0 ? baseToken_ : quoteToken_,
-                    fee: poolFee,
-                    tickLower: (TickMath.MIN_TICK / tickSpacing) * tickSpacing,
-                    tickUpper: (TickMath.MAX_TICK / tickSpacing) * tickSpacing,
-                    amount0Desired: amount0,
-                    amount1Desired: amount1,
-                    amount0Min: _getAmountWithSlippage(amount0, params.maxSlippage),
-                    amount1Min: _getAmountWithSlippage(amount1, params.maxSlippage),
-                    recipient: lotConfiguration[lotId_].recipient, // Transfer directly to the recipient. The position manager will check if it can receive ERC721 tokens.
-                    deadline: block.timestamp,
-                    veRamTokenId: params.veRamTokenId
-                });
-            }
+            IRamsesV2PositionManager.MintParams memory mintParams = _getMintParams(
+                lotId_, quoteToken_, quoteTokenAmount_, baseToken_, baseTokenAmount_, params
+            );
 
             // Approve spending
             ERC20(quoteToken_).approve(address(ramsesV2PositionManager), quoteTokenAmount_);
@@ -202,5 +184,44 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
                 IRamsesV2Pool(pool).initialize(sqrtPriceX96);
             }
         }
+    }
+
+    function _getMintParams(
+        uint96 lotId_,
+        address quoteToken_,
+        uint256 quoteTokenAmount_,
+        address baseToken_,
+        uint256 baseTokenAmount_,
+        OnSettleParams memory onSettleParams_
+    ) internal view returns (IRamsesV2PositionManager.MintParams memory) {
+        // Extract the pool fee from the implParams
+        uint24 poolFee;
+        int24 tickSpacing;
+        {
+            poolFee = abi.decode(lotConfiguration[lotId_].implParams, (uint24));
+            tickSpacing = ramsesV2Factory.feeAmountTickSpacing(poolFee);
+        }
+
+        // Determine the ordering of tokens
+        bool quoteTokenIsToken0 = quoteToken_ < baseToken_;
+
+        // Calculate the minimum amount out for each token
+        uint256 amount0 = quoteTokenIsToken0 ? quoteTokenAmount_ : baseTokenAmount_;
+        uint256 amount1 = quoteTokenIsToken0 ? baseTokenAmount_ : quoteTokenAmount_;
+
+        return IRamsesV2PositionManager.MintParams({
+            token0: quoteTokenIsToken0 ? quoteToken_ : baseToken_,
+            token1: quoteTokenIsToken0 ? baseToken_ : quoteToken_,
+            fee: poolFee,
+            tickLower: (TickMath.MIN_TICK / tickSpacing) * tickSpacing,
+            tickUpper: (TickMath.MAX_TICK / tickSpacing) * tickSpacing,
+            amount0Desired: amount0,
+            amount1Desired: amount1,
+            amount0Min: _getAmountWithSlippage(amount0, onSettleParams_.maxSlippage),
+            amount1Min: _getAmountWithSlippage(amount1, onSettleParams_.maxSlippage),
+            recipient: lotConfiguration[lotId_].recipient,
+            deadline: block.timestamp,
+            veRamTokenId: onSettleParams_.veRamTokenId
+        });
     }
 }
