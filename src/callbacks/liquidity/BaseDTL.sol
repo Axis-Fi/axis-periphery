@@ -42,6 +42,9 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
     error Callback_PoolTokenNotFound();
 
+    /// @notice The auction lot has already been completed
+    error Callback_AlreadyComplete();
+
     // ========== STRUCTS ========== //
 
     /// @notice     Configuration for the DTL callback
@@ -288,6 +291,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot is already complete
     ///
     /// @param      lotId_          The lot ID
     /// @param      proceeds_       The proceeds from the auction
@@ -299,7 +303,16 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         uint256 refund_,
         bytes calldata callbackData_
     ) internal virtual override {
-        DTLConfiguration memory config = lotConfiguration[lotId_];
+        DTLConfiguration storage config = lotConfiguration[lotId_];
+
+        // Check that the lot is active
+        if (!config.active) {
+            revert Callback_AlreadyComplete();
+        }
+
+        // Mark the lot as inactive
+        lotConfiguration[lotId_].active = false;
+
         address seller;
         address baseToken;
         address quoteToken;
