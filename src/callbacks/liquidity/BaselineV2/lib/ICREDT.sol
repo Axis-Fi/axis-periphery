@@ -58,7 +58,8 @@ interface ICREDTv1 {
         address _user,
         uint256 _newCollateral,
         uint256 _newCredit,
-        uint256 _newInterest,
         uint256 _newExpiry
     ) external;
+
+    function defaultOutstanding() external;
 }
