@@ -22,7 +22,7 @@ import {
     toKeycode as toBaselineKeycode,
     Permissions as BaselinePermissions
 } from "./lib/Kernel.sol";
-import {Range, IBPOOLv1} from "./lib/IBPOOL.sol";
+import {Position, Range, IBPOOLv1} from "./lib/IBPOOL.sol";
 import {ICREDTv1} from "./lib/ICREDT.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
@@ -70,6 +70,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The required funds were not sent to this callbacks contract
     error Callback_MissingFunds();
 
+    /// @notice The initialization is invalid
+    error Callback_InvalidInitialization();
+
     /// @notice The BPOOL reserve token does not match the configured `RESERVE` address
     error InvalidModule();
 
@@ -110,10 +113,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ERC20 public immutable RESERVE;
     // solhint-enable var-name-mixedcase
     ERC20 public bAsset;
-
-    // Accounting
-    uint256 public initialCirculatingSupply;
-    uint256 public reserveBalance;
 
     // Axis Auction Variables
 
@@ -365,7 +364,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Mint the capacity of baseline tokens to the auction house to prefund the auction
         BPOOL.mint(msg.sender, capacity_);
-        initialCirculatingSupply += capacity_;
     }
 
     /// @notice Override this function to implement allowlist functionality
@@ -407,7 +405,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         auctionComplete = true;
 
         // Send tokens to BPOOL and then burn
-        initialCirculatingSupply -= refund_;
         Transfer.transfer(bAsset, address(BPOOL), refund_, false);
         BPOOL.burnAllBAssetsInContract();
     }
@@ -433,7 +430,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Mint tokens for curator fee if it's not zero
         if (curatorFee_ > 0) {
-            initialCirculatingSupply += curatorFee_;
             BPOOL.mint(msg.sender, curatorFee_);
         }
     }
@@ -510,9 +506,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         //// Step 1: Burn any refunded bAsset tokens ////
 
-        // Subtract refund from initial supply
-        initialCirculatingSupply -= refund_;
-
         // Burn any refunded bAsset tokens that were sent from the auction house
         Transfer.transfer(bAsset, address(BPOOL), refund_, false);
         BPOOL.burnAllBAssetsInContract();
@@ -543,14 +536,26 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         Transfer.transfer(RESERVE, recipient, RESERVE.balanceOf(address(this)), false);
 
         //// Step 5: Verify Solvency ////
-        // TODO update solvency check to consider credit
-        uint256 totalCapacity = BPOOL.getPosition(Range.FLOOR).capacity
-            + BPOOL.getPosition(Range.ANCHOR).capacity + BPOOL.getPosition(Range.DISCOVERY).capacity;
+        {
+            uint256 totalSpotSupply = bAsset.totalSupply();
+            uint256 totalCredit = CREDT.totalCreditIssued();
+            uint256 totalCollatSupply = CREDT.totalCollateralized();
 
-        // Note: if this reverts, then the auction will not be able to be settled
-        // and users will be able to claim refunds from the auction house
-        if (totalCapacity < initialCirculatingSupply) revert Insolvent();
+            Position memory floor = BPOOL.getPosition(Range.FLOOR);
 
+            uint256 debtCapacity = BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, totalCredit);
+
+            uint256 totalCapacity = debtCapacity
+                + BPOOL.getPosition(Range.FLOOR).capacity
+                + BPOOL.getPosition(Range.ANCHOR).capacity
+                + BPOOL.getPosition(Range.DISCOVERY).capacity;
+
+            // verify the liquidity can support the intended supply 
+            // and that there is no significant initial surplus
+            uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
+            if (capacityRatio < 100e16 || capacityRatio > 102e16) revert Callback_InvalidInitialization();
+        }
+        
         // Emit an event
         {
             (int24 floorTickLower, ) = BPOOL.getTicks(Range.FLOOR);
