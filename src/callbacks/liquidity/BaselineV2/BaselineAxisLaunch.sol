@@ -12,7 +12,6 @@ import {
     fromKeycode as fromAxisKeycode
 } from "@axis-core-1.0.0/modules/Keycode.sol";
 import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
-import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
 
 // Baseline dependencies
 import {
@@ -24,13 +23,11 @@ import {
 } from "./lib/Kernel.sol";
 import {Position, Range, IBPOOLv1} from "./lib/IBPOOL.sol";
 import {ICREDTv1} from "./lib/ICREDT.sol";
-import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 // Other libraries
 import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
 import {Transfer} from "@axis-core-1.0.0/lib/Transfer.sol";
-import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
 /// @notice     Axis auction callback to initialize a Baseline token using proceeds from a batch auction.
 /// @dev        This contract combines Baseline's InitializeProtocol Policy and Axis' Callback functionality to build an Axis auction callback specific to Baseline V2 token launches
@@ -81,7 +78,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     // ========== EVENTS ========== //
 
-    event LiquidityDeployed(int24 floorTickLower, int24 anchorTickUpper, uint128 floorLiquidity, uint128 anchorLiquidity);
+    event LiquidityDeployed(
+        int24 floorTickLower, int24 anchorTickUpper, uint128 floorLiquidity, uint128 anchorLiquidity
+    );
 
     // ========== DATA STRUCTURES ========== //
 
@@ -343,7 +342,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
             // Get the tick spacing from the pool
             int24 tickSpacing = BPOOL.TICK_SPACING();
-            
+
             // Anchor range lower is the anchor tick width below the anchor range upper
             int24 anchorRangeLower = anchorRangeUpper - cbData.anchorTickWidth * tickSpacing;
 
@@ -543,24 +542,30 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
             Position memory floor = BPOOL.getPosition(Range.FLOOR);
 
-            uint256 debtCapacity = BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, totalCredit);
+            uint256 debtCapacity =
+                BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, totalCredit);
 
-            uint256 totalCapacity = debtCapacity
-                + BPOOL.getPosition(Range.FLOOR).capacity
-                + BPOOL.getPosition(Range.ANCHOR).capacity
-                + BPOOL.getPosition(Range.DISCOVERY).capacity;
+            uint256 totalCapacity = debtCapacity + BPOOL.getPosition(Range.FLOOR).capacity
+                + BPOOL.getPosition(Range.ANCHOR).capacity + BPOOL.getPosition(Range.DISCOVERY).capacity;
 
-            // verify the liquidity can support the intended supply 
+            // verify the liquidity can support the intended supply
             // and that there is no significant initial surplus
             uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
-            if (capacityRatio < 100e16 || capacityRatio > 102e16) revert Callback_InvalidInitialization();
+            if (capacityRatio < 100e16 || capacityRatio > 102e16) {
+                revert Callback_InvalidInitialization();
+            }
         }
-        
+
         // Emit an event
         {
-            (int24 floorTickLower, ) = BPOOL.getTicks(Range.FLOOR);
+            (int24 floorTickLower,) = BPOOL.getTicks(Range.FLOOR);
             (, int24 anchorTickUpper) = BPOOL.getTicks(Range.ANCHOR);
-            emit LiquidityDeployed(floorTickLower, anchorTickUpper, BPOOL.getLiquidity(Range.FLOOR), BPOOL.getLiquidity(Range.ANCHOR));
+            emit LiquidityDeployed(
+                floorTickLower,
+                anchorTickUpper,
+                BPOOL.getLiquidity(Range.FLOOR),
+                BPOOL.getLiquidity(Range.ANCHOR)
+            );
         }
     }
 
