@@ -121,7 +121,7 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         _onCancel();
 
         // Check the circulating supply is updated
-        // assertEq(_dtl.initialCirculatingSupply(), 0, "circulating supply");
+        assertEq(_baseToken.totalSupply(), 0, "circulating supply");
 
         // Check the auction is marked as completed
         assertEq(_dtl.auctionComplete(), true, "auction completed");

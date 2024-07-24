@@ -122,13 +122,13 @@ contract MockBPOOL is IBPOOLv1, ERC20 {
     function getBaselineValue() external view override returns (uint256) {}
 
     function getActiveTS() public view returns (int24) {
-        (, int24 tick,,,,,) = pool.slot0();
+        (, int24 activeTick_,,,,,) = pool.slot0();
 
         // Round down to the nearest active tick spacing
-        tick = ((tick / TICK_SPACING) * TICK_SPACING);
+        int24 tick = ((activeTick_ / TICK_SPACING) * TICK_SPACING);
 
         // Properly handle negative numbers and edge cases
-        if (tick >= 0 || tick % TICK_SPACING == 0) {
+        if (activeTick_ >= 0 || activeTick_ % TICK_SPACING == 0) {
             tick += TICK_SPACING;
         }
 

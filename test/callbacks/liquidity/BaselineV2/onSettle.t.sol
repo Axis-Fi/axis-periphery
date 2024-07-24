@@ -163,9 +163,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(address(_baseToken.pool())), 0, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
 
         // Circulating supply
-        // assertEq(
-        //     _dtl.initialCirculatingSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply"
-        // );
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply");
 
         // Auction marked as complete
         assertEq(_dtl.auctionComplete(), true, "auction completed");
@@ -225,9 +223,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(address(_baseToken.pool())), 0, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
 
         // Circulating supply
-        // assertEq(
-        //     _dtl.initialCirculatingSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply"
-        // );
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply");
 
         // Auction marked as complete
         assertEq(_dtl.auctionComplete(), true, "auction completed");
@@ -287,9 +283,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(address(_baseToken.pool())), 0, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
 
         // Circulating supply
-        // assertEq(
-        //     _dtl.initialCirculatingSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply"
-        // );
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply");
 
         // Auction marked as complete
         assertEq(_dtl.auctionComplete(), true, "auction completed");
@@ -349,9 +343,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(address(_baseToken.pool())), 0, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
 
         // Circulating supply
-        // assertEq(
-        //     _dtl.initialCirculatingSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply"
-        // );
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply");
 
         // Auction marked as complete
         assertEq(_dtl.auctionComplete(), true, "auction completed");

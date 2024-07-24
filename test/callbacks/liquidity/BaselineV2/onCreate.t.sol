@@ -29,7 +29,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         vm.expectRevert(err);
     }
 
-    function _assertBaseTokenBalances() internal {
+    function _assertBaseTokenBalances() internal view {
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller balance");
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "dtl balance");
@@ -118,36 +118,38 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         revert("Unsupported decimal permutation");
     }
 
-    function _roundToTickSpacingUp(int24 tick_) internal view returns (int24) {
+    function _roundToTickSpacingUp(int24 activeTick_) internal view returns (int24) {
         // Rounds down
-        int24 roundedTick = (tick_ / _tickSpacing) * _tickSpacing;
+        int24 roundedTick = (activeTick_ / _tickSpacing) * _tickSpacing;
 
         // Add a tick spacing to round up
-        if (tick_ > roundedTick) {
+        // This mimics BPOOL.getActiveTS()
+        if (activeTick_ >= 0 || activeTick_ % _tickSpacing == 0) {
             roundedTick += _tickSpacing;
         }
 
         return roundedTick;
     }
 
-    function _assertTicks(int24 fixedPriceTick_) internal {
+    function _assertTicks(int24 fixedPriceTick_) internal view {
         assertEq(_baseToken.activeTick(), fixedPriceTick_, "active tick");
         console2.log("Active tick: ", _baseToken.activeTick());
+        console2.log("Tick spacing: ", _tickSpacing);
 
         // Calculate the active tick with rounding
         int24 anchorTickUpper = _roundToTickSpacingUp(fixedPriceTick_);
         int24 anchorTickLower = anchorTickUpper - _createData.anchorTickWidth * _tickSpacing;
-        console2.log("Anchor tick lower: ", anchorTickLower);
-        console2.log("Anchor tick upper: ", anchorTickUpper);
-
-        // Active tick should be within the anchor range
-        assertGt(fixedPriceTick_, anchorTickLower, "active tick > anchor tick lower");
-        assertLe(fixedPriceTick_, anchorTickUpper, "active tick <= anchor tick upper");
+        console2.log("Calculated anchor tick lower: ", anchorTickLower);
+        console2.log("Calculated anchor tick upper: ", anchorTickUpper);
 
         // Anchor range should be the width of anchorTickWidth * tick spacing
         (int24 anchorTickLower_, int24 anchorTickUpper_) = _baseToken.getTicks(Range.ANCHOR);
         assertEq(anchorTickLower_, anchorTickLower, "anchor tick lower");
         assertEq(anchorTickUpper_, anchorTickUpper, "anchor tick upper");
+
+        // Active tick should be within the anchor range
+        assertGt(fixedPriceTick_, anchorTickLower_, "active tick > anchor tick lower");
+        assertLe(fixedPriceTick_, anchorTickUpper_, "active tick <= anchor tick upper");
 
         // Floor range should be the width of the tick spacing and below the anchor range
         (int24 floorTickLower, int24 floorTickUpper) = _baseToken.getTicks(Range.FLOOR);
@@ -165,6 +167,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     }
 
     // ============ Tests ============ //
+
+    // TODO ordering of tokens
 
     // [X] when the callback data is incorrect
     //  [X] it reverts
@@ -459,7 +463,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -516,7 +520,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
 
         // Calculation for the maximum price
         // By default, quote token is token0
@@ -551,7 +555,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         // By default, quote token is token0
@@ -615,7 +619,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -640,11 +644,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        // assertEq(
-        //     _dtl.initialCirculatingSupply(),
-        //     _scaleBaseTokenAmount(_LOT_CAPACITY),
-        //     "circulating supply"
-        // );
+        assertEq(
+            _baseToken.totalSupply(), _scaleBaseTokenAmount(_LOT_CAPACITY), "circulating supply"
+        );
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -669,11 +671,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        // assertEq(
-        //     _dtl.initialCirculatingSupply(),
-        //     _scaleBaseTokenAmount(_LOT_CAPACITY),
-        //     "circulating supply"
-        // );
+        assertEq(
+            _baseToken.totalSupply(), _scaleBaseTokenAmount(_LOT_CAPACITY), "circulating supply"
+        );
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -702,7 +702,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
 
         int24 fixedPriceTick = 0;
 

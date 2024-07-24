@@ -7,7 +7,8 @@ import {console2} from "@forge-std-1.9.1/console2.sol";
 import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
 import {WithSalts} from "../../../lib/WithSalts.sol";
 import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
-import {MockBPOOL} from "../../../callbacks/liquidity/BaselineV2/mocks/MockBPOOL.sol";
+import {MockBPOOL} from "./mocks/MockBPOOL.sol";
+import {MockCREDT} from "./mocks/MockCREDT.sol";
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
 import {UniswapV3Factory} from "../../../lib/uniswap-v3/UniswapV3Factory.sol";
@@ -78,6 +79,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
     MockERC20 internal _quoteToken;
     MockBPOOL internal _baseToken;
+    MockCREDT internal _creditModule;
 
     // Inputs
     IFixedPriceBatch.AuctionDataParams internal _fpbParams = IFixedPriceBatch.AuctionDataParams({
@@ -144,6 +146,8 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         _tickSpacing = _uniV3Factory.feeAmountTickSpacing(_feeTier);
 
+        _creditModule = new MockCREDT();
+
         // Base token is created in the givenBPoolIsCreated modifier
 
         // Calculate the initial tick
@@ -176,7 +180,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         );
 
         // Create a new mock BPOOL with the given fee tier
-        _baseToken = new MockBPOOL(
+        _baseToken = new MockBPOOL{salt: baseTokenSalt}(
             "Base Token",
             "BT",
             _baseTokenDecimals,
@@ -185,6 +189,13 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
             _feeTier,
             _poolInitialTick
         );
+
+        // Assert that the token ordering is correct
+        if (_isBaseTokenAddressLower) {
+            require(address(_baseToken) < _BASELINE_QUOTE_TOKEN, "Base token > quote token");
+        } else {
+            require(address(_baseToken) > _BASELINE_QUOTE_TOKEN, "Base token < quote token");
+        }
 
         // Update the mock
         _mockBaselineGetModuleForKeycode();
@@ -365,6 +376,14 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
                 bytes4(keccak256("getModuleForKeycode(bytes5)")), toBaselineKeycode("BPOOL")
             ),
             abi.encode(address(_baseToken))
+        );
+
+        vm.mockCall(
+            _BASELINE_KERNEL,
+            abi.encodeWithSelector(
+                bytes4(keccak256("getModuleForKeycode(bytes5)")), toBaselineKeycode("CREDT")
+            ),
+            abi.encode(address(_creditModule))
         );
     }
 }
