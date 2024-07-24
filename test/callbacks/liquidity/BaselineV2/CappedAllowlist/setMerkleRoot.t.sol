@@ -68,9 +68,15 @@ contract BaselineCappedAllowlistSetMerkleRootTest is BaselineCappedAllowlistTest
         givenAllowlistParams(_MERKLE_ROOT, _BUYER_LIMIT)
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenAddressHasBaseTokenBalance(_dtlAddress, _REFUND_AMOUNT)
-        givenOnSettle
     {
+        // Transfer refund from auction house to the callback
+        // We transfer instead of minting to not affect the supply
+        vm.prank(address(_auctionHouse));
+        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
+
+        // Perform onSettle callback
+        _onSettle();
+
         // Expect revert
         bytes memory err = abi.encodeWithSelector(BALwithAllowlist.Callback_InvalidState.selector);
         vm.expectRevert(err);

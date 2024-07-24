@@ -314,13 +314,10 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onSettle() internal {
-        // _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        vm.startPrank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _scaleBaseTokenAmount(_REFUND_AMOUNT));
+        vm.prank(address(_auctionHouse));
         _dtl.onSettle(
             _lotId, _PROCEEDS_AMOUNT, _scaleBaseTokenAmount(_REFUND_AMOUNT), abi.encode("")
         );
-        vm.stopPrank();
     }
 
     modifier givenOnSettle() {

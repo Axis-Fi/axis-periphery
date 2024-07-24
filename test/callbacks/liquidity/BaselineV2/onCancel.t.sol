@@ -82,9 +82,15 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenAddressHasBaseTokenBalance(_dtlAddress, _REFUND_AMOUNT)
-        givenOnSettle
     {
+        // Transfer refund from auction house to the callback
+        // We transfer instead of minting to not affect the supply
+        vm.prank(address(_auctionHouse));
+        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
+
+        // Perform onSettle callback
+        _onSettle();
+
         // Expect revert
         bytes memory err =
             abi.encodeWithSelector(BaselineAxisLaunch.Callback_AlreadyComplete.selector);
@@ -115,8 +121,12 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenOnCreate
-        givenAddressHasBaseTokenBalance(_dtlAddress, _LOT_CAPACITY)
     {
+        // Transfer capacity from auction house back to the callback
+        // We transfer instead of minting to not affect the supply
+        vm.prank(address(_auctionHouse));
+        _baseToken.transfer(_dtlAddress, _LOT_CAPACITY);
+
         // Perform callback
         _onCancel();
 
