@@ -21,9 +21,9 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the caller is not the auction house
     //  [X] it reverts
-    // [X] when the curator fee is non-zero
-    //  [X] it reverts
-    // [X] it does nothing
+    // [X] when the curator fee is zero
+    //  [ ] it does nothing
+    // [ ] it mints the base token to the auction house
 
     function test_lotNotRegistered_reverts()
         public
