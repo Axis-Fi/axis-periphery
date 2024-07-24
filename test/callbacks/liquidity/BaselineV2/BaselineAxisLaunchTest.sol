@@ -86,11 +86,18 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     });
 
     BaselineAxisLaunch.CreateData internal _createData = BaselineAxisLaunch.CreateData({
+        recipient: _SELLER,
+        poolPercent: _ONE_HUNDRED_PERCENT,
         floorReservesPercent: _FLOOR_RESERVES_PERCENT,
         anchorTickWidth: _ANCHOR_TICK_WIDTH,
         discoveryTickWidth: _DISCOVERY_TICK_WIDTH,
         allowlistParams: abi.encode("")
     });
+
+    // TODO add new tests
+    // - recipient
+    // - pool percent
+    // - re-enable circulating supply checks
 
     function setUp() public {
         // Set reasonable timestamp

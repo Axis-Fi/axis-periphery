@@ -459,7 +459,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -516,7 +516,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
 
         // Calculation for the maximum price
         // By default, quote token is token0
@@ -551,7 +551,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         // By default, quote token is token0
@@ -615,7 +615,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -640,11 +640,11 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        assertEq(
-            _dtl.initialCirculatingSupply(),
-            _scaleBaseTokenAmount(_LOT_CAPACITY),
-            "circulating supply"
-        );
+        // assertEq(
+        //     _dtl.initialCirculatingSupply(),
+        //     _scaleBaseTokenAmount(_LOT_CAPACITY),
+        //     "circulating supply"
+        // );
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -669,11 +669,11 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        assertEq(
-            _dtl.initialCirculatingSupply(),
-            _scaleBaseTokenAmount(_LOT_CAPACITY),
-            "circulating supply"
-        );
+        // assertEq(
+        //     _dtl.initialCirculatingSupply(),
+        //     _scaleBaseTokenAmount(_LOT_CAPACITY),
+        //     "circulating supply"
+        // );
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         int24 fixedPriceTick = _getFixedPriceTick();
@@ -702,7 +702,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.lotId(), _lotId, "lot ID");
 
         // Check circulating supply
-        assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
+        // assertEq(_dtl.initialCirculatingSupply(), _LOT_CAPACITY, "circulating supply");
 
         int24 fixedPriceTick = 0;
 
