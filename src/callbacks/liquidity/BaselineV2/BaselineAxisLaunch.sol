@@ -512,8 +512,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         uint256 poolProceeds = proceeds_ * poolPercent / ONE_HUNDRED_PERCENT;
 
         // Approve spending of the reserve token
-        // There should not be any dangling approvals left
-        Transfer.approve(RESERVE, address(BPOOL), proceeds_);
+        Transfer.approve(RESERVE, address(BPOOL), poolProceeds);
 
         // Add the configured percentage of the proceeds to the Floor range
         uint256 floorReserves = poolProceeds * floorReservesPercent / ONE_HUNDRED_PERCENT;
@@ -521,6 +520,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Add the remainder of the proceeds to the Anchor range
         BPOOL.addReservesTo(Range.ANCHOR, poolProceeds - floorReserves);
+
+        // Ensure that there are no dangling approvals
+        Transfer.approve(RESERVE, address(BPOOL), 0);
 
         // Add proportional liquidity to the Discovery range.
         // Only the anchor range is used, otherwise the liquidity would be too thick.
