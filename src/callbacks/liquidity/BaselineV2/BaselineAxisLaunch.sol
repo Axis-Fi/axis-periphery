@@ -29,6 +29,8 @@ import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
 import {Transfer} from "@axis-core-1.0.0/lib/Transfer.sol";
 
+import {console2} from "@forge-std-1.9.1/console2.sol";
+
 /// @notice     Axis auction callback to initialize a Baseline token using proceeds from a batch auction.
 /// @dev        This contract combines Baseline's InitializeProtocol Policy and Axis' Callback functionality to build an Axis auction callback specific to Baseline V2 token launches
 ///             It is designed to be used with a single auction and Baseline pool
@@ -571,10 +573,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
             uint256 totalCapacity = debtCapacity + BPOOL.getPosition(Range.FLOOR).capacity
                 + BPOOL.getPosition(Range.ANCHOR).capacity + BPOOL.getPosition(Range.DISCOVERY).capacity;
+            console2.log("totalCapacity", totalCapacity);
+            console2.log("totalSpotSupply", totalSpotSupply);
+            console2.log("totalCollatSupply", totalCollatSupply);
 
             // verify the liquidity can support the intended supply
             // and that there is no significant initial surplus
             uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
+            console2.log("capacityRatio", capacityRatio);
             if (capacityRatio < 100e16 || capacityRatio > 102e16) {
                 revert Callback_InvalidInitialization();
             }
