@@ -22,8 +22,8 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
     // [X] when the caller is not the auction house
     //  [X] it reverts
     // [X] when the curator fee is zero
-    //  [ ] it does nothing
-    // [ ] it mints the base token to the auction house
+    //  [X] it does nothing
+    // [X] it mints the base token to the auction house
 
     function test_lotNotRegistered_reverts()
         public
@@ -54,21 +54,25 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         _dtl.onCurate(_lotId, 0, true, abi.encode(""));
     }
 
-    function test_curatorFeeNonZero_reverts(uint256 curatorFee_)
+    function test_curatorFeeNonZero(uint256 curatorFee_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenOnCreate
     {
-        uint256 curatorFee = bound(curatorFee_, 1, type(uint256).max);
-
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
-        vm.expectRevert(err);
+        uint256 curatorFee = bound(curatorFee_, 1, type(uint96).max);
+        uint256 balanceBefore = _baseToken.balanceOf(address(_auctionHouse));
 
         // Perform callback
         _performCallback(curatorFee);
+
+        // Assert that the base token was minted to the auction house
+        assertEq(
+            _baseToken.balanceOf(address(_auctionHouse)),
+            balanceBefore + curatorFee,
+            "base token: auction house"
+        );
     }
 
     function test_curatorFeeZero()
@@ -78,7 +82,14 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
     {
+        uint256 balanceBefore = _baseToken.balanceOf(address(_auctionHouse));
+
         // Perform callback
         _performCallback(0);
+
+        // Assert that the base token was minted to the auction house
+        assertEq(
+            _baseToken.balanceOf(address(_auctionHouse)), balanceBefore, "base token: auction house"
+        );
     }
 }

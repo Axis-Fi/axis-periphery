@@ -11,6 +11,9 @@ import {
     ITokenBalance
 } from "../../../../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
 
+// Baseline
+import {Actions as BaselineKernelActions} from "@baseline/Kernel.sol";
+
 contract BaselineTokenAllowlistTest is BaselineAxisLaunchTest {
     uint96 internal constant _TOKEN_THRESHOLD = 5e18;
     MockERC20 internal _token;
@@ -34,9 +37,9 @@ contract BaselineTokenAllowlistTest is BaselineAxisLaunchTest {
 
         _dtlAddress = address(_dtl);
 
-        // Call configureDependencies to set everything that's needed
-        _mockBaselineGetModuleForKeycode();
-        _dtl.configureDependencies();
+        // Install as a policy
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, _dtlAddress);
         _;
     }
 

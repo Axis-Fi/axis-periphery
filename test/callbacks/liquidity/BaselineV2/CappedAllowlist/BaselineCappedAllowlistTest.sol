@@ -8,6 +8,9 @@ import {BaselineAxisLaunchTest} from "../BaselineAxisLaunchTest.sol";
 import {BALwithCappedAllowlist} from
     "../../../../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 
+// Baseline
+import {Actions as BaselineKernelActions} from "@baseline/Kernel.sol";
+
 contract BaselineCappedAllowlistTest is BaselineAxisLaunchTest {
     uint256 internal constant _BUYER_LIMIT = 5e18;
 
@@ -30,9 +33,9 @@ contract BaselineCappedAllowlistTest is BaselineAxisLaunchTest {
 
         _dtlAddress = address(_dtl);
 
-        // Call configureDependencies to set everything that's needed
-        _mockBaselineGetModuleForKeycode();
-        _dtl.configureDependencies();
+        // Install as a policy
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, _dtlAddress);
         _;
     }
 

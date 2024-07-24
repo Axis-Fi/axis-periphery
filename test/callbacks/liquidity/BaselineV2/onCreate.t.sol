@@ -7,6 +7,7 @@ import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {Range} from "@baseline/modules/BPOOL.v1.sol";
+import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
@@ -205,7 +206,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     // [X] when the auction is not prefunded
     //  [X] it reverts
     // [X] when the auction price does not match the pool active tick
-    //  [X] it reverts
+    //  [X] it succeeds
     // [X] when the floorReservesPercent is 0-99%
     //  [X] it correctly records the allocation
     // [X] when the tick spacing is narrow
@@ -214,26 +215,24 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it correctly sets the active tick
     // [X] when the auction fixed price is very low
     //  [X] it correctly sets the active tick
-    // [X] when the base token address is lower than the quote token address
-    //  [X] it correctly sets the active tick
     // [X] when the quote token decimals are higher than the base token decimals
     //  [X] it correctly sets the active tick
     // [X] when the quote token decimals are lower than the base token decimals
     //  [X] it correctly sets the active tick
     // [X] when the anchorTickWidth is small
     //  [X] it correctly sets the anchor ticks to not overlap with the other ranges
-    // [ ] when the anchorTickWidth is greater than 10
-    //  [ ] it reverts
-    // [ ] when the activeTick and anchorTickWidth results in an overflow
-    //  [ ] it reverts
-    // [ ] when the activeTick and anchorTickWidth results in an underflow
-    //  [ ] it reverts
+    // [X] when the anchorTickWidth is greater than 10
+    //  [X] it reverts
+    // [X] when the activeTick and anchorTickWidth results in an overflow
+    //  [X] it reverts
+    // [X] when the activeTick and anchorTickWidth results in an underflow
+    //  [X] it reverts
     // [X] when the discoveryTickWidth is small
     //  [X] it correctly sets the discovery ticks to not overlap with the other ranges
-    // [ ] when the activeTick and discoveryTickWidth results in an overflow
-    //  [ ] it reverts
-    // [ ] when the activeTick and discoveryTickWidth results in an underflow
-    //  [ ] it reverts
+    // [X] when the activeTick and discoveryTickWidth results in an overflow
+    //  [X] it reverts
+    // [X] when the activeTick and discoveryTickWidth results in an underflow
+    //  [X] it reverts
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
 
     function test_callbackDataIncorrect_reverts()
@@ -369,13 +368,32 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_anchorTickWidthInvalid_reverts(int24 anchorTickWidth_)
+    function test_anchorTickWidth_belowZero_reverts(int24 anchorTickWidth_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
         int24 anchorTickWidth = int24(bound(anchorTickWidth_, type(int24).min, 0));
+        _createData.anchorTickWidth = anchorTickWidth;
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_InvalidAnchorTickWidth.selector
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_anchorTickWidth_aboveTen_reverts(int24 anchorTickWidth_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 11, type(int24).max));
         _createData.anchorTickWidth = anchorTickWidth;
 
         // Expect revert
@@ -503,23 +521,38 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         );
     }
 
-    function test_auctionPriceDoesNotMatchPoolActiveTick_reverts()
+    function test_auctionPriceDoesNotMatchPoolActiveTick()
         public
         givenBPoolIsCreated // BPOOL will have an active tick of _FIXED_PRICE
         givenCallbackIsCreated
         givenFixedPrice(2e18)
         givenAuctionIsCreated // Has to be after the fixed price is set
     {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaselineAxisLaunch.Callback_Params_PoolTickMismatch.selector,
-            _getTickFromPrice(2e18, _baseTokenDecimals, _isBaseTokenAddressLower),
-            _getPoolActiveTick()
-        );
-        vm.expectRevert(err);
-
         // Perform the call
         _onCreate();
+
+        // Check that the callback owner is correct
+        assertEq(_dtl.owner(), _OWNER, "owner");
+
+        // Assert base token balances
+        _assertBaseTokenBalances();
+
+        // Lot ID is set
+        assertEq(_dtl.lotId(), _lotId, "lot ID");
+
+        // Check circulating supply
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
+
+        // The pool should be initialised with the tick equivalent to the auction's fixed price
+        // Fixed price = 2e18
+        // SqrtPriceX96 = sqrt(2e18 * 2^192 / 1e18)
+        //              = 1.12045542e29
+        // Tick = log((1.12045542e29 / 2^96)^2) / log(1.0001)
+        //      = 6,931.8183824009 (rounded down)
+        // Price = 1.0001^6931 / (10^(18-18)) = 1.9998363402
+        int24 fixedPriceTick = 10_986; // Price: 3e18
+
+        _assertTicks(fixedPriceTick);
     }
 
     function test_success()
@@ -776,5 +809,74 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         int24 fixedPriceTick = 0;
 
         _assertTicks(fixedPriceTick);
+    }
+
+    function test_anchorRange_overflow_reverts()
+        public
+        givenPoolInitialTick(TickMath.MAX_TICK - 1) // This will result in the upper tick of the anchor range to be above the MAX_TICK, which should cause a revert
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(1)
+    {
+        // Expect a revert
+        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_anchorRange_underflow_reverts()
+        public
+        givenPoolInitialTick(TickMath.MIN_TICK + 1) // This will result in the lower tick of the anchor range to be below the MIN_TICK, which should cause a revert
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(1)
+    {
+        // Expect a revert
+        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_discoveryRange_overflow_reverts()
+        public
+        givenPoolInitialTick(TickMath.MAX_TICK - _tickSpacing + 1) // This will result in the upper tick of the discovery range to be above the MAX_TICK, which should cause a revert
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(1)
+        givenDiscoveryTickWidth(1)
+    {
+        // Expect a revert
+        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    // There are a few test scenarios that can't be tested:
+    // - The upper tick of the floor range is above the MAX_TICK: not possible, since that would require the pool to be initialised with a tick above the MAX_TICK
+    // - The lower tick of the discovery range is below the MIN_TICK: not possible, since that would require the pool to be initialised with a tick below the MIN_TICK
+
+    function test_floorRange_underflow_reverts()
+        public
+        givenPoolInitialTick(TickMath.MIN_TICK) // This will result in the lower tick of the floor range to be below the MIN_TICK, which should cause a revert
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(1)
+    {
+        // Expect a revert
+        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
     }
 }

@@ -243,10 +243,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 This function reverts if:
     ///                 - `baseToken_` is not the same as `bAsset`
     ///                 - `quoteToken_` is not the same as `RESERVE`
+    ///                 - `baseToken_` is not lower than `quoteToken_`
+    ///                 - `recipient` is the zero address
     ///                 - `lotId` is already set
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
     ///                 - `CreateData.poolPercent` is less than 1% or greater than 100%
-    ///                 - `CreateData.anchorTickWidth` is 0
+    ///                 - `CreateData.anchorTickWidth` is 0 or > 10
     ///                 - `CreateData.discoveryTickWidth` is 0
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
@@ -268,6 +270,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         if (quoteToken_ != address(RESERVE)) {
             revert Callback_Params_ReserveTokenMismatch(quoteToken_, address(RESERVE));
         }
+        // Ensure the base token is lower than the quote token
+        if (address(bAsset) > address(RESERVE)) {
+            revert Callback_BPOOLInvalidAddress();
+        }
 
         // Validate that the lot ID is not already set
         if (lotId != type(uint96).max) revert Callback_InvalidParams();
@@ -278,8 +284,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Validate that the recipient is not the zero address
         if (cbData.recipient == address(0)) revert Callback_Params_InvalidRecipient();
 
-        // Validate that the anchor tick width is at least 1 tick spacing
-        if (cbData.anchorTickWidth <= 0) {
+        // Validate that the anchor tick width is at least 1 tick spacing and at most 10
+        // Baseline supports only within this range
+        if (cbData.anchorTickWidth <= 0 || cbData.anchorTickWidth > 10) {
             revert Callback_Params_InvalidAnchorTickWidth();
         }
 

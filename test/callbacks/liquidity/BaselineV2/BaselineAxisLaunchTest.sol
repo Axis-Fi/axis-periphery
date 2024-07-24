@@ -153,6 +153,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         }
 
         _tickSpacing = _uniV3Factory.feeAmountTickSpacing(_feeTier);
+        console2.log("Tick spacing: ", _tickSpacing);
 
         // Set up Baseline
         _creditModule = new MockCREDT();
@@ -171,7 +172,13 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         console2.log("Pool initial tick set to: ", _poolInitialTick);
     }
 
-    modifier givenBPoolIsCreated() {
+    modifier givenPoolInitialTick(int24 poolInitialTick_) {
+        _poolInitialTick = poolInitialTick_;
+        console2.log("Pool initial tick set to: ", _poolInitialTick);
+        _;
+    }
+
+    function _createBPOOL() internal {
         // Generate a salt so that the base token address is higher (or lower) than the quote token
         bytes32 baseTokenSalt = ComputeAddress.generateSalt(
             _BASELINE_QUOTE_TOKEN,
@@ -223,6 +230,10 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         // Update the mock
         _mockBaselineGetModuleForKeycode();
+    }
+
+    modifier givenBPoolIsCreated() {
+        _createBPOOL();
         _;
     }
 
