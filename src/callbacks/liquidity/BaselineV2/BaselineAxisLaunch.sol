@@ -71,10 +71,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     error Callback_InvalidInitialization();
 
     /// @notice The BPOOL reserve token does not match the configured `RESERVE` address
-    error InvalidModule();
-
-    /// @notice Deploying reserves and liquidity would result in the Baseline pool being insolvent
-    error Insolvent();
+    error Callback_BPOOLReserveMismatch();
 
     // ========== EVENTS ========== //
 
@@ -197,7 +194,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         CREDT = ICREDTv1(getModuleAddress(credt));
 
         // Require that the BPOOL's reserve token be the same as the callback's reserve token
-        if (address(BPOOL.reserve()) != address(RESERVE)) revert InvalidModule();
+        if (address(BPOOL.reserve()) != address(RESERVE)) revert Callback_BPOOLReserveMismatch();
     }
 
     /// @inheritdoc Policy
@@ -423,7 +420,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         uint256 curatorFee_,
         bool,
         bytes calldata
-    ) internal view override {
+    ) internal override {
         // Validate the lot ID
         if (lotId_ != lotId) revert Callback_InvalidParams();
 
