@@ -1,0 +1,31 @@
+diff --git forkSrcPrefix/src/modules/BPOOL.v1.sol forkDstPrefix/src/modules/BPOOL.v1.sol
+index 0afaad9a6eebb5bf511df2a979466b3543058449..793a3c7f4c6e414b78fa61ab60003cb161507dc4 100644
+--- forkSrcPrefix/src/modules/BPOOL.v1.sol
++++ forkDstPrefix/src/modules/BPOOL.v1.sol
+@@ -1,16 +1,16 @@
+ // SPDX-License-Identifier: AGPL-3.0-only
+ pragma solidity ^0.8.0;
+ 
+-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
+-
+-import "src/Kernel.sol";
+-import {ERC20} from "solmate/tokens/ERC20.sol";
+-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+-import {TickMath} from "v3-core/libraries/TickMath.sol";
+-import {FixedPoint96} from "v3-core/libraries/FixedPoint96.sol";
+-import {IUniswapV3Pool} from "v3-core/interfaces/IUniswapV3Pool.sol";
+-import {IUniswapV3Factory} from "v3-core/interfaces/IUniswapV3Factory.sol"; 
+-import {LiquidityAmounts} from "v3-periphery/libraries/LiquidityAmounts.sol";
++import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
++
++import {Kernel, Module, Keycode, toKeycode} from "../Kernel.sol";
++import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
++import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
++import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
++import {FixedPoint96} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FixedPoint96.sol";
++import {IUniswapV3Pool} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
++import {IUniswapV3Factory} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
++import {LiquidityAmounts} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/LiquidityAmounts.sol";
+ 
+ 
+ // Liquidity range
