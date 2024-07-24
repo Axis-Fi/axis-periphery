@@ -6,7 +6,7 @@ import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-import {Range} from "../../../../src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
+import {Range, Position} from "@baseline/modules/BPOOL.v1.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 
 contract BaselineOnSettleTest is BaselineAxisLaunchTest {
@@ -35,6 +35,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     // [ ] given there are credit account allocations
     //  [ ] it includes the allocations in the solvency check
     // [X] it burns refunded base tokens, updates the circulating supply, marks the auction as completed and deploys the reserves into the Baseline pool
+
+    // TODO poolPercent fuzzing
+    // TODO anchor width fuzzing
+    // TODO discovery width fuzzing
+    // TODO active tick fuzzing
 
     function test_lotNotRegistered_reverts()
         public
@@ -172,23 +177,23 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Reserves deployed into the pool
         assertEq(
-            _baseToken.rangeReserves(Range.FLOOR),
+            _getRangeCapacity(Range.FLOOR),
             _PROCEEDS_AMOUNT.mulDivDown(_FLOOR_RESERVES_PERCENT, _ONE_HUNDRED_PERCENT),
             "reserves: floor"
         );
         assertEq(
-            _baseToken.rangeReserves(Range.ANCHOR),
+            _getRangeCapacity(Range.ANCHOR),
             _PROCEEDS_AMOUNT.mulDivDown(
                 _ONE_HUNDRED_PERCENT - _FLOOR_RESERVES_PERCENT, _ONE_HUNDRED_PERCENT
             ),
             "reserves: anchor"
         );
-        assertEq(_baseToken.rangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+        assertEq(_getRangeCapacity(Range.DISCOVERY), 0, "reserves: discovery");
 
         // Liquidity
-        assertEq(_baseToken.rangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
-        assertEq(_baseToken.rangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
-        assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
+        assertEq(_getRangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
+        assertEq(_getRangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
+        assertGt(_getRangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
     }
 
     function test_floorReservesPercent_zero()
@@ -207,7 +212,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Mint tokens
         _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        _baseToken.mint(_dtlAddress, _REFUND_AMOUNT);
+        _mintBaseTokens(_dtlAddress, _REFUND_AMOUNT);
 
         // Perform callback
         _onSettle();
@@ -232,23 +237,23 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Reserves deployed into the pool
         assertEq(
-            _baseToken.rangeReserves(Range.FLOOR),
+            _getRangeCapacity(Range.FLOOR),
             _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
             "reserves: floor"
         );
         assertEq(
-            _baseToken.rangeReserves(Range.ANCHOR),
+            _getRangeCapacity(Range.ANCHOR),
             _PROCEEDS_AMOUNT.mulDivDown(
                 _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
             ),
             "reserves: anchor"
         );
-        assertEq(_baseToken.rangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+        assertEq(_getRangeCapacity(Range.DISCOVERY), 0, "reserves: discovery");
 
         // Liquidity
-        assertEq(_baseToken.rangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
-        assertEq(_baseToken.rangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
-        assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
+        assertEq(_getRangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
+        assertEq(_getRangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
+        assertGt(_getRangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
     }
 
     function test_floorReservesPercent_ninetyNinePercent()
@@ -267,7 +272,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Mint tokens
         _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        _baseToken.mint(_dtlAddress, _REFUND_AMOUNT);
+        _mintBaseTokens(_dtlAddress, _REFUND_AMOUNT);
 
         // Perform callback
         _onSettle();
@@ -292,23 +297,23 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Reserves deployed into the pool
         assertEq(
-            _baseToken.rangeReserves(Range.FLOOR),
+            _getRangeCapacity(Range.FLOOR),
             _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
             "reserves: floor"
         );
         assertEq(
-            _baseToken.rangeReserves(Range.ANCHOR),
+            _getRangeCapacity(Range.ANCHOR),
             _PROCEEDS_AMOUNT.mulDivDown(
                 _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
             ),
             "reserves: anchor"
         );
-        assertEq(_baseToken.rangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+        assertEq(_getRangeCapacity(Range.DISCOVERY), 0, "reserves: discovery");
 
         // Liquidity
-        assertEq(_baseToken.rangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
-        assertEq(_baseToken.rangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
-        assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
+        assertEq(_getRangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
+        assertEq(_getRangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
+        assertGt(_getRangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
     }
 
     function test_floorReservesPercent_fuzz(uint24 floorReservesPercent_)
@@ -327,7 +332,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Mint tokens
         _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        _baseToken.mint(_dtlAddress, _REFUND_AMOUNT);
+        _mintBaseTokens(_dtlAddress, _REFUND_AMOUNT);
 
         // Perform callback
         _onSettle();
@@ -352,22 +357,22 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Reserves deployed into the pool
         assertEq(
-            _baseToken.rangeReserves(Range.FLOOR),
+            _getRangeCapacity(Range.FLOOR),
             _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
             "reserves: floor"
         );
         assertEq(
-            _baseToken.rangeReserves(Range.ANCHOR),
+            _getRangeCapacity(Range.ANCHOR),
             _PROCEEDS_AMOUNT.mulDivDown(
                 _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
             ),
             "reserves: anchor"
         );
-        assertEq(_baseToken.rangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+        assertEq(_getRangeCapacity(Range.DISCOVERY), 0, "reserves: discovery");
 
         // Liquidity
-        assertEq(_baseToken.rangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
-        assertEq(_baseToken.rangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
-        assertGt(_baseToken.rangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
+        assertEq(_getRangeLiquidity(Range.FLOOR), 0, "liquidity: floor");
+        assertEq(_getRangeLiquidity(Range.ANCHOR), 0, "liquidity: anchor");
+        assertGt(_getRangeLiquidity(Range.DISCOVERY), 0, "liquidity: discovery");
     }
 }

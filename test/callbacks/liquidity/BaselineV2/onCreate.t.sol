@@ -6,7 +6,7 @@ import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
-import {Range} from "../../../../src/callbacks/liquidity/BaselineV2/lib/IBPOOL.sol";
+import {Range} from "@baseline/modules/BPOOL.v1.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
@@ -131,9 +131,17 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         return roundedTick;
     }
 
+    function _getPoolActiveTick() internal view returns (int24) {
+        (, int24 activeTick,,,,,) = _baseToken.pool().slot0();
+        return activeTick;
+    }
+
     function _assertTicks(int24 fixedPriceTick_) internal view {
-        assertEq(_baseToken.activeTick(), fixedPriceTick_, "active tick");
-        console2.log("Active tick: ", _baseToken.activeTick());
+        // Get the tick from the pool
+        int24 activeTick = _getPoolActiveTick();
+
+        assertEq(activeTick, fixedPriceTick_, "active tick");
+        console2.log("Active tick: ", activeTick);
         console2.log("Tick spacing: ", _tickSpacing);
 
         // Calculate the active tick with rounding
@@ -178,14 +186,14 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the quote token is not the reserve
     //  [X] it reverts
-    // [ ] when the base token is lower than the reserve token
-    //  [ ] it reverts
-    // [ ] when the recipient is the zero address
-    //  [ ] it reverts
-    // [ ] when the poolPercent is < 1%
-    //  [ ] it reverts
-    // [ ] when the poolPercent is > 100%
-    //  [ ] it reverts
+    // [X] when the base token is higher than the reserve token
+    //  [X] it reverts
+    // [X] when the recipient is the zero address
+    //  [X] it reverts
+    // [X] when the poolPercent is < 1%
+    //  [X] it reverts
+    // [X] when the poolPercent is > 100%
+    //  [X] it reverts
     // [X] when the floorReservesPercent is not between 0 and 99%
     //  [X] it reverts
     // [X] when the anchorTickWidth is <= 0
@@ -214,15 +222,17 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it correctly sets the active tick
     // [X] when the anchorTickWidth is small
     //  [X] it correctly sets the anchor ticks to not overlap with the other ranges
-    // [ ] when the anchorTickWidth results in an overflow
+    // [ ] when the anchorTickWidth is greater than 10
     //  [ ] it reverts
-    // [ ] when the anchorTickWidth results in an underflow
+    // [ ] when the activeTick and anchorTickWidth results in an overflow
+    //  [ ] it reverts
+    // [ ] when the activeTick and anchorTickWidth results in an underflow
     //  [ ] it reverts
     // [X] when the discoveryTickWidth is small
     //  [X] it correctly sets the discovery ticks to not overlap with the other ranges
-    // [ ] when the discoveryTickWidth results in an overflow
+    // [ ] when the activeTick and discoveryTickWidth results in an overflow
     //  [ ] it reverts
-    // [ ] when the discoveryTickWidth results in an underflow
+    // [ ] when the activeTick and discoveryTickWidth results in an underflow
     //  [ ] it reverts
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
 
@@ -397,6 +407,60 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
+    function test_recipientZero_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Set the recipient to be the zero address
+        _createData.recipient = address(0);
+
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_InvalidRecipient.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolPercent_underOnePercent_reverts(uint24 poolPercent_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        uint24 poolPercent = uint24(bound(poolPercent_, 0, 1e2 - 1));
+        _createData.poolPercent = poolPercent;
+
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_InvalidPoolPercent.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolPercent_aboveOneHundredPercent_reverts(uint24 poolPercent_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        uint24 poolPercent = uint24(bound(poolPercent_, 100e2 + 1, type(uint24).max));
+        _createData.poolPercent = poolPercent;
+
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_InvalidPoolPercent.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
     function test_givenAuctionFormatNotFixedPriceBatch_reverts()
         public
         givenBPoolIsCreated
@@ -450,7 +514,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         bytes memory err = abi.encodeWithSelector(
             BaselineAxisLaunch.Callback_Params_PoolTickMismatch.selector,
             _getTickFromPrice(2e18, _baseTokenDecimals, _isBaseTokenAddressLower),
-            _baseToken.activeTick()
+            _getPoolActiveTick()
         );
         vm.expectRevert(err);
 
@@ -537,17 +601,17 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
 
         // Calculation for the maximum price
-        // By default, quote token is token0
-        // Minimum sqrtPriceX96 = MIN_SQRT_RATIO = 4_295_128_739
-        // 4_295_128_739^2 = 1e18 * 2^192 / amount0
-        // amount0 = 1e18 * 2^192 / 4_295_128_739^2 = 3.402567867e56 ~= 3e56
+        // By default, quote token is token1
+        // Maximum sqrtPriceX96 = MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342
+        // 1461446703485210103287273052203988822378723970342^2 = amount1 * 2^192 / 1e18
+        // amount1 = 1461446703485210103287273052203988822378723970342^2 * 1e18 / 2^192 = 3.4025678684e56 ~= 3e56
 
-        // SqrtPriceX96 = sqrt(1e18 * 2^192 / 3e56)
-        //              = 4,574,240,095.5009932534
-        // Tick = log((4,574,240,095.5009932534 / 2^96)^2) / log(1.0001)
-        //      = -886,012.7559071901 (rounded down)
-        // Price = 1.0001^-886013 / (10^(18-18)) = 0
-        int24 fixedPriceTick = -886_013;
+        // SqrtPriceX96 = sqrt(3e56 * 2^192 / 1e18)
+        //              = 1.3722720287e48
+        // Tick = log((1.3722720287e48 / 2^96)^2) / log(1.0001)
+        //      = 886,012.7559079141 (rounded down)
+        // Price = 1.0001^886,012.7559079141 / (10^(18-18)) = 3e38
+        int24 fixedPriceTick = 886_012;
 
         _assertTicks(fixedPriceTick);
     }
@@ -572,14 +636,14 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
-        // By default, quote token is token0
+        // By default, quote token is token1
         // Fixed price = 1
-        // SqrtPriceX96 = sqrt(1e18 * 2^192 / 1)
-        //              = 7.9228162514e37
-        // Tick = log((7.9228162514e37 / 2^96)^2) / log(1.0001)
-        //      = 414,486.0396584532 (rounded down)
-        // Price = 1.0001^414486 / (10^(18-18)) = 9.9999603427e17
-        int24 fixedPriceTick = 414_486;
+        // SqrtPriceX96 = sqrt(1 * 2^192 / 1e18)
+        //              = 7.9228162514e19
+        // Tick = log((7.9228162514e19 / 2^96)^2) / log(1.0001)
+        //      = -414,486.0396585868 (rounded down)
+        // Price = 1.0001^-414,486.0396585868 / (10^(18-18)) = 9.9999999999e-19
+        int24 fixedPriceTick = -414_487;
 
         _assertTicks(fixedPriceTick);
     }
@@ -616,29 +680,20 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _assertTicks(fixedPriceTick);
     }
 
-    function test_baseTokenAddressLower()
+    function test_baseTokenAddressHigher_reverts()
         public
-        givenBaseTokenAddressLower
+        givenBaseTokenAddressHigher
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_BPOOLInvalidAddress.selector);
+        vm.expectRevert(err);
+
         // Perform the call
         _onCreate();
-
-        // Assert base token balances
-        _assertBaseTokenBalances();
-
-        // Lot ID is set
-        assertEq(_dtl.lotId(), _lotId, "lot ID");
-
-        // Check circulating supply
-        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
-
-        // The pool should be initialised with the tick equivalent to the auction's fixed price
-        int24 fixedPriceTick = _getFixedPriceTick();
-
-        _assertTicks(fixedPriceTick);
     }
 
     function test_baseTokenDecimalsHigher()

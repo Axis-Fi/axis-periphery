@@ -7,8 +7,6 @@ import {console2} from "@forge-std-1.9.1/console2.sol";
 import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
 import {WithSalts} from "../../../lib/WithSalts.sol";
 import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
-import {MockBPOOL} from "./mocks/MockBPOOL.sol";
-import {MockCREDT} from "./mocks/MockCREDT.sol";
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
 import {UniswapV3Factory} from "../../../lib/uniswap-v3/UniswapV3Factory.sol";
@@ -34,6 +32,10 @@ import {BaselineAxisLaunch} from
 // Baseline
 import {toKeycode as toBaselineKeycode} from
     "../../../../src/callbacks/liquidity/BaselineV2/lib/Kernel.sol";
+import {Kernel as BaselineKernel, Actions as BaselineKernelActions} from "@baseline/Kernel.sol";
+import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
+import {MockCREDT} from "./mocks/MockCREDT.sol";
+import {BPOOLMinter} from "./BPOOLMinter.sol";
 
 abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for BaselineAxisLaunch;
@@ -57,7 +59,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     uint256 internal constant _BASE_SCALE = 1e18;
     uint8 internal _quoteTokenDecimals = 18;
     uint8 internal _baseTokenDecimals = 18;
-    bool internal _isBaseTokenAddressLower = false;
+    bool internal _isBaseTokenAddressLower = true;
     /// @dev Set in `givenBPoolFeeTier()`
     uint24 internal _feeTier = _FEE_TIER;
     /// @dev Set in `_updatePoolInitialTick()`
@@ -79,8 +81,11 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     IAuction internal _auctionModule;
 
     MockERC20 internal _quoteToken;
-    MockBPOOL internal _baseToken;
+    BaselineKernel internal _baselineKernel;
+    BPOOLv1 internal _baseToken;
+    /// @dev Use a mock CREDT module as CREDTv1 uses an incompatible solidity version
     MockCREDT internal _creditModule;
+    BPOOLMinter internal _bPoolMinter;
 
     // Inputs
     IFixedPriceBatch.AuctionDataParams internal _fpbParams = IFixedPriceBatch.AuctionDataParams({
@@ -120,6 +125,13 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
             revert("UniswapV3Factory address mismatch");
         }
 
+        // Create the Baseline kernel at a deterministic address, since it is used as input to callbacks
+        vm.prank(_OWNER);
+        BaselineKernel baselineKernel = new BaselineKernel();
+        _baselineKernel = BaselineKernel(_BASELINE_KERNEL);
+        vm.etch(address(_baselineKernel), address(baselineKernel).code);
+        vm.store(address(_baselineKernel), bytes32(uint256(0)), bytes32(abi.encode(_OWNER))); // Owner
+
         // Create auction modules
         _empModule = new EncryptedMarginalPrice(address(_auctionHouse));
         _fpbModule = new FixedPriceBatch(address(_auctionHouse));
@@ -142,9 +154,10 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         _tickSpacing = _uniV3Factory.feeAmountTickSpacing(_feeTier);
 
+        // Set up Baseline
         _creditModule = new MockCREDT();
-
         // Base token is created in the givenBPoolIsCreated modifier
+        _bPoolMinter = new BPOOLMinter(_baselineKernel);
 
         // Calculate the initial tick
         _updatePoolInitialTick();
@@ -155,6 +168,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     function _updatePoolInitialTick() internal {
         _poolInitialTick =
             _getTickFromPrice(_fpbParams.price, _baseTokenDecimals, _isBaseTokenAddressLower);
+        console2.log("Pool initial tick set to: ", _poolInitialTick);
     }
 
     modifier givenBPoolIsCreated() {
@@ -162,8 +176,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         bytes32 baseTokenSalt = ComputeAddress.generateSalt(
             _BASELINE_QUOTE_TOKEN,
             !_isBaseTokenAddressLower,
-            type(MockBPOOL).creationCode,
+            type(BPOOLv1).creationCode,
             abi.encode(
+                _baselineKernel,
                 "Base Token",
                 "BT",
                 _baseTokenDecimals,
@@ -175,8 +190,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
             address(this)
         );
 
-        // Create a new mock BPOOL with the given fee tier
-        _baseToken = new MockBPOOL{salt: baseTokenSalt}(
+        // Create a new BPOOL with the given fee tier
+        _baseToken = new BPOOLv1{salt: baseTokenSalt}(
+            _baselineKernel,
             "Base Token",
             "BT",
             _baseTokenDecimals,
@@ -192,6 +208,18 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         } else {
             require(address(_baseToken) > _BASELINE_QUOTE_TOKEN, "Base token < quote token");
         }
+
+        // Install the module
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.InstallModule, address(_baseToken));
+
+        // Activate the BPOOL minter
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, address(_bPoolMinter));
+
+        // Enable transfers
+        vm.prank(_OWNER);
+        _bPoolMinter.setTransferLock(false);
 
         // Update the mock
         _mockBaselineGetModuleForKeycode();
@@ -219,8 +247,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         _dtlAddress = address(_dtl);
 
-        // Call configureDependencies to set everything that's needed
-        _dtl.configureDependencies();
+        // Install as a policy
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, _dtlAddress);
         _;
     }
 
@@ -291,7 +320,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    modifier givenBaseTokenAddressLower() {
+    modifier givenBaseTokenAddressHigher() {
         _isBaseTokenAddressLower = false;
 
         _updatePoolInitialTick();
@@ -307,6 +336,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
     modifier givenFixedPrice(uint256 fixedPrice_) {
         _fpbParams.price = fixedPrice_;
+        console2.log("Fixed price set to: ", fixedPrice_);
 
         _updatePoolInitialTick();
         _;
@@ -327,7 +357,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     modifier givenAddressHasBaseTokenBalance(address account_, uint256 amount_) {
-        _baseToken.mint(account_, amount_);
+        _mintBaseTokens(account_, amount_);
         _;
     }
 
@@ -355,6 +385,23 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         return TickMath.getTickAtSqrtRatio(sqrtPriceX96);
     }
 
+    function _getRangeCapacity(Range range_) internal view returns (uint256) {
+        Position memory position = _baseToken.getPosition(range_);
+
+        return position.capacity;
+    }
+
+    function _getRangeLiquidity(Range range_) internal view returns (uint256) {
+        Position memory position = _baseToken.getPosition(range_);
+
+        return position.liquidity;
+    }
+
+    function _mintBaseTokens(address account_, uint256 amount_) internal {
+        vm.prank(_OWNER);
+        _bPoolMinter.mint(account_, amount_);
+    }
+
     // ========== MOCKS ========== //
 
     function _mockGetAuctionModuleForId() internal {
@@ -366,14 +413,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _mockBaselineGetModuleForKeycode() internal {
-        vm.mockCall(
-            _BASELINE_KERNEL,
-            abi.encodeWithSelector(
-                bytes4(keccak256("getModuleForKeycode(bytes5)")), toBaselineKeycode("BPOOL")
-            ),
-            abi.encode(address(_baseToken))
-        );
-
         vm.mockCall(
             _BASELINE_KERNEL,
             abi.encodeWithSelector(

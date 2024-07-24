@@ -61,6 +61,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The pool percent is invalid
     error Callback_Params_InvalidPoolPercent();
 
+    /// @notice The recipient address is invalid
+    error Callback_Params_InvalidRecipient();
+
     /// @notice The auction tied to this callbacks contract has already been completed
     error Callback_AlreadyComplete();
 
@@ -72,6 +75,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     /// @notice The BPOOL reserve token does not match the configured `RESERVE` address
     error Callback_BPOOLReserveMismatch();
+
+    /// @notice The address of the BPOOL is higher than the RESERVE token address, when it must be lower
+    error Callback_BPOOLInvalidAddress();
 
     // ========== EVENTS ========== //
 
@@ -270,7 +276,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         CreateData memory cbData = abi.decode(callbackData_, (CreateData));
 
         // Validate that the recipient is not the zero address
-        if (cbData.recipient == address(0)) revert Callback_InvalidParams();
+        if (cbData.recipient == address(0)) revert Callback_Params_InvalidRecipient();
 
         // Validate that the anchor tick width is at least 1 tick spacing
         if (cbData.anchorTickWidth <= 0) {
