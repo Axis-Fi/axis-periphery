@@ -84,7 +84,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice Data struct for the onCreate callback
     ///
     /// @param  recipient               The address to receive proceeds that do not go to the pool
-    /// @param  poolPercent             The percentage of the proceeds to allocate to the pool, in basis points (1% = 100)
+    /// @param  poolPercent             The percentage of the proceeds to allocate to the pool, in basis points (1% = 100). The remainder will be sent to the `recipient`.
     /// @param  floorReservesPercent    The percentage of the pool proceeds to allocate to the floor range, in basis points (1% = 100). The remainder will be allocated to the anchor range.
     /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
     /// @param  discoveryTickWidth      The width of the discovery tick range, as a multiple of the pool tick spacing.
@@ -238,7 +238,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `baseToken_` is not the same as `bAsset`
     ///                 - `quoteToken_` is not the same as `RESERVE`
     ///                 - `lotId` is already set
-    ///                 - `CreateData.floorReservesPercent` is less than 0% or greater than 100%
+    ///                 - `CreateData.floorReservesPercent` is greater than 99%
+    ///                 - `CreateData.poolPercent` is less than 1% or greater than 100%
     ///                 - `CreateData.anchorTickWidth` is 0
     ///                 - `CreateData.discoveryTickWidth` is 0
     ///                 - The auction format is not supported
