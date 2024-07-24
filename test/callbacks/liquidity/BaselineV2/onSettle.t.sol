@@ -152,7 +152,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        // givenAddressHasBaseTokenBalance(_dtlAddress, _REFUND_AMOUNT)
+    // givenAddressHasBaseTokenBalance(_dtlAddress, _REFUND_AMOUNT)
     {
         // Perform callback
         _onSettle();
@@ -172,7 +172,13 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
 
         // Circulating supply
-        assertEq(totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets - _baseToken.getPosition(Range.ANCHOR).bAssets - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(), _LOT_CAPACITY - _REFUND_AMOUNT, "circulating supply");
+        assertEq(
+            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
+                - _baseToken.getPosition(Range.ANCHOR).bAssets
+                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
+            _LOT_CAPACITY - _REFUND_AMOUNT,
+            "circulating supply"
+        );
 
         // Auction marked as complete
         assertEq(_dtl.auctionComplete(), true, "auction completed");
