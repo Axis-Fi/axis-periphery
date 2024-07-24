@@ -55,6 +55,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The discovery tick width is invalid
     error Callback_Params_InvalidDiscoveryTickWidth();
 
+    /// @notice One of the ranges is out of bounds
+    error Callback_Params_RangeOutOfBounds();
+
     /// @notice The floor reserves percent is invalid
     error Callback_Params_InvalidFloorReservesPercent();
 
@@ -110,6 +113,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     // solhint-disable var-name-mixedcase
     IBPOOLv1 public BPOOL;
     ICREDTv1 public CREDT;
+
+    // TickMath constants
+    int24 internal constant _MAX_TICK = 887_272;
+    int24 internal constant _MIN_TICK = -887_272;
 
     // Pool variables
     ERC20 public immutable RESERVE;
@@ -252,7 +259,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `CreateData.discoveryTickWidth` is 0
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
-    ///                 - The active tick of the Baseline pool (from `baseToken_`) is not the same as the tick corresponding to the auction price
+    ///                 - Any of the tick ranges would exceed the tick bounds
     function _onCreate(
         uint96 lotId_,
         address seller_,
@@ -362,14 +369,18 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
             // Set the floor range
             // Floor range lower is the anchor range lower minus one tick spacing
-            BPOOL.setTicks(Range.FLOOR, anchorRangeLower - tickSpacing, anchorRangeLower);
+            int24 floorRangeLower = anchorRangeLower - tickSpacing;
+            BPOOL.setTicks(Range.FLOOR, floorRangeLower, anchorRangeLower);
 
             // Set the discovery range
-            BPOOL.setTicks(
-                Range.DISCOVERY,
-                anchorRangeUpper,
-                anchorRangeUpper + tickSpacing * cbData.discoveryTickWidth
-            );
+            int24 discoveryRangeUpper = anchorRangeUpper + tickSpacing * cbData.discoveryTickWidth;
+            BPOOL.setTicks(Range.DISCOVERY, anchorRangeUpper, discoveryRangeUpper);
+
+            // If the floor range lower tick (or any other above it) is below the min tick, it will cause problems
+            // If the discovery range upper tick (or any other below it) is above the max tick, it will cause problems
+            if (floorRangeLower < _MIN_TICK || discoveryRangeUpper > _MAX_TICK) {
+                revert Callback_Params_RangeOutOfBounds();
+            }
         }
 
         // Mint the capacity of baseline tokens to the auction house to prefund the auction

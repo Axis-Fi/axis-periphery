@@ -820,7 +820,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAnchorTickWidth(1)
     {
         // Expect a revert
-        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_RangeOutOfBounds.selector);
         vm.expectRevert(err);
 
         // Perform the call
@@ -836,7 +837,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAnchorTickWidth(1)
     {
         // Expect a revert
-        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_RangeOutOfBounds.selector);
         vm.expectRevert(err);
 
         // Perform the call
@@ -853,7 +855,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenDiscoveryTickWidth(1)
     {
         // Expect a revert
-        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_RangeOutOfBounds.selector);
         vm.expectRevert(err);
 
         // Perform the call
@@ -873,7 +876,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAnchorTickWidth(1)
     {
         // Expect a revert
-        bytes memory err = abi.encodeWithSelector(TickMath.R.selector);
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_RangeOutOfBounds.selector);
         vm.expectRevert(err);
 
         // Perform the call
