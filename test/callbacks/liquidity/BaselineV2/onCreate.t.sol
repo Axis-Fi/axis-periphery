@@ -168,8 +168,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
     // ============ Tests ============ //
 
-    // TODO ordering of tokens
-
     // [X] when the callback data is incorrect
     //  [X] it reverts
     // [X] when the callback is not called by the auction house
@@ -180,6 +178,14 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the quote token is not the reserve
     //  [X] it reverts
+    // [ ] when the base token is lower than the reserve token
+    //  [ ] it reverts
+    // [ ] when the recipient is the zero address
+    //  [ ] it reverts
+    // [ ] when the poolPercent is < 1%
+    //  [ ] it reverts
+    // [ ] when the poolPercent is > 100%
+    //  [ ] it reverts
     // [X] when the floorReservesPercent is not between 0 and 99%
     //  [X] it reverts
     // [X] when the anchorTickWidth is <= 0
@@ -208,8 +214,16 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it correctly sets the active tick
     // [X] when the anchorTickWidth is small
     //  [X] it correctly sets the anchor ticks to not overlap with the other ranges
+    // [ ] when the anchorTickWidth results in an overflow
+    //  [ ] it reverts
+    // [ ] when the anchorTickWidth results in an underflow
+    //  [ ] it reverts
     // [X] when the discoveryTickWidth is small
     //  [X] it correctly sets the discovery ticks to not overlap with the other ranges
+    // [ ] when the discoveryTickWidth results in an overflow
+    //  [ ] it reverts
+    // [ ] when the discoveryTickWidth results in an underflow
+    //  [ ] it reverts
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
 
     function test_callbackDataIncorrect_reverts()

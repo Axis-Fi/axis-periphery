@@ -58,6 +58,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     uint8 internal _quoteTokenDecimals = 18;
     uint8 internal _baseTokenDecimals = 18;
     bool internal _isBaseTokenAddressLower = false;
+    /// @dev Set in `givenBPoolFeeTier()`
     uint24 internal _feeTier = _FEE_TIER;
     /// @dev Set in `_updatePoolInitialTick()`
     int24 internal _poolInitialTick;
@@ -95,11 +96,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         discoveryTickWidth: _DISCOVERY_TICK_WIDTH,
         allowlistParams: abi.encode("")
     });
-
-    // TODO add new tests
-    // - recipient
-    // - pool percent
-    // - re-enable circulating supply checks
 
     function setUp() public {
         // Set reasonable timestamp
