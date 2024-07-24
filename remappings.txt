@@ -15,3 +15,4 @@
 @openzeppelin/contracts=dependencies/@openzeppelin-contracts-4.9.2
 @openzeppelin/contracts-upgradeable=dependencies/@openzeppelin-contracts-upgradeable-4.9.2
 @solady-0.0.124=dependencies/solady-0.0.124/src
+@baseline=lib/baseline-v2/src
