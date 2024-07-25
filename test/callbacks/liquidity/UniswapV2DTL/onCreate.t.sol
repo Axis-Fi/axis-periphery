@@ -50,6 +50,8 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
 
     // ============ Tests ============ //
 
+    // [ ] when the auction lot has already been completed
+    //  [ ] it reverts
     // [X] when the callback data is incorrect
     //  [X] it reverts
     // [X] when the callback is not called by the auction house

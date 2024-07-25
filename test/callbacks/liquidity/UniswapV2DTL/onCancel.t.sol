@@ -20,6 +20,8 @@ contract UniswapV2DirectToLiquidityOnCancelTest is UniswapV2DirectToLiquidityTes
 
     // [X] when the lot has not been registered
     //  [X] it reverts
+    // [ ] when the auction lot has already been completed
+    //  [ ] it reverts
     // [X] when multiple lots are created
     //  [X] it marks the correct lot as inactive
     // [X] it marks the lot as inactive
