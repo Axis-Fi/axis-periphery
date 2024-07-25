@@ -123,6 +123,7 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         // Check that the callback has been given permission to use the veRamTokenId
+        // Similar to maxSlippage, this needs to be stored during onCreate
         if (
             params.veRamTokenId > 0
                 && !IVotingEscrow(ramsesV2PositionManager.veRam()).isApprovedOrOwner(
