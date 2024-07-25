@@ -5,6 +5,7 @@ import {RamsesV1DirectToLiquidityTest} from "./RamsesV1DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {RamsesV1DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
 
 contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
     // ============ Modifiers ============ //
@@ -50,43 +51,43 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
 
     // ============ Tests ============ //
 
-    // [ ] when the callback data is incorrect
-    //  [ ] it reverts
-    // [ ] when the callback is not called by the auction house
-    //  [ ] it reverts
-    // [ ] when the lot has already been registered
-    //  [ ] it reverts
+    // [X] when the callback data is incorrect
+    //  [ X] it reverts
+    // [X] when the callback is not called by the auction house
+    //  [X] it reverts
+    // [X] when the lot has already been registered
+    //  [X] it reverts
     // [ ] when the lot has already been completed
     //  [ ] it reverts
-    // [ ] when the proceeds utilisation is 0
-    //  [ ] it reverts
-    // [ ] when the proceeds utilisation is greater than 100%
-    //  [ ] it reverts
+    // [X] when the proceeds utilisation is 0
+    //  [X] it reverts
+    // [X] when the proceeds utilisation is greater than 100%
+    //  [X] it reverts
     // [ ] when the implParams is not the correct length
     //  [ ] it reverts
     // [ ] when the max slippage is greater than 100%
     //  [ ] it reverts
     // [ ] given ramses v1 pool already exists
     //  [ ] it succeeds
-    // [ ] when the start and expiry timestamps are the same
-    //  [ ] it reverts
-    // [ ] when the start timestamp is after the expiry timestamp
-    //  [ ] it reverts
-    // [ ] when the start timestamp is before the current timestamp
-    //  [ ] it succeeds
-    // [ ] when the expiry timestamp is before the current timestamp
-    //  [ ] it reverts
-    // [ ] when the start timestamp and expiry timestamp are specified
-    //  [ ] given the linear vesting module is not installed
-    //   [ ] it reverts
-    //  [ ] it records the address of the linear vesting module
-    // [ ] when the recipient is the zero address
-    //  [ ] it reverts
-    // [ ] when the recipient is not the seller
-    //  [ ] it records the recipient
-    // [ ] when multiple lots are created
-    //  [ ] it registers each lot
-    // [ ] it registers the lot, stores the parameters
+    // [X] when the start and expiry timestamps are the same
+    //  [X] it reverts
+    // [X] when the start timestamp is after the expiry timestamp
+    //  [X] it reverts
+    // [X] when the start timestamp is before the current timestamp
+    //  [X] it succeeds
+    // [X] when the expiry timestamp is before the current timestamp
+    //  [X] it reverts
+    // [X] when the start timestamp and expiry timestamp are specified
+    //  [X] given the linear vesting module is not installed
+    //   [X] it reverts
+    //  [X] it records the address of the linear vesting module
+    // [X] when the recipient is the zero address
+    //  [X] it reverts
+    // [X] when the recipient is not the seller
+    //  [X] it records the recipient
+    // [X] when multiple lots are created
+    //  [X] it registers each lot
+    // [X] it registers the lot, stores the parameters
 
     function test_whenCallbackDataIsIncorrect_reverts() public givenCallbackIsCreated {
         // Expect revert
@@ -154,7 +155,7 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
         _performCallback();
     }
 
-    function test_givenUniswapV2PoolAlreadyExists_reverts() public givenCallbackIsCreated {
+    function test_givenRamsesV1PoolAlreadyExists_reverts() public givenCallbackIsCreated {
         // Create the pool
         _factory.createPair(address(_baseToken), address(_quoteToken), false);
 
@@ -320,6 +321,12 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
+        RamsesV1DirectToLiquidity.RamsesV1OnCreateParams memory ramsesCreateParams = abi.decode(
+            _dtlCreateParams.implParams, (RamsesV1DirectToLiquidity.RamsesV1OnCreateParams)
+        );
+        assertEq(ramsesCreateParams.stable, _ramsesCreateParams.stable, "stable");
+        assertEq(ramsesCreateParams.maxSlippage, _ramsesCreateParams.maxSlippage, "maxSlippage");
+
         // Assert balances
         _assertBaseTokenBalances();
     }
@@ -348,6 +355,12 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
         assertEq(address(configuration.linearVestingModule), address(0), "linearVestingModule");
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
+
+        RamsesV1DirectToLiquidity.RamsesV1OnCreateParams memory ramsesCreateParams = abi.decode(
+            _dtlCreateParams.implParams, (RamsesV1DirectToLiquidity.RamsesV1OnCreateParams)
+        );
+        assertEq(ramsesCreateParams.stable, _ramsesCreateParams.stable, "stable");
+        assertEq(ramsesCreateParams.maxSlippage, _ramsesCreateParams.maxSlippage, "maxSlippage");
 
         // Assert balances
         _assertBaseTokenBalances();
