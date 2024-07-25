@@ -13,7 +13,6 @@ import {IRamsesV1Pool} from "../../../../src/callbacks/liquidity/Ramses/lib/IRam
 // AuctionHouse
 import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {RamsesV1DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
 
 contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
@@ -208,7 +207,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     }
 
     modifier givenPoolHasDepositLowerPrice() {
-        uint256 quoteTokensToDeposit = _quoteTokensToDeposit * 95 / 100;
+        uint256 quoteTokensToDeposit = _quoteTokensToDeposit * 105 / 100;
         uint256 baseTokensToDeposit = _baseTokensToDeposit;
 
         // Mint additional tokens
@@ -235,8 +234,8 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     }
 
     modifier givenPoolHasDepositHigherPrice() {
-        uint256 quoteTokensToDeposit = _quoteTokensToDeposit;
-        uint256 baseTokensToDeposit = _baseTokensToDeposit * 95 / 100;
+        uint256 quoteTokensToDeposit = _quoteTokensToDeposit * 95 / 100;
+        uint256 baseTokensToDeposit = _baseTokensToDeposit;
 
         // Mint additional tokens
         _quoteToken.mint(address(this), quoteTokensToDeposit);
@@ -404,7 +403,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
         // Expect revert
-        vm.expectRevert("UniswapV2Router: INSUFFICIENT_A_AMOUNT");
+        vm.expectRevert("Router: INSUFFICIENT_B_AMOUNT");
 
         _performCallback();
     }
@@ -412,6 +411,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     function test_givenPoolHasDepositWithLowerPrice_whenMaxSlippageIsSet()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(500) // 5%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreated
@@ -419,7 +419,6 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-        givenMaxSlippage(500) // 5%
     {
         _performCallback();
 
@@ -442,7 +441,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
         // Expect revert
-        vm.expectRevert("UniswapV2Router: INSUFFICIENT_B_AMOUNT");
+        vm.expectRevert("Router: INSUFFICIENT_A_AMOUNT");
 
         _performCallback();
     }
@@ -450,6 +449,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     function test_givenPoolHasDepositWithHigherPrice_whenMaxSlippageIsSet()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(500) // 5%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreated
@@ -457,7 +457,6 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-        givenMaxSlippage(500) // 5%
     {
         _performCallback();
 

@@ -7,7 +7,6 @@ import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
 import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
 import {WithSalts} from "../../../lib/WithSalts.sol";
 import {TestConstants} from "../../../Constants.sol";
-import {console2} from "@forge-std-1.9.1/console2.sol";
 
 // Mocks
 import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
