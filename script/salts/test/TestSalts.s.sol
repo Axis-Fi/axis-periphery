@@ -34,6 +34,8 @@ import {BALwithCappedAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 import {BALwithTokenAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
+import {RamsesV1DirectToLiquidity} from "../../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
+import {RamsesV2DirectToLiquidity} from "../../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
 
 contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConstants {
     string internal constant _CAPPED_MERKLE_ALLOWLIST = "CappedMerkleAllowlist";
@@ -311,5 +313,22 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
             "BaselineTokenAllowlist", type(BALwithTokenAllowlist).creationCode, callbackArgs
         );
         _setTestSalt(callbackBytecodePath, "EF", "BaselineTokenAllowlist", callbackBytecodeHash);
+    }
+
+    function generateRamsesV1DirectToLiquidity() public {
+        bytes memory args = abi.encode(_AUCTION_HOUSE, _RAMSES_V1_FACTORY, _RAMSES_V1_ROUTER);
+        bytes memory contractCode = type(RamsesV1DirectToLiquidity).creationCode;
+        (string memory bytecodePath, bytes32 bytecodeHash) =
+            _writeBytecode("RamsesV1DirectToLiquidity", contractCode, args);
+        _setTestSalt(bytecodePath, "E6", "RamsesV1DirectToLiquidity", bytecodeHash);
+    }
+
+    function generateRamsesV2DirectToLiquidity() public {
+        bytes memory args =
+            abi.encode(_AUCTION_HOUSE, _RAMSES_V2_FACTORY, _RAMSES_V2_POSITION_MANAGER);
+        bytes memory contractCode = type(RamsesV2DirectToLiquidity).creationCode;
+        (string memory bytecodePath, bytes32 bytecodeHash) =
+            _writeBytecode("RamsesV2DirectToLiquidity", contractCode, args);
+        _setTestSalt(bytecodePath, "E6", "RamsesV2DirectToLiquidity", bytecodeHash);
     }
 }

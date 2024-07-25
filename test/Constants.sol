@@ -16,4 +16,14 @@ abstract contract TestConstants is TestConstantsCore {
         address(0xAA22883d39ea4e42f7033e3e931aA476DEe30b73);
     address internal constant _CREATE2_DEPLOYER =
         address(0x4e59b44847b379578588920cA78FbF26c0B4956C);
+
+    // Ramses addresses on Arbitrum
+    address internal constant _RAMSES_V1_FACTORY =
+        address(0xAAA20D08e59F6561f242b08513D36266C5A29415);
+    address internal constant _RAMSES_V1_ROUTER =
+        address(0xAAA87963EFeB6f7E0a2711F397663105Acb1805e);
+    address internal constant _RAMSES_V2_FACTORY =
+        address(0xAA2cd7477c451E703f3B9Ba5663334914763edF8);
+    address internal constant _RAMSES_V2_POSITION_MANAGER =
+        address(0xAA277CB7914b7e5514946Da92cb9De332Ce610EF);
 }
