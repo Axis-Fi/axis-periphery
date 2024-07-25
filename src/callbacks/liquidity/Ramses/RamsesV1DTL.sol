@@ -49,9 +49,6 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     /// @dev        This contract is used to add liquidity to Ramses pairs
     IRamsesV1Router public router;
 
-    /// @notice     Mapping of lot ID to configuration parameters
-    mapping(uint96 => RamsesV1OnCreateParams) public lotParameters;
-
     /// @notice     Mapping of lot ID to pool token
     mapping(uint96 => address) public lotIdToPoolToken;
 
@@ -88,20 +85,9 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         address,
         uint256,
         bool,
-        bytes calldata callbackData_
+        bytes calldata
     ) internal virtual override {
-        RamsesV1OnCreateParams memory params;
-        {
-            OnCreateParams memory onCreateParams = abi.decode(callbackData_, (OnCreateParams));
-
-            // Validate that the callback data is of the correct length
-            if (onCreateParams.implParams.length != 64) {
-                revert Callback_InvalidParams();
-            }
-
-            // Decode the callback data
-            params = abi.decode(onCreateParams.implParams, (RamsesV1OnCreateParams));
-        }
+        RamsesV1OnCreateParams memory params = _decodeParameters(lotId_);
 
         // Check that the slippage amount is within bounds
         // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
@@ -109,8 +95,6 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
             revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
         }
-
-        lotParameters[lotId_] = params;
     }
 
     /// @inheritdoc BaseDirectToLiquidity
@@ -126,7 +110,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         uint256 baseTokenAmount_,
         bytes memory
     ) internal virtual override {
-        RamsesV1OnCreateParams memory params = lotParameters[lotId_];
+        RamsesV1OnCreateParams memory params = _decodeParameters(lotId_);
 
         // Create and initialize the pool if necessary
         // Token orientation is irrelevant
@@ -197,5 +181,19 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         else {
             poolToken.safeTransfer(config.recipient, poolTokenQuantity);
         }
+    }
+
+    function _decodeParameters(uint96 lotId_)
+        internal
+        view
+        returns (RamsesV1OnCreateParams memory)
+    {
+        DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
+        // Validate that the callback data is of the correct length
+        if (lotConfig.implParams.length != 64) {
+            revert Callback_InvalidParams();
+        }
+
+        return abi.decode(lotConfig.implParams, (RamsesV1OnCreateParams));
     }
 }

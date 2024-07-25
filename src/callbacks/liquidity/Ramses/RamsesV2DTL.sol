@@ -55,9 +55,6 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     /// @notice     The Ramses V2 position manager
     IRamsesV2PositionManager public ramsesV2PositionManager;
 
-    /// @notice     Mapping of lot ID to configuration parameters
-    mapping(uint96 => RamsesV2OnCreateParams) public lotParameters;
-
     // ========== CONSTRUCTOR ========== //
 
     constructor(
@@ -93,20 +90,9 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         address,
         uint256,
         bool,
-        bytes calldata callbackData_
+        bytes calldata
     ) internal virtual override {
-        RamsesV2OnCreateParams memory params;
-        {
-            OnCreateParams memory onCreateParams = abi.decode(callbackData_, (OnCreateParams));
-
-            // Validate that the callback data is of the correct length
-            if (onCreateParams.implParams.length != 96) {
-                revert Callback_InvalidParams();
-            }
-
-            // Decode the callback data
-            params = abi.decode(onCreateParams.implParams, (RamsesV2OnCreateParams));
-        }
+        RamsesV2OnCreateParams memory params = _decodeParameters(lotId_);
 
         // Validate the parameters
         // Pool fee
@@ -132,8 +118,6 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         ) {
             revert Callback_InvalidParams();
         }
-
-        lotParameters[lotId_] = params;
     }
 
     /// @inheritdoc BaseDirectToLiquidity
@@ -168,7 +152,7 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
             _createAndInitializePoolIfNecessary(
                 quoteTokenIsToken0 ? quoteToken_ : baseToken_,
                 quoteTokenIsToken0 ? baseToken_ : quoteToken_,
-                lotParameters[lotId_].poolFee,
+                _decodeParameters(lotId_).poolFee,
                 sqrtPriceX96
             );
         }
@@ -229,7 +213,7 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         address baseToken_,
         uint256 baseTokenAmount_
     ) internal view returns (IRamsesV2PositionManager.MintParams memory) {
-        RamsesV2OnCreateParams memory params = lotParameters[lotId_];
+        RamsesV2OnCreateParams memory params = _decodeParameters(lotId_);
 
         int24 tickSpacing = ramsesV2Factory.feeAmountTickSpacing(params.poolFee);
 
@@ -254,5 +238,19 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
             deadline: block.timestamp,
             veRamTokenId: params.veRamTokenId
         });
+    }
+
+    function _decodeParameters(uint96 lotId_)
+        internal
+        view
+        returns (RamsesV2OnCreateParams memory)
+    {
+        DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
+        // Validate that the callback data is of the correct length
+        if (lotConfig.implParams.length != 96) {
+            revert Callback_InvalidParams();
+        }
+
+        return abi.decode(lotConfig.implParams, (RamsesV2OnCreateParams));
     }
 }
