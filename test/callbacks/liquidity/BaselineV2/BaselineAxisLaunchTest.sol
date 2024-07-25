@@ -396,16 +396,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         return TickMath.getTickAtSqrtRatio(sqrtPriceX96);
     }
 
-    function _getRangeCapacity(Range range_) internal view returns (uint256) {
+    function _getRangeReserves(Range range_) internal view returns (uint256) {
         Position memory position = _baseToken.getPosition(range_);
 
-        return position.capacity;
+        return position.reserves;
     }
 
-    function _getRangeLiquidity(Range range_) internal view returns (uint256) {
+    function _getRangeBAssets(Range range_) internal view returns (uint256) {
         Position memory position = _baseToken.getPosition(range_);
 
-        return position.liquidity;
+        return position.bAssets;
     }
 
     function _mintBaseTokens(address account_, uint256 amount_) internal {
