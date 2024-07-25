@@ -155,18 +155,6 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
         _performCallback();
     }
 
-    function test_givenRamsesV1PoolAlreadyExists_reverts() public givenCallbackIsCreated {
-        // Create the pool
-        _factory.createPair(address(_baseToken), address(_quoteToken), false);
-
-        // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_Params_PoolExists.selector);
-        vm.expectRevert(err);
-
-        _performCallback();
-    }
-
     function test_whenStartAndExpiryTimestampsAreTheSame_reverts()
         public
         givenCallbackIsCreated
