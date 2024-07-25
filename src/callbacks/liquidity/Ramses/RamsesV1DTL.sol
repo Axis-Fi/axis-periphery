@@ -79,6 +79,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the parameters
     ///
     ///             This function reverts if:
+    ///             - The callback data is of the incorrect length
     ///             - `RamsesV1OnCreateParams.maxSlippage` is out of bounds
     function __onCreate(
         uint96 lotId_,
