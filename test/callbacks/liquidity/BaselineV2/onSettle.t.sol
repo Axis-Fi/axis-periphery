@@ -32,6 +32,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the percent in floor reserves changes
     //  [X] it adds reserves to the floor and anchor ranges in the correct proportions
+    // [X] given a curator fee has been paid
+    //  [X] the solvency check passes
     // [ ] given there are credit account allocations
     //  [ ] it includes the allocations in the solvency check
     // [X] it burns refunded base tokens, updates the circulating supply, marks the auction as completed and deploys the reserves into the Baseline pool
@@ -83,12 +85,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
-
         // Perform callback
         _onSettle();
 
@@ -158,12 +156,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
-
         // Perform callback
         _onSettle();
 
@@ -179,7 +173,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
         uint256 totalSupply = _baseToken.totalSupply();
         uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool"); // No liquidity in the anchor range, so no base token in the discovery range
+        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
 
         // Circulating supply
         assertApproxEqAbs(
@@ -217,6 +211,49 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
     }
 
+    function test_curatorFee(uint256 curatorFee_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // This enables a curator fee theoretically up to the total proceeds
+        uint256 curatorFee = bound(curatorFee_, 1, (_PROCEEDS_AMOUNT - _REFUND_AMOUNT));
+
+        // Perform the onCurate callback
+        _onCurate(curatorFee);
+
+        // Perform the onSettle callback
+        _onSettle();
+
+        // Assert quote token balances
+        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
+        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
+        assertEq(
+            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
+        );
+
+        // Assert base token balances
+        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
+        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
+        uint256 totalSupply = _baseToken.totalSupply();
+        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT - curatorFee;
+        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
+
+        // Circulating supply
+        assertApproxEqAbs(
+            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
+                - _baseToken.getPosition(Range.ANCHOR).bAssets
+                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
+            _LOT_CAPACITY - _REFUND_AMOUNT + curatorFee,
+            2, // There is a difference (rounding error?) of 2
+            "circulating supply"
+        );
+    }
+
     function test_floorReservesPercent_zero()
         public
         givenBPoolIsCreated
@@ -235,9 +272,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
 
         // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
+        _transferBaseTokenRefund(_REFUND_AMOUNT);
 
         // Perform callback
         _onSettle();
@@ -310,9 +345,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
 
         // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
+        _transferBaseTokenRefund(_REFUND_AMOUNT);
 
         // Perform callback
         _onSettle();
@@ -385,9 +418,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
 
         // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
+        _transferBaseTokenRefund(_REFUND_AMOUNT);
 
         // Perform callback
         _onSettle();

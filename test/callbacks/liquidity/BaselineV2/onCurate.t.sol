@@ -8,11 +8,6 @@ import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 contract BaselineOnCurateTest is BaselineAxisLaunchTest {
     // ============ Modifiers ============ //
 
-    function _performCallback(uint256 curatorFee_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCurate(_lotId, curatorFee_, true, abi.encode(""));
-    }
-
     // ============ Assertions ============ //
 
     // ============ Tests ============ //
@@ -36,7 +31,7 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         vm.expectRevert(err);
 
         // Call the callback
-        _performCallback(0);
+        _onCurate(0);
     }
 
     function test_notAuctionHouse_reverts()
@@ -65,7 +60,7 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         uint256 balanceBefore = _baseToken.balanceOf(address(_auctionHouse));
 
         // Perform callback
-        _performCallback(curatorFee);
+        _onCurate(curatorFee);
 
         // Assert that the base token was minted to the auction house
         assertEq(
@@ -85,7 +80,7 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         uint256 balanceBefore = _baseToken.balanceOf(address(_auctionHouse));
 
         // Perform callback
-        _performCallback(0);
+        _onCurate(0);
 
         // Assert that the base token was minted to the auction house
         assertEq(

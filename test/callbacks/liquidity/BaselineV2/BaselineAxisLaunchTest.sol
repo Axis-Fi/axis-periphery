@@ -325,6 +325,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
+    function _onCurate(uint256 curatorFee_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCurate(_lotId, curatorFee_, true, abi.encode(""));
+    }
+
+    modifier givenOnCurate(uint256 curatorFee_) {
+        _onCurate(curatorFee_);
+        _;
+    }
+
     modifier givenBPoolFeeTier(uint24 feeTier_) {
         _feeTier = feeTier_;
         _tickSpacing = _uniV3Factory.feeAmountTickSpacing(_feeTier);
@@ -374,6 +384,18 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
     modifier givenAddressHasQuoteTokenBalance(address account_, uint256 amount_) {
         _quoteToken.mint(account_, amount_);
+        _;
+    }
+
+    function _transferBaseTokenRefund(uint256 amount_) internal {
+        // Transfer refund from auction house to the callback
+        // We transfer instead of minting to not affect the supply
+        vm.prank(address(_auctionHouse));
+        _baseToken.transfer(_dtlAddress, amount_);
+    }
+
+    modifier givenBaseTokenRefundIsTransferred(uint256 amount_) {
+        _transferBaseTokenRefund(amount_);
         _;
     }
 
