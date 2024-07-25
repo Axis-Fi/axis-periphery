@@ -33,6 +33,13 @@ import {BALwithCappedAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 import {BALwithTokenAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
+import {RamsesV1DirectToLiquidity} from "../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
+import {RamsesV2DirectToLiquidity} from "../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
+
+// Ramses
+import {IRamsesV1Router} from "../../src/callbacks/liquidity/Ramses/lib/IRamsesV1Router.sol";
+import {IRamsesV2PositionManager} from
+    "../../src/callbacks/liquidity/Ramses/lib/IRamsesV2PositionManager.sol";
 
 // Baseline
 import {
@@ -970,6 +977,95 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("    Policy activated in Baseline Kernel");
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
+    }
+
+    function deployBatchRamsesV1DirectToLiquidity(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address ramsesV1PairFactory = _getEnvAddressOrOverride(
+            "constants.ramsesV1.pairFactory", sequenceName_, "args.pairFactory"
+        );
+        address payable ramsesV1Router = payable(
+            _getEnvAddressOrOverride("constants.ramsesV1.router", sequenceName_, "args.router")
+        );
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
+
+        // Check that the router and factory match
+        require(
+            IRamsesV1Router(ramsesV1Router).factory() == ramsesV1PairFactory,
+            "IRamsesV1Router.factory() does not match given Ramses V1 pair factory address"
+        );
+
+        // Get the salt
+        bytes32 salt_ = _getSalt(
+            deploymentKey,
+            type(RamsesV1DirectToLiquidity).creationCode,
+            abi.encode(batchAuctionHouse, ramsesV1PairFactory, ramsesV1Router)
+        );
+
+        // Revert if the salt is not set
+        require(salt_ != bytes32(0), "Salt not set");
+
+        // Deploy the module
+        console2.log("    salt:", vm.toString(salt_));
+
+        vm.broadcast();
+        RamsesV1DirectToLiquidity dtl = new RamsesV1DirectToLiquidity{salt: salt_}(
+            batchAuctionHouse, ramsesV1PairFactory, ramsesV1Router
+        );
+        console2.log("");
+        console2.log("    deployed at:", address(dtl));
+
+        return (address(dtl), _PREFIX_CALLBACKS, deploymentKey);
+    }
+
+    function deployBatchRamsesV2DirectToLiquidity(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address ramsesV2Factory =
+            _getEnvAddressOrOverride("constants.ramsesV2.factory", sequenceName_, "args.factory");
+        address payable ramsesV2PositionManager = payable(
+            _getEnvAddressOrOverride(
+                "constants.ramsesV2.positionManager", sequenceName_, "args.positionManager"
+            )
+        );
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
+
+        // Check that the router and factory match
+        require(
+            IRamsesV2PositionManager(ramsesV2PositionManager).factory() == ramsesV2Factory,
+            "IRamsesV2PositionManager.factory() does not match given Ramses V2 factory address"
+        );
+
+        // Get the salt
+        bytes32 salt_ = _getSalt(
+            deploymentKey,
+            type(RamsesV1DirectToLiquidity).creationCode,
+            abi.encode(batchAuctionHouse, ramsesV2Factory, ramsesV2PositionManager)
+        );
+
+        // Revert if the salt is not set
+        require(salt_ != bytes32(0), "Salt not set");
+
+        // Deploy the module
+        console2.log("    salt:", vm.toString(salt_));
+
+        vm.broadcast();
+        RamsesV2DirectToLiquidity dtl = new RamsesV2DirectToLiquidity{salt: salt_}(
+            batchAuctionHouse, ramsesV2Factory, ramsesV2PositionManager
+        );
+        console2.log("");
+        console2.log("    deployed at:", address(dtl));
+
+        return (address(dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
     // ========== HELPER FUNCTIONS ========== //
