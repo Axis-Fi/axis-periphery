@@ -11,6 +11,7 @@ import {BaseDirectToLiquidity} from "../BaseDTL.sol";
 import {IRamsesV2Pool} from "./lib/IRamsesV2Pool.sol";
 import {IRamsesV2Factory} from "./lib/IRamsesV2Factory.sol";
 import {IRamsesV2PositionManager} from "./lib/IRamsesV2PositionManager.sol";
+import {IVotingEscrow} from "./lib/IVotingEscrow.sol";
 
 // Uniswap
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
@@ -35,12 +36,13 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
 
     // ========== STRUCTS ========== //
 
-    /// @notice     Parameters for the onSettle callback
+    /// @notice     Parameters for the onCreate callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
-    /// @param      maxSlippage             The maximum slippage allowed when adding liquidity (in terms of `ONE_HUNDRED_PERCENT`)
-    /// @param      veRamTokenId            The token ID of the veRAM token to use for the position (optional)
-    struct OnSettleParams {
+    /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
+    /// @param      veRamTokenId    The token ID of the veRAM token to use for the position (optional)
+    struct RamsesV2OnCreateParams {
+        uint24 poolFee;
         uint24 maxSlippage;
         uint256 veRamTokenId;
     }
@@ -52,6 +54,9 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
 
     /// @notice     The Ramses V2 position manager
     IRamsesV2PositionManager public ramsesV2PositionManager;
+
+    /// @notice     Mapping of lot ID to configuration parameters
+    mapping(uint96 => RamsesV2OnCreateParams) public lotParameters;
 
     // ========== CONSTRUCTOR ========== //
 
@@ -78,31 +83,56 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the input data
     ///
     ///             This function reverts if:
-    ///             - OnCreateParams.implParams.poolFee is not enabled
-    ///             - The pool for the token and fee combination already exists
+    ///             - `RamsesV1OnCreateParams.poolFee` is not enabled
+    ///             - `RamsesV1OnCreateParams.maxSlippage` is out of bounds
+    ///             - This contract does not have permission to use the veRamTokenId
     function __onCreate(
-        uint96,
+        uint96 lotId_,
         address,
-        address baseToken_,
-        address quoteToken_,
+        address,
+        address,
         uint256,
         bool,
         bytes calldata callbackData_
     ) internal virtual override {
-        OnCreateParams memory params = abi.decode(callbackData_, (OnCreateParams));
-        uint24 poolFee = abi.decode(params.implParams, (uint24));
+        RamsesV2OnCreateParams memory params;
+        {
+            OnCreateParams memory onCreateParams = abi.decode(callbackData_, (OnCreateParams));
+
+            // Validate that the callback data is of the correct length
+            if (onCreateParams.implParams.length != 96) {
+                revert Callback_InvalidParams();
+            }
+
+            // Decode the callback data
+            params = abi.decode(onCreateParams.implParams, (RamsesV2OnCreateParams));
+        }
 
         // Validate the parameters
         // Pool fee
         // Fee not enabled
-        if (ramsesV2Factory.feeAmountTickSpacing(poolFee) == 0) {
+        if (ramsesV2Factory.feeAmountTickSpacing(params.poolFee) == 0) {
             revert Callback_Params_PoolFeeNotEnabled();
         }
 
-        // Check that the pool does not exist
-        if (ramsesV2Factory.getPool(baseToken_, quoteToken_, poolFee) != address(0)) {
-            revert Callback_Params_PoolExists();
+        // Check that the maxSlippage is in bounds
+        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
+        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
+        if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
         }
+
+        // Check that the callback has been given permission to use the veRamTokenId
+        if (
+            params.veRamTokenId > 0
+                && !IVotingEscrow(ramsesV2PositionManager.veRam()).isApprovedOrOwner(
+                    address(this), params.veRamTokenId
+                )
+        ) {
+            revert Callback_InvalidParams();
+        }
+
+        lotParameters[lotId_] = params;
     }
 
     /// @inheritdoc BaseDirectToLiquidity
@@ -120,14 +150,8 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_,
-        bytes memory callbackData_
+        bytes memory
     ) internal virtual override {
-        // Decode the callback data
-        OnSettleParams memory params = abi.decode(callbackData_, (OnSettleParams));
-
-        // Extract the pool fee from the implParams
-        uint24 poolFee = abi.decode(lotConfiguration[lotId_].implParams, (uint24));
-
         // Determine the ordering of tokens
         bool quoteTokenIsToken0 = quoteToken_ < baseToken_;
 
@@ -143,16 +167,15 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
             _createAndInitializePoolIfNecessary(
                 quoteTokenIsToken0 ? quoteToken_ : baseToken_,
                 quoteTokenIsToken0 ? baseToken_ : quoteToken_,
-                poolFee,
+                lotParameters[lotId_].poolFee,
                 sqrtPriceX96
             );
         }
 
         // Mint the position and add liquidity
         {
-            IRamsesV2PositionManager.MintParams memory mintParams = _getMintParams(
-                lotId_, quoteToken_, quoteTokenAmount_, baseToken_, baseTokenAmount_, params
-            );
+            IRamsesV2PositionManager.MintParams memory mintParams =
+                _getMintParams(lotId_, quoteToken_, quoteTokenAmount_, baseToken_, baseTokenAmount_);
 
             // Approve spending
             ERC20(quoteToken_).approve(address(ramsesV2PositionManager), quoteTokenAmount_);
@@ -203,16 +226,11 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         address quoteToken_,
         uint256 quoteTokenAmount_,
         address baseToken_,
-        uint256 baseTokenAmount_,
-        OnSettleParams memory onSettleParams_
+        uint256 baseTokenAmount_
     ) internal view returns (IRamsesV2PositionManager.MintParams memory) {
-        // Extract the pool fee from the implParams
-        uint24 poolFee;
-        int24 tickSpacing;
-        {
-            poolFee = abi.decode(lotConfiguration[lotId_].implParams, (uint24));
-            tickSpacing = ramsesV2Factory.feeAmountTickSpacing(poolFee);
-        }
+        RamsesV2OnCreateParams memory params = lotParameters[lotId_];
+
+        int24 tickSpacing = ramsesV2Factory.feeAmountTickSpacing(params.poolFee);
 
         // Determine the ordering of tokens
         bool quoteTokenIsToken0 = quoteToken_ < baseToken_;
@@ -224,16 +242,16 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         return IRamsesV2PositionManager.MintParams({
             token0: quoteTokenIsToken0 ? quoteToken_ : baseToken_,
             token1: quoteTokenIsToken0 ? baseToken_ : quoteToken_,
-            fee: poolFee,
+            fee: params.poolFee,
             tickLower: (TickMath.MIN_TICK / tickSpacing) * tickSpacing,
             tickUpper: (TickMath.MAX_TICK / tickSpacing) * tickSpacing,
             amount0Desired: amount0,
             amount1Desired: amount1,
-            amount0Min: _getAmountWithSlippage(amount0, onSettleParams_.maxSlippage),
-            amount1Min: _getAmountWithSlippage(amount1, onSettleParams_.maxSlippage),
+            amount0Min: _getAmountWithSlippage(amount0, params.maxSlippage),
+            amount1Min: _getAmountWithSlippage(amount1, params.maxSlippage),
             recipient: lotConfiguration[lotId_].recipient,
             deadline: block.timestamp,
-            veRamTokenId: onSettleParams_.veRamTokenId
+            veRamTokenId: params.veRamTokenId
         });
     }
 }
