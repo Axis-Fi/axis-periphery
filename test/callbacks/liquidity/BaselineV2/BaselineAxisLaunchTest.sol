@@ -237,7 +237,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    modifier givenCallbackIsCreated() virtual {
+    function _createCallback() internal {
         if (address(_baseToken) == address(0)) {
             revert("Base token not created");
         }
@@ -261,6 +261,10 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         // Install as a policy
         vm.prank(_OWNER);
         _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, _dtlAddress);
+    }
+
+    modifier givenCallbackIsCreated() virtual {
+        _createCallback();
         _;
     }
 
@@ -270,7 +274,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    modifier givenAuctionIsCreated() {
+    function _createAuction() internal {
         // Create a dummy auction in the module
         IAuction.AuctionParams memory auctionParams = IAuction.AuctionParams({
             start: _START,
@@ -282,6 +286,10 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         vm.prank(address(_auctionHouse));
         _fpbModule.auction(_lotId, auctionParams, _quoteTokenDecimals, _baseTokenDecimals);
+    }
+
+    modifier givenAuctionIsCreated() {
+        _createAuction();
         _;
     }
 

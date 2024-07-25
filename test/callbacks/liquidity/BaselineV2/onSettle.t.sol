@@ -16,6 +16,67 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
     // ============ Assertions ============ //
 
+    function _assertQuoteTokenBalances() internal view {
+        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
+        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
+        uint256 poolProceeds = _PROCEEDS_AMOUNT * _createData.poolPercent / 100e2;
+        assertEq(
+            _quoteToken.balanceOf(address(_baseToken.pool())), poolProceeds, "quote token: pool"
+        );
+        assertEq(
+            _quoteToken.balanceOf(_OWNER), _PROCEEDS_AMOUNT - poolProceeds, "quote token: owner"
+        );
+    }
+
+    function _assertBaseTokenBalances(uint256 curatorFee_) internal view {
+        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
+        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
+
+        uint256 totalSupply = _baseToken.totalSupply();
+        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT - curatorFee_;
+        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
+        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
+    }
+
+    function _assertCirculatingSupply(uint256 curatorFee_) internal view {
+        uint256 totalSupply = _baseToken.totalSupply();
+
+        assertApproxEqAbs(
+            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
+                - _baseToken.getPosition(Range.ANCHOR).bAssets
+                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCreditIssued(), // totalCreditIssued would affect supply, totalCollateralized will not
+            _LOT_CAPACITY - _REFUND_AMOUNT + curatorFee_,
+            2, // There is a difference (rounding error?) of 2
+            "circulating supply"
+        );
+    }
+
+    function _assertAuctionComplete() internal view {
+        assertEq(_dtl.auctionComplete(), true, "auction completed");
+    }
+
+    function _assertPoolReserves() internal view {
+        uint256 floorProceeds = _PROCEEDS_AMOUNT * _createData.floorReservesPercent / 100e2;
+        assertApproxEqAbs(
+            _getRangeReserves(Range.FLOOR),
+            floorProceeds,
+            1, // There is a difference (rounding error?) of 1
+            "reserves: floor"
+        );
+        assertApproxEqAbs(
+            _getRangeReserves(Range.ANCHOR),
+            _PROCEEDS_AMOUNT - floorProceeds,
+            1, // There is a difference (rounding error?) of 1
+            "reserves: anchor"
+        );
+        assertEq(_getRangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+
+        // BAssets deployed into the pool
+        assertEq(_getRangeBAssets(Range.FLOOR), 0, "bAssets: floor");
+        assertGt(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
+        assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
+    }
+
     // ============ Tests ============ //
 
     // [X] when the lot has not been registered
@@ -38,11 +99,13 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] it includes the allocations in the solvency check
     // [X] given the allocation of proceeds to the pool is not 100%
     //  [X] it allocates the proceeds correctly
+    // [X] given the anchor range width is fuzzed
+    //  [X] it allocates the proceeds correctly
+    // [X] given the discovery range width is fuzzed
+    //  [X] it allocates the proceeds correctly
+    // [X] given the active tick is fuzzed
+    //  [X] it allocates the proceeds correctly
     // [X] it burns refunded base tokens, updates the circulating supply, marks the auction as completed and deploys the reserves into the Baseline pool
-
-    // TODO anchor width fuzzing
-    // TODO discovery width fuzzing
-    // TODO active tick fuzzing
 
     function test_lotNotRegistered_reverts()
         public
@@ -162,56 +225,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Perform callback
         _onSettle();
 
-        // Assert quote token balances
-        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
-        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
-        );
-        assertEq(_quoteToken.balanceOf(_OWNER), 0, "quote token: owner");
-
-        // Assert base token balances
-        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
-        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
-        uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
-
-        // Circulating supply
-        assertApproxEqAbs(
-            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
-                - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
-            _LOT_CAPACITY - _REFUND_AMOUNT,
-            2, // There is a difference (rounding error?) of 2
-            "circulating supply"
-        );
-
-        // Auction marked as complete
-        assertEq(_dtl.auctionComplete(), true, "auction completed");
-
-        // Reserves deployed into the pool
-        assertApproxEqAbs(
-            _getRangeReserves(Range.FLOOR),
-            _PROCEEDS_AMOUNT.mulDivDown(_FLOOR_RESERVES_PERCENT, _ONE_HUNDRED_PERCENT),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: floor"
-        );
-        assertApproxEqAbs(
-            _getRangeReserves(Range.ANCHOR),
-            _PROCEEDS_AMOUNT.mulDivDown(
-                _ONE_HUNDRED_PERCENT - _FLOOR_RESERVES_PERCENT, _ONE_HUNDRED_PERCENT
-            ),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: anchor"
-        );
-        assertEq(_getRangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
-
-        // BAssets deployed into the pool
-        assertEq(_getRangeBAssets(Range.FLOOR), 0, "bAssets: floor");
-        assertGt(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
-        assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
     }
 
     function test_curatorFee(uint256 curatorFee_)
@@ -232,31 +250,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Perform the onSettle callback
         _onSettle();
 
-        // Assert quote token balances
-        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
-        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
-        );
-        assertEq(_quoteToken.balanceOf(_OWNER), 0, "quote token: owner");
-
-        // Assert base token balances
-        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
-        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
-        uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT - curatorFee;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
-
-        // Circulating supply
-        assertApproxEqAbs(
-            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
-                - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCreditIssued(), // totalCreditIssued would affect supply, totalCollateralized will not
-            _LOT_CAPACITY - _REFUND_AMOUNT + curatorFee,
-            2, // There is a difference (rounding error?) of 2
-            "circulating supply"
-        );
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(curatorFee);
+        _assertCirculatingSupply(curatorFee);
+        _assertAuctionComplete();
+        _assertPoolReserves();
     }
 
     function test_givenCreditAllocations_fuzz(uint256 creditAllocations_)
@@ -277,31 +275,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Perform callback
         _onSettle();
 
-        // Assert quote token balances
-        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
-        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
-        );
-        assertEq(_quoteToken.balanceOf(_OWNER), 0, "quote token: owner");
-
-        // Assert base token balances
-        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
-        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
-        uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
-
-        // Circulating supply
-        assertApproxEqAbs(
-            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
-                - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCreditIssued(), // totalCreditIssued would affect supply, totalCollateralized will not
-            _LOT_CAPACITY - _REFUND_AMOUNT,
-            2, // There is a difference (rounding error?) of 2
-            "circulating supply"
-        );
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
     }
 
     function test_floorReservesPercent_zero()
@@ -327,56 +305,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Perform callback
         _onSettle();
 
-        // Assert quote token balances
-        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
-        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
-        );
-        assertEq(_quoteToken.balanceOf(_OWNER), 0, "quote token: owner");
-
-        // Assert base token balances
-        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
-        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
-        uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
-
-        // Circulating supply
-        assertApproxEqAbs(
-            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
-                - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
-            _LOT_CAPACITY - _REFUND_AMOUNT,
-            2, // There is a difference (rounding error?) of 2
-            "circulating supply"
-        );
-
-        // Auction marked as complete
-        assertEq(_dtl.auctionComplete(), true, "auction completed");
-
-        // Reserves deployed into the pool
-        assertApproxEqAbs(
-            _getRangeReserves(Range.FLOOR),
-            _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: floor"
-        );
-        assertApproxEqAbs(
-            _getRangeReserves(Range.ANCHOR),
-            _PROCEEDS_AMOUNT.mulDivDown(
-                _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
-            ),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: anchor"
-        );
-        assertEq(_getRangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
-
-        // BAssets deployed into the pool
-        assertEq(_getRangeBAssets(Range.FLOOR), 0, "bAssets: floor");
-        assertGt(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
-        assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
     }
 
     function test_floorReservesPercent_ninetyNinePercent()
@@ -402,56 +335,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Perform callback
         _onSettle();
 
-        // Assert quote token balances
-        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
-        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
-        );
-        assertEq(_quoteToken.balanceOf(_OWNER), 0, "quote token: owner");
-
-        // Assert base token balances
-        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
-        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
-        uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
-
-        // Circulating supply
-        assertApproxEqAbs(
-            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
-                - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
-            _LOT_CAPACITY - _REFUND_AMOUNT,
-            2, // There is a difference (rounding error?) of 2
-            "circulating supply"
-        );
-
-        // Auction marked as complete
-        assertEq(_dtl.auctionComplete(), true, "auction completed");
-
-        // Reserves deployed into the pool
-        assertApproxEqAbs(
-            _getRangeReserves(Range.FLOOR),
-            _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: floor"
-        );
-        assertApproxEqAbs(
-            _getRangeReserves(Range.ANCHOR),
-            _PROCEEDS_AMOUNT.mulDivDown(
-                _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
-            ),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: anchor"
-        );
-        assertEq(_getRangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
-
-        // BAssets deployed into the pool
-        assertEq(_getRangeBAssets(Range.FLOOR), 0, "bAssets: floor");
-        assertGt(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
-        assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
     }
 
     function test_floorReservesPercent_fuzz(uint24 floorReservesPercent_)
@@ -477,56 +365,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Perform callback
         _onSettle();
 
-        // Assert quote token balances
-        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
-        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
-        );
-        assertEq(_quoteToken.balanceOf(_OWNER), 0, "quote token: owner");
-
-        // Assert base token balances
-        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
-        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
-        uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
-
-        // Circulating supply
-        assertApproxEqAbs(
-            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
-                - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
-            _LOT_CAPACITY - _REFUND_AMOUNT,
-            2,
-            "circulating supply"
-        );
-
-        // Auction marked as complete
-        assertEq(_dtl.auctionComplete(), true, "auction completed");
-
-        // Reserves deployed into the pool
-        assertApproxEqAbs(
-            _getRangeReserves(Range.FLOOR),
-            _PROCEEDS_AMOUNT.mulDivDown(floorReservesPercent, _ONE_HUNDRED_PERCENT),
-            1,
-            "reserves: floor"
-        );
-        assertApproxEqAbs(
-            _getRangeReserves(Range.ANCHOR),
-            _PROCEEDS_AMOUNT.mulDivDown(
-                _ONE_HUNDRED_PERCENT - floorReservesPercent, _ONE_HUNDRED_PERCENT
-            ),
-            1,
-            "reserves: anchor"
-        );
-        assertEq(_getRangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
-
-        // BAssets deployed into the pool
-        assertEq(_getRangeBAssets(Range.FLOOR), 0, "bAssets: floor");
-        assertGt(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
-        assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
     }
 
     function test_poolPercent_fuzz(uint24 poolPercent_)
@@ -538,7 +381,6 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Adhere to the constraints of the poolPercent parameter
         uint24 poolPercent = uint24(bound(poolPercent_, 1e2, 100e2));
         _createData.poolPercent = poolPercent;
-        _createData.recipient = _OWNER;
 
         // Perform the onCreate callback
         _onCreate();
@@ -550,58 +392,94 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Perform callback
         _onSettle();
 
-        // Assert quote token balances
-        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
-        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        uint256 poolProceeds = _PROCEEDS_AMOUNT * poolPercent / 100e2;
-        assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), poolProceeds, "quote token: pool"
-        );
-        assertEq(
-            _quoteToken.balanceOf(_OWNER), _PROCEEDS_AMOUNT - poolProceeds, "quote token: owner"
-        );
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
 
-        // Assert base token balances
-        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
-        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
-        uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
-        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
+    function test_anchorTickWidth_fuzz(int24 anchorTickWidth_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Set the anchor tick width
+        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 1, 10));
+        _createData.anchorTickWidth = anchorTickWidth;
 
-        // Circulating supply
-        assertApproxEqAbs(
-            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
-                - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
-            _LOT_CAPACITY - _REFUND_AMOUNT,
-            2, // There is a difference (rounding error?) of 2
-            "circulating supply"
-        );
+        // Perform the onCreate callback
+        _onCreate();
 
-        // Auction marked as complete
-        assertEq(_dtl.auctionComplete(), true, "auction completed");
+        // Mint tokens
+        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
+        _transferBaseTokenRefund(_REFUND_AMOUNT);
 
-        // Reserves deployed into the pool
-        assertApproxEqAbs(
-            _getRangeReserves(Range.FLOOR),
-            _PROCEEDS_AMOUNT.mulDivDown(_FLOOR_RESERVES_PERCENT, _ONE_HUNDRED_PERCENT),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: floor"
-        );
-        assertApproxEqAbs(
-            _getRangeReserves(Range.ANCHOR),
-            _PROCEEDS_AMOUNT.mulDivDown(
-                _ONE_HUNDRED_PERCENT - _FLOOR_RESERVES_PERCENT, _ONE_HUNDRED_PERCENT
-            ),
-            1, // There is a difference (rounding error?) of 1
-            "reserves: anchor"
-        );
-        assertEq(_getRangeReserves(Range.DISCOVERY), 0, "reserves: discovery");
+        // Perform callback
+        _onSettle();
 
-        // BAssets deployed into the pool
-        assertEq(_getRangeBAssets(Range.FLOOR), 0, "bAssets: floor");
-        assertGt(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
-        assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_discoveryTickWidth_fuzz(int24 discoveryTickWidth_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Set the discovery tick width
+        int24 discoveryTickWidth = int24(bound(discoveryTickWidth_, 1, 350));
+        _createData.discoveryTickWidth = discoveryTickWidth;
+
+        // Perform the onCreate callback
+        _onCreate();
+
+        // Mint tokens
+        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
+        _transferBaseTokenRefund(_REFUND_AMOUNT);
+
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_initialTick_fuzz(int24 initialTick_) public {
+        int24 initialTick = int24(bound(initialTick_, -800_000, 800_000));
+        _poolInitialTick = initialTick;
+
+        // Create the BPOOL
+        _createBPOOL();
+
+        // Create the callback
+        _createCallback();
+
+        // Create the auction
+        _createAuction();
+
+        // Perform the onCreate callback
+        _onCreate();
+
+        // Mint tokens
+        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
+        _transferBaseTokenRefund(_REFUND_AMOUNT);
+
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
     }
 }
