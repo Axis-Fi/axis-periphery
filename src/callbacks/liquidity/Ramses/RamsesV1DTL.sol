@@ -89,20 +89,25 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         bool,
         bytes calldata callbackData_
     ) internal virtual override {
-        // Validate that the callback data is of the correct length
-        if (callbackData_.length != 64) {
-            revert Callback_InvalidParams();
+        RamsesV1OnCreateParams memory params;
+        {
+            OnCreateParams memory onCreateParams = abi.decode(callbackData_, (OnCreateParams));
+
+            // Validate that the callback data is of the correct length
+            if (onCreateParams.implParams.length != 64) {
+                revert Callback_InvalidParams();
+            }
+
+            // Decode the callback data
+            params = abi.decode(onCreateParams.implParams, (RamsesV1OnCreateParams));
         }
 
-        // Decode the callback data
-        RamsesV1OnCreateParams memory params = abi.decode(callbackData_, (RamsesV1OnCreateParams));
-
         // Check that the slippage amount is within bounds
+        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
+        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
         if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
             revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
         }
-        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
-        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
 
         lotParameters[lotId_] = params;
     }
