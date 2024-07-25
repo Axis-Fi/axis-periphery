@@ -49,11 +49,8 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     /// @dev        This contract is used to add liquidity to Ramses pairs
     IRamsesV1Router public router;
 
-    /// @notice     Records whether a pool should be stable or volatile
-    mapping(uint96 => bool) public lotIdToStable;
-
-    /// @notice     Mapping of lot ID to maximum slippage
-    mapping(uint96 => uint24) public lotIdToMaxSlippage;
+    /// @notice     Mapping of lot ID to configuration parameters
+    mapping(uint96 => RamsesV1OnCreateParams) public lotParameters;
 
     /// @notice     Mapping of lot ID to pool token
     mapping(uint96 => address) public lotIdToPoolToken;
@@ -92,6 +89,11 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         bool,
         bytes calldata callbackData_
     ) internal virtual override {
+        // Validate that the callback data is of the correct length
+        if (callbackData_.length != 64) {
+            revert Callback_InvalidParams();
+        }
+
         // Decode the callback data
         RamsesV1OnCreateParams memory params = abi.decode(callbackData_, (RamsesV1OnCreateParams));
 
@@ -101,10 +103,8 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         }
         // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
         // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
-        lotIdToMaxSlippage[lotId_] = params.maxSlippage;
 
-        // Record whether the pool should be stable or volatile
-        lotIdToStable[lotId_] = params.stable;
+        lotParameters[lotId_] = params;
     }
 
     /// @inheritdoc BaseDirectToLiquidity
@@ -120,19 +120,18 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         uint256 baseTokenAmount_,
         bytes memory
     ) internal virtual override {
+        RamsesV1OnCreateParams memory params = lotParameters[lotId_];
+
         // Create and initialize the pool if necessary
         // Token orientation is irrelevant
-        bool stable = lotIdToStable[lotId_];
-        address pairAddress = pairFactory.getPair(baseToken_, quoteToken_, stable);
+        address pairAddress = pairFactory.getPair(baseToken_, quoteToken_, params.stable);
         if (pairAddress == address(0)) {
-            pairAddress = pairFactory.createPair(baseToken_, quoteToken_, stable);
+            pairAddress = pairFactory.createPair(baseToken_, quoteToken_, params.stable);
         }
 
         // Calculate the minimum amount out for each token
-        uint256 quoteTokenAmountMin =
-            _getAmountWithSlippage(quoteTokenAmount_, lotIdToMaxSlippage[lotId_]);
-        uint256 baseTokenAmountMin =
-            _getAmountWithSlippage(baseTokenAmount_, lotIdToMaxSlippage[lotId_]);
+        uint256 quoteTokenAmountMin = _getAmountWithSlippage(quoteTokenAmount_, params.maxSlippage);
+        uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokenAmount_, params.maxSlippage);
 
         // Approve the router to spend the tokens
         ERC20(quoteToken_).approve(address(router), quoteTokenAmount_);
@@ -145,7 +144,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         router.addLiquidity(
             quoteToken_,
             baseToken_,
-            stable,
+            params.stable,
             quoteTokenAmount_,
             baseTokenAmount_,
             quoteTokenAmountMin,
