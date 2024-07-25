@@ -30,13 +30,17 @@ contract MockCREDT is ICREDTv1 {
 
     function lastDefaultedTimeslot() external view override returns (uint256) {}
 
-    function totalCreditIssued() external view override returns (uint256) {}
+    function totalCreditIssued() external view override returns (uint256) {
+        return _totalCreditIssued;
+    }
 
     function setTotalCreditIssues(uint256 totalCreditIssued_) external {
         _totalCreditIssued = totalCreditIssued_;
     }
 
-    function totalCollateralized() external view override returns (uint256) {}
+    function totalCollateralized() external view override returns (uint256) {
+        return _totalCollateralized;
+    }
 
     function setTotalCollateralized(uint256 totalCollateralized_) external {
         _totalCollateralized = totalCollateralized_;

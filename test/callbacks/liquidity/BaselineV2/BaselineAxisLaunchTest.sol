@@ -228,7 +228,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         vm.prank(_OWNER);
         _bPoolMinter.setTransferLock(false);
 
-        // Update the mock
+        // Update the mock for the CREDT module
         _mockBaselineGetModuleForKeycode();
     }
 

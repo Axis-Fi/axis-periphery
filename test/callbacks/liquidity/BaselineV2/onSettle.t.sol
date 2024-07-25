@@ -34,8 +34,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] it adds reserves to the floor and anchor ranges in the correct proportions
     // [X] given a curator fee has been paid
     //  [X] the solvency check passes
-    // [ ] given there are credit account allocations
-    //  [ ] it includes the allocations in the solvency check
+    // [X] given there are credit account allocations
+    //  [X] it includes the allocations in the solvency check
     // [X] it burns refunded base tokens, updates the circulating supply, marks the auction as completed and deploys the reserves into the Baseline pool
 
     // TODO poolPercent fuzzing
@@ -247,8 +247,51 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertApproxEqAbs(
             totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
                 - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCollateralized(),
+                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCreditIssued(), // totalCreditIssued would affect supply, totalCollateralized will not
             _LOT_CAPACITY - _REFUND_AMOUNT + curatorFee,
+            2, // There is a difference (rounding error?) of 2
+            "circulating supply"
+        );
+    }
+
+    function test_givenCreditAllocations_fuzz(uint256 creditAllocations_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // NOTE: somewhere around 88526166011773621485726186888697, this makes the Baseline token insolvent. Should this be accepted as an upper limit with tests? Any further action?
+        uint256 creditAllocations = bound(creditAllocations_, 0, type(uint256).max);
+
+        // Allocate credit accounts
+        _creditModule.setTotalCollateralized(creditAllocations);
+
+        // Perform callback
+        _onSettle();
+
+        // Assert quote token balances
+        assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
+        assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
+        assertEq(
+            _quoteToken.balanceOf(address(_baseToken.pool())), _PROCEEDS_AMOUNT, "quote token: pool"
+        );
+
+        // Assert base token balances
+        assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
+        assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
+        uint256 totalSupply = _baseToken.totalSupply();
+        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT;
+        assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
+
+        // Circulating supply
+        assertApproxEqAbs(
+            totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
+                - _baseToken.getPosition(Range.ANCHOR).bAssets
+                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCreditIssued(), // totalCreditIssued would affect supply, totalCollateralized will not
+            _LOT_CAPACITY - _REFUND_AMOUNT,
             2, // There is a difference (rounding error?) of 2
             "circulating supply"
         );

@@ -563,31 +563,29 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         //// Step 5: Verify Solvency ////
         {
             uint256 totalSupply = bAsset.totalSupply();
-            uint256 totalCredit = CREDT.totalCreditIssued();
             uint256 totalCollatSupply = CREDT.totalCollateralized();
+            uint256 initialBlv = BPOOL.getBaselineValue();
 
             Position memory floor = BPOOL.getPosition(Range.FLOOR);
             Position memory anchor = BPOOL.getPosition(Range.ANCHOR);
             Position memory discovery = BPOOL.getPosition(Range.DISCOVERY);
 
-            uint256 debtCapacity =
-                BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, totalCredit);
+            uint256 debtCapacity = BPOOL.getCapacityForReserves(
+                floor.sqrtPriceL, floor.sqrtPriceU, totalCollatSupply.mulWad(initialBlv)
+            );
 
             uint256 totalCapacity =
                 debtCapacity + floor.capacity + anchor.capacity + discovery.capacity;
             console2.log("totalCapacity", totalCapacity);
             console2.log("totalSupply", totalSupply);
             console2.log("totalCollatSupply", totalCollatSupply);
-            console2.log(
-                "totalSpotSupply",
-                totalSupply - totalCollatSupply - floor.bAssets - anchor.bAssets - discovery.bAssets
-            );
+            uint256 totalSpotSupply =
+                totalSupply - floor.bAssets - anchor.bAssets - discovery.bAssets;
+            console2.log("totalSpotSupply", totalSpotSupply);
 
             // verify the liquidity can support the intended supply
             // and that there is no significant initial surplus
-            uint256 capacityRatio = totalCapacity.divWad(
-                totalSupply - floor.bAssets - anchor.bAssets - discovery.bAssets
-            );
+            uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
             console2.log("capacityRatio", capacityRatio);
             if (capacityRatio < 100e16 || capacityRatio > 102e16) {
                 revert Callback_InvalidInitialization();
