@@ -32,16 +32,10 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     /// @notice     Parameters for the onCreate callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
-    /// @param      stable          Whether the pool is stable or volatile
+    /// @param      stable          Whether the pool will be stable or volatile
+    /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
     struct RamsesV1OnCreateParams {
         bool stable;
-    }
-
-    /// @notice     Parameters for the onSettle callback
-    /// @dev        This will be encoded in the `callbackData_` parameter
-    ///
-    /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of `ONE_HUNDRED_PERCENT`)
-    struct RamsesV1OnSettleParams {
         uint24 maxSlippage;
     }
 
@@ -57,6 +51,9 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
 
     /// @notice     Records whether a pool should be stable or volatile
     mapping(uint96 => bool) public lotIdToStable;
+
+    /// @notice     Mapping of lot ID to maximum slippage
+    mapping(uint96 => uint24) public lotIdToMaxSlippage;
 
     /// @notice     Mapping of lot ID to pool token
     mapping(uint96 => address) public lotIdToPoolToken;
@@ -85,12 +82,12 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the parameters
     ///
     ///             This function reverts if:
-    ///             - The pool for the token combination already exists
+    ///             - `RamsesV1OnCreateParams.maxSlippage` is out of bounds
     function __onCreate(
         uint96 lotId_,
         address,
-        address baseToken_,
-        address quoteToken_,
+        address,
+        address,
         uint256,
         bool,
         bytes calldata callbackData_
@@ -98,10 +95,13 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         // Decode the callback data
         RamsesV1OnCreateParams memory params = abi.decode(callbackData_, (RamsesV1OnCreateParams));
 
-        // Check that the pool does not exist
-        if (pairFactory.getPair(baseToken_, quoteToken_, params.stable) != address(0)) {
-            revert Callback_Params_PoolExists();
+        // Check that the slippage amount is within bounds
+        if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
         }
+        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
+        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
+        lotIdToMaxSlippage[lotId_] = params.maxSlippage;
 
         // Record whether the pool should be stable or volatile
         lotIdToStable[lotId_] = params.stable;
@@ -118,11 +118,8 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_,
-        bytes memory callbackData_
+        bytes memory
     ) internal virtual override {
-        // Decode the callback data
-        RamsesV1OnSettleParams memory params = abi.decode(callbackData_, (RamsesV1OnSettleParams));
-
         // Create and initialize the pool if necessary
         // Token orientation is irrelevant
         bool stable = lotIdToStable[lotId_];
@@ -132,8 +129,10 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         // Calculate the minimum amount out for each token
-        uint256 quoteTokenAmountMin = _getAmountWithSlippage(quoteTokenAmount_, params.maxSlippage);
-        uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokenAmount_, params.maxSlippage);
+        uint256 quoteTokenAmountMin =
+            _getAmountWithSlippage(quoteTokenAmount_, lotIdToMaxSlippage[lotId_]);
+        uint256 baseTokenAmountMin =
+            _getAmountWithSlippage(baseTokenAmount_, lotIdToMaxSlippage[lotId_]);
 
         // Approve the router to spend the tokens
         ERC20(quoteToken_).approve(address(router), quoteTokenAmount_);
@@ -141,6 +140,8 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
 
         // Deposit into the pool
         // Token orientation is irrelevant
+        // If the pool is liquid and initialised at a price different to the auction, this will revert
+        // The auction would fail to settle, and bidders could be refunded by an abort() call
         router.addLiquidity(
             quoteToken_,
             baseToken_,
