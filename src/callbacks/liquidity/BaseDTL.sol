@@ -228,9 +228,15 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot has already been completed
     ///
     /// @param      lotId_          The lot ID
     function _onCancel(uint96 lotId_, uint256, bool, bytes calldata) internal override {
+        // Check that the lot is active
+        if (!lotConfiguration[lotId_].active) {
+            revert Callback_AlreadyComplete();
+        }
+
         // Mark the lot as inactive to prevent further actions
         DTLConfiguration storage config = lotConfiguration[lotId_];
         config.active = false;
@@ -242,6 +248,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot has already been completed
     ///
     /// @param      lotId_          The lot ID
     /// @param      curatorPayout_  The maximum curator payout
@@ -251,6 +258,11 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         bool,
         bytes calldata
     ) internal override {
+        // Check that the lot is active
+        if (!lotConfiguration[lotId_].active) {
+            revert Callback_AlreadyComplete();
+        }
+
         // Update the funding
         DTLConfiguration storage config = lotConfiguration[lotId_];
         config.lotCuratorPayout = curatorPayout_;
