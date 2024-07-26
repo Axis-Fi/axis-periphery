@@ -7,12 +7,13 @@ import {RamsesV1DirectToLiquidityTest} from "./RamsesV1DTLTest.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 
-// Rames
+// Ramses
 import {IRamsesV1Pool} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV1Pool.sol";
 
 // AuctionHouse
 import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
 contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
@@ -21,8 +22,6 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     /// @dev The minimum amount of liquidity retained in the pool
     uint256 internal constant _MINIMUM_LIQUIDITY = 10 ** 3;
 
-    uint96 internal _proceeds;
-    uint96 internal _refund;
     uint96 internal _capacityUtilised;
     uint96 internal _quoteTokensToDeposit;
     uint96 internal _baseTokensToDeposit;
@@ -32,10 +31,12 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
 
     // ========== Internal functions ========== //
 
+    function _getRamsesV1Pool(bool stable_) internal view returns (IRamsesV1Pool) {
+        return IRamsesV1Pool(_factory.getPair(address(_quoteToken), address(_baseToken), stable_));
+    }
+
     function _getRamsesV1Pool() internal view returns (IRamsesV1Pool) {
-        return IRamsesV1Pool(
-            _factory.getPair(address(_quoteToken), address(_baseToken), _ramsesCreateParams.stable)
-        );
+        return _getRamsesV1Pool(_ramsesCreateParams.stable);
     }
 
     function _getVestingTokenId() internal view returns (uint256) {
@@ -131,26 +132,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "DTL: base token balance");
     }
 
-    function _assertApprovals() internal view {
-        // Ensure there are no dangling approvals
-        assertEq(
-            _quoteToken.allowance(_dtlAddress, address(_router)), 0, "DTL: quote token allowance"
-        );
-        assertEq(
-            _baseToken.allowance(_dtlAddress, address(_router)), 0, "DTL: base token allowance"
-        );
-    }
-
     // ========== Modifiers ========== //
-
-    function _performCallback(uint96 lotId_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
-    }
-
-    function _performCallback() internal {
-        _performCallback(_lotId);
-    }
 
     function _createPool() internal returns (address) {
         return _factory.createPair(
@@ -262,8 +244,15 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
 
     // ========== Tests ========== //
 
-    // [ ] given the onSettle callback has already been called
-    //  [ ] it reverts
+    // [X] given the onSettle callback has already been called
+    //  [X] when onSettle is called
+    //   [X] it reverts
+    //  [X] when onCancel is called
+    //   [X] it reverts
+    //  [X] when onCreate is called
+    //   [X] it reverts
+    //  [X] when onCurate is called
+    //   [X] it reverts
     // [X] given the pool is created
     //  [X] it initializes the pool
     // [X] given the pool is created and initialized
@@ -288,8 +277,10 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     //  [X] it mints the LP token to the recipient
     // [X] when multiple lots are created
     //  [X] it performs actions on the correct pool
-    // [ ] given the stable parameter is true
-    //  [ ] it creates a stable pool
+    // [X] given the stable parameter is true
+    //  [X] it creates a stable pool
+    // [X] given the stable parameter is false
+    //  [X] it creates a volatile pool
     // [X] it creates and initializes the pool, creates a pool token, deposits into the pool token, transfers the LP token to the seller and transfers any excess back to the seller
 
     function test_givenPoolIsCreated()
@@ -302,7 +293,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -321,7 +312,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -340,7 +331,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -363,7 +354,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -382,7 +373,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -405,7 +396,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         // Expect revert
         vm.expectRevert("Router: INSUFFICIENT_B_AMOUNT");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenPoolHasDepositWithLowerPrice_whenMaxSlippageIsSet()
@@ -420,7 +411,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -443,7 +434,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         // Expect revert
         vm.expectRevert("Router: INSUFFICIENT_A_AMOUNT");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenPoolHasDepositWithHigherPrice_whenMaxSlippageIsSet()
@@ -458,7 +449,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -479,7 +470,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -501,7 +492,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -522,7 +513,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         // Warp to the end of the vesting period
         vm.warp(_initialTimestamp + 3);
@@ -551,7 +542,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         // Get the pools deployed by the DTL callback
         IRamsesV1Pool pool = _getRamsesV1Pool();
@@ -613,7 +604,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenInsufficientBaseTokenAllowance_reverts()
@@ -628,7 +619,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         // Expect revert
         vm.expectRevert("TRANSFER_FROM_FAILED");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_success()
@@ -640,7 +631,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -661,13 +652,51 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         // Create second lot
         uint96 lotIdTwo = _createLot(_NOT_SELLER);
 
-        _performCallback(lotIdTwo);
+        _performOnSettle(lotIdTwo);
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
         _assertApprovals();
+    }
+
+    function test_stablePool()
+        public
+        givenCallbackIsCreated
+        givenStable(true)
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        address stablePool = address(_getRamsesV1Pool(true));
+        address volatilePool = address(_getRamsesV1Pool(false));
+
+        assertNotEq(stablePool, address(0), "stable pool address");
+        assertEq(volatilePool, address(0), "volatile pool address");
+    }
+
+    function test_volatilePool()
+        public
+        givenCallbackIsCreated
+        givenStable(false)
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        address stablePool = address(_getRamsesV1Pool(true));
+        address volatilePool = address(_getRamsesV1Pool(false));
+
+        assertEq(stablePool, address(0), "stable pool address");
+        assertNotEq(volatilePool, address(0), "volatile pool address");
     }
 
     function test_whenRecipientIsNotSeller()
@@ -680,12 +709,95 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
         _assertApprovals();
+    }
+
+    function test_auctionCompleted_onCreate_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseCallback determines if the lot has already been registered
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCreate again
+        _performOnCreate();
+    }
+
+    function test_auctionCompleted_onCurate_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCurate
+        _performOnCurate(_curatorPayout);
+    }
+
+    function test_auctionCompleted_onCancel_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCancel
+        _performOnCancel();
+    }
+
+    function test_auctionCompleted_onSettle_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onSettle
+        _performOnSettle();
     }
 }

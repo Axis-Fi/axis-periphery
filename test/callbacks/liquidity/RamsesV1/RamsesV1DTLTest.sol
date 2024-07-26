@@ -54,6 +54,9 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
 
+    uint96 internal _proceeds;
+    uint96 internal _refund;
+
     // Inputs
     RamsesV1DirectToLiquidity.RamsesV1OnCreateParams internal _ramsesCreateParams =
         RamsesV1DirectToLiquidity.RamsesV1OnCreateParams({stable: false, maxSlippage: uint24(0)});
@@ -183,6 +186,32 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
         _;
     }
 
+    function _performOnCreate(address seller_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCreate(
+            _lotId,
+            seller_,
+            address(_baseToken),
+            address(_quoteToken),
+            _LOT_CAPACITY,
+            false,
+            abi.encode(_dtlCreateParams)
+        );
+    }
+
+    function _performOnCreate() internal {
+        _performOnCreate(_SELLER);
+    }
+
+    function _performOnCancel(uint96 lotId_, uint256 refundAmount_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCancel(lotId_, refundAmount_, false, abi.encode(""));
+    }
+
+    function _performOnCancel() internal {
+        _performOnCancel(_lotId, 0);
+    }
+
     function _performOnCurate(uint96 curatorPayout_) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorPayout_, false, abi.encode(""));
@@ -191,6 +220,15 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
     modifier givenOnCurate(uint96 curatorPayout_) {
         _performOnCurate(curatorPayout_);
         _;
+    }
+
+    function _performOnSettle(uint96 lotId_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
+    }
+
+    function _performOnSettle() internal {
+        _performOnSettle(_lotId);
     }
 
     modifier givenProceedsUtilisationPercent(uint24 percent_) {
@@ -221,11 +259,13 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
         _;
     }
 
-    modifier givenMaxSlippage(uint24 maxSlippage_) {
+    function _setMaxSlippage(uint24 maxSlippage_) internal {
         _ramsesCreateParams.maxSlippage = maxSlippage_;
-
-        // Update the callback data
         _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
+    }
+
+    modifier givenMaxSlippage(uint24 maxSlippage_) {
+        _setMaxSlippage(maxSlippage_);
         _;
     }
 
@@ -259,5 +299,33 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
             active: active_,
             implParams: implParams_
         });
+    }
+
+    // ========== ASSERTIONS ========== //
+
+    function _assertApprovals() internal view {
+        // Router
+        assertEq(
+            _quoteToken.allowance(address(_dtl), address(_router)),
+            0,
+            "allowance: quote token: router"
+        );
+        assertEq(
+            _baseToken.allowance(address(_dtl), address(_router)),
+            0,
+            "allowance: base token: router"
+        );
+
+        // LinearVesting
+        assertEq(
+            _quoteToken.allowance(address(_dtl), address(_linearVesting)),
+            0,
+            "allowance: quote token: linear vesting"
+        );
+        assertEq(
+            _baseToken.allowance(address(_dtl), address(_linearVesting)),
+            0,
+            "allowance: base token: linear vesting"
+        );
     }
 }

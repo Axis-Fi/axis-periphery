@@ -22,8 +22,6 @@ contract RamsesV1DTLOnCurateForkTest is RamsesV1DirectToLiquidityTest {
     //  [X] it reverts
     // [X] when multiple lots are created
     //  [X] it marks the correct lot as inactive
-    // [ ] when the auction lot has already been completed
-    //  [ ] it reverts
     // [X] it registers the curator payout
 
     function test_whenLotNotRegistered_reverts() public givenCallbackIsCreated {
@@ -52,6 +50,8 @@ contract RamsesV1DTLOnCurateForkTest is RamsesV1DirectToLiquidityTest {
             _LOT_CAPACITY,
             "auction house base token balance"
         );
+
+        _assertApprovals();
     }
 
     function test_success_multiple() public givenCallbackIsCreated givenOnCreate {
@@ -81,5 +81,7 @@ contract RamsesV1DTLOnCurateForkTest is RamsesV1DirectToLiquidityTest {
             _LOT_CAPACITY * 2,
             "auction house base token balance"
         );
+
+        _assertApprovals();
     }
 }

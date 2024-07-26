@@ -12,19 +12,25 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
     // ============ Modifiers ============ //
 
     function _performCallback(uint96 lotId_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCancel(lotId_, _REFUND_AMOUNT, false, abi.encode(""));
+        _performOnCancel(lotId_, _REFUND_AMOUNT);
     }
 
     // ============ Tests ============ //
 
-    // [ ] when the lot has not been registered
-    //  [ ] it reverts
-    // [ ] when multiple lots are created
-    //  [ ] it marks the correct lot as inactive
-    // [ ] when the lot has already been completed
-    //  [ ] it reverts
-    // [ ] it marks the lot as inactive
+    // [X] given the onCancel callback has already been called
+    //  [X] when onSettle is called
+    //   [X] it reverts
+    //  [X] when onCancel is called
+    //   [X] it reverts
+    //  [X] when onCurate is called
+    //   [X] it reverts
+    //  [X] when onCreate is called
+    //   [X] it reverts
+    // [X] when the lot has not been registered
+    //  [X] it reverts
+    // [X] when multiple lots are created
+    //  [X] it marks the correct lot as inactive
+    // [X] it marks the lot as inactive
 
     function test_whenLotNotRegistered_reverts() public givenCallbackIsCreated {
         // Expect revert
@@ -69,5 +75,56 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token balance");
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller base token balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller base token balance");
+    }
+
+    function test_auctionCancelled_onCreate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseCallback determines if the lot has already been registered
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_auctionCancelled_onCurate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCurate(0);
+    }
+
+    function test_auctionCancelled_onCancel_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCancel();
+    }
+
+    function test_auctionCancelled_onSettle_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnSettle();
     }
 }
