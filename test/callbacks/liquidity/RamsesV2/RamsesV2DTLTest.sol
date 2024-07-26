@@ -92,7 +92,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
 
         _factory = IRamsesV2Factory(_RAMSES_V2_FACTORY);
         _positionManager = IRamsesV2PositionManager(payable(_RAMSES_V2_POSITION_MANAGER));
-        _ram = IRAM(IVotingEscrow(_positionManager.veRam()).token());
+        // _ram = IRAM(IVotingEscrow(_positionManager.veRam()).token());
 
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
 
