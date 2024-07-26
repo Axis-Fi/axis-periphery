@@ -55,6 +55,9 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     /// @notice     The Ramses V2 position manager
     IRamsesV2PositionManager public ramsesV2PositionManager;
 
+    /// @notice     Mapping of lot ID to Ramses V2 token ID
+    mapping(uint96 => uint256) public lotIdToTokenId;
+
     // ========== CONSTRUCTOR ========== //
 
     constructor(
@@ -80,9 +83,9 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the input data
     ///
     ///             This function reverts if:
-    ///             - `RamsesV1OnCreateParams.poolFee` is not enabled
-    ///             - `RamsesV1OnCreateParams.maxSlippage` is out of bounds
-    ///             - This contract does not have permission to use the veRamTokenId
+    ///             - `RamsesV2OnCreateParams.poolFee` is not enabled
+    ///             - `RamsesV2OnCreateParams.maxSlippage` is out of bounds
+    ///             - This contract does not have permission to use `RamsesV2OnCreateParams.veRamTokenId`
     function __onCreate(
         uint96 lotId_,
         address,
@@ -167,7 +170,8 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
             ERC20(baseToken_).approve(address(ramsesV2PositionManager), baseTokenAmount_);
 
             // Mint the position
-            ramsesV2PositionManager.mint(mintParams);
+            (uint256 tokenId,,,) = ramsesV2PositionManager.mint(mintParams);
+            lotIdToTokenId[lotId_] = tokenId;
 
             // Reset dangling approvals
             // The position manager may not spend all tokens
