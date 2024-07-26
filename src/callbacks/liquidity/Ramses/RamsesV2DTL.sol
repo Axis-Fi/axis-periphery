@@ -35,20 +35,15 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     /// @notice The specified pool fee is not enabled in the Ramses V2 Factory
     error Callback_Params_PoolFeeNotEnabled();
 
-    /// @notice The specified veRAM token ID is not approved for use by the callback
-    error Callback_Params_VeRamTokenIdNotApproved();
-
     // ========== STRUCTS ========== //
 
     /// @notice     Parameters for the onCreate callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
     /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
-    /// @param      veRamTokenId    The token ID of the veRAM token to use for the position (optional)
     struct RamsesV2OnCreateParams {
         uint24 poolFee;
         uint24 maxSlippage;
-        uint256 veRamTokenId;
     }
 
     // ========== STATE VARIABLES ========== //
@@ -89,7 +84,6 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             This function reverts if:
     ///             - `RamsesV2OnCreateParams.poolFee` is not enabled
     ///             - `RamsesV2OnCreateParams.maxSlippage` is out of bounds
-    ///             - This contract does not have permission to use `RamsesV2OnCreateParams.veRamTokenId`
     function __onCreate(
         uint96 lotId_,
         address,
@@ -113,17 +107,6 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
         if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
             revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
-        }
-
-        // Check that the callback has been given permission to use the veRamTokenId
-        // Similar to maxSlippage, this needs to be stored during onCreate
-        if (
-            params.veRamTokenId > 0
-                && !IVotingEscrow(ramsesV2PositionManager.veRam()).isApprovedOrOwner(
-                    address(this), params.veRamTokenId
-                )
-        ) {
-            revert Callback_Params_VeRamTokenIdNotApproved();
         }
     }
 
@@ -250,10 +233,12 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
             amount1Min: _getAmountWithSlippage(amount1, params.maxSlippage),
             recipient: lotConfiguration[lotId_].recipient,
             deadline: block.timestamp,
-            veRamTokenId: params.veRamTokenId
+            veRamTokenId: 0 // Not supported at the moment
         });
     }
 
+    /// @notice Decodes the configuration parameters from the DTLConfiguration
+    /// @dev   The configuration parameters are stored in `DTLConfiguration.implParams`
     function _decodeParameters(uint96 lotId_)
         internal
         view
@@ -261,7 +246,7 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     {
         DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
         // Validate that the callback data is of the correct length
-        if (lotConfig.implParams.length != 96) {
+        if (lotConfig.implParams.length != 64) {
             revert Callback_InvalidParams();
         }
 

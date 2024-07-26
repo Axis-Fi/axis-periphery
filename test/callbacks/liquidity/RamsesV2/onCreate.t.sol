@@ -62,10 +62,10 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
     //  [X] it reverts
     // [X] when the recipient is not the seller
     //  [X] it records the recipient
-    // [X] when the veRamTokenId is set
-    //  [X] given the DTL contract is approved to use the veRamTokenId
-    //   [X] it succeeds
-    //  [X] it reverts
+    // [ ] when the veRamTokenId is set
+    //  [ ] given the DTL contract is approved to use the veRamTokenId
+    //   [ ] it succeeds
+    //  [ ] it reverts
     // [X] when multiple lots are created
     //  [X] it registers each lot
     // [X] it registers the lot
@@ -274,7 +274,7 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
             abi.decode(configuration.implParams, (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams));
         assertEq(_ramsesCreateParams.poolFee, _ramsesCreateParams.poolFee, "poolFee");
         assertEq(_ramsesCreateParams.maxSlippage, _ramsesCreateParams.maxSlippage, "maxSlippage");
-        assertEq(_ramsesCreateParams.veRamTokenId, _ramsesCreateParams.veRamTokenId, "veRamTokenId");
+        // assertEq(_ramsesCreateParams.veRamTokenId, _ramsesCreateParams.veRamTokenId, "veRamTokenId");
 
         // Assert balances
         _assertBaseTokenBalances();
@@ -324,34 +324,34 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
         assertEq(ramsesCreateParams.maxSlippage, maxSlippage, "maxSlippage");
     }
 
-    function test_veRamTokenId()
-        public
-        givenCallbackIsCreated
-        givenVeRamTokenId
-        givenVeRamTokenIdApproval(true)
-    {
-        _performOnCreate();
+    // function test_veRamTokenId()
+    //     public
+    //     givenCallbackIsCreated
+    //     givenVeRamTokenId
+    //     givenVeRamTokenIdApproval(true)
+    // {
+    //     _performOnCreate();
 
-        // Assert values
-        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+    //     // Assert values
+    //     BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
 
-        RamsesV2DirectToLiquidity.RamsesV2OnCreateParams memory ramsesCreateParams =
-            abi.decode(configuration.implParams, (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams));
-        assertEq(ramsesCreateParams.veRamTokenId, 1000, "veRamTokenId");
-    }
+    //     RamsesV2DirectToLiquidity.RamsesV2OnCreateParams memory ramsesCreateParams =
+    //         abi.decode(configuration.implParams, (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams));
+    //     assertEq(ramsesCreateParams.veRamTokenId, 1000, "veRamTokenId");
+    // }
 
-    function test_veRamTokenId_notApproved_reverts()
-        public
-        givenCallbackIsCreated
-        givenVeRamTokenId
-        givenVeRamTokenIdApproval(false)
-    {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            RamsesV2DirectToLiquidity.Callback_Params_VeRamTokenIdNotApproved.selector
-        );
-        vm.expectRevert(err);
+    // function test_veRamTokenId_notApproved_reverts()
+    //     public
+    //     givenCallbackIsCreated
+    //     givenVeRamTokenId
+    //     givenVeRamTokenIdApproval(false)
+    // {
+    //     // Expect revert
+    //     bytes memory err = abi.encodeWithSelector(
+    //         RamsesV2DirectToLiquidity.Callback_Params_VeRamTokenIdNotApproved.selector
+    //     );
+    //     vm.expectRevert(err);
 
-        _performOnCreate();
-    }
+    //     _performOnCreate();
+    // }
 }

@@ -63,8 +63,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     RamsesV2DirectToLiquidity.RamsesV2OnCreateParams internal _ramsesCreateParams =
     RamsesV2DirectToLiquidity.RamsesV2OnCreateParams({
         poolFee: 500,
-        maxSlippage: 1, // 0.01%, to handle rounding errors
-        veRamTokenId: 0
+        maxSlippage: 1 // 0.01%, to handle rounding errors
     });
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
@@ -256,7 +255,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     }
 
     function _setVeRamTokenId(uint256 veRamTokenId_) internal {
-        _ramsesCreateParams.veRamTokenId = veRamTokenId_;
+        // _ramsesCreateParams.veRamTokenId = veRamTokenId_;
         _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
     }
 
@@ -326,7 +325,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     }
 
     modifier givenVeRamTokenIdApproval(bool approved_) {
-        _mockVeRamTokenIdApproved(_ramsesCreateParams.veRamTokenId, approved_);
+        // _mockVeRamTokenIdApproved(_ramsesCreateParams.veRamTokenId, approved_);
         _;
     }
 

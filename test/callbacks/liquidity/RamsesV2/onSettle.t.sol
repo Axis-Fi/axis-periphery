@@ -195,8 +195,8 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
     //  [X] it mints the LP token to the recipient
     // [X] when multiple lots are created
     //  [X] it performs actions on the correct pool
-    // [X] given the veRamTokenId is set
-    //  [X] it succeeds
+    // [ ] given the veRamTokenId is set
+    //  [ ] it succeeds
     // [X] it creates and initializes the pool, mints the position, transfers the LP token to the seller and transfers any excess back to the seller
 
     function test_givenPoolIsCreated()
@@ -591,23 +591,23 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         _performOnSettle();
     }
 
-    function test_veRamTokenId()
-        public
-        givenCallbackIsCreated
-        givenVeRamTokenId
-        givenVeRamTokenIdApproval(true)
-        givenOnCreate
-        setCallbackParameters(_PROCEEDS, _REFUND)
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
-        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
-        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
-    {
-        _performOnSettle();
+    // function test_veRamTokenId()
+    //     public
+    //     givenCallbackIsCreated
+    //     givenVeRamTokenId
+    //     givenVeRamTokenIdApproval(true)
+    //     givenOnCreate
+    //     setCallbackParameters(_PROCEEDS, _REFUND)
+    //     givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+    //     givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+    //     givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    // {
+    //     _performOnSettle();
 
-        _assertPoolState(_sqrtPriceX96);
-        _assertLpTokenBalance();
-        _assertQuoteTokenBalance();
-        _assertBaseTokenBalance();
-        _assertApprovals();
-    }
+    //     _assertPoolState(_sqrtPriceX96);
+    //     _assertLpTokenBalance();
+    //     _assertQuoteTokenBalance();
+    //     _assertBaseTokenBalance();
+    //     _assertApprovals();
+    // }
 }
