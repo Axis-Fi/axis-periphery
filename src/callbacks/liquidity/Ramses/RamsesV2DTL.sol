@@ -32,7 +32,11 @@ import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     // ========== ERRORS ========== //
 
+    /// @notice The specified pool fee is not enabled in the Ramses V2 Factory
     error Callback_Params_PoolFeeNotEnabled();
+
+    /// @notice The specified veRAM token ID is not approved for use by the callback
+    error Callback_Params_VeRamTokenIdNotApproved();
 
     // ========== STRUCTS ========== //
 
@@ -119,7 +123,7 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
                     address(this), params.veRamTokenId
                 )
         ) {
-            revert Callback_InvalidParams();
+            revert Callback_Params_VeRamTokenIdNotApproved();
         }
     }
 
@@ -185,6 +189,12 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             as `_mintAndDeposit()` directly transfers the token to the recipient
     function _transferPoolToken(uint96) internal virtual override {
         // Nothing to do
+    }
+
+    /// @inheritdoc BaseDirectToLiquidity
+    /// @dev        This implementation disables linear vesting
+    function _isLinearVestingSupported() internal pure virtual override returns (bool) {
+        return false;
     }
 
     // ========== INTERNAL FUNCTIONS ========== //

@@ -21,6 +21,8 @@ import {RamsesV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ram
 import {IRamsesV2Factory} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2Factory.sol";
 import {IRamsesV2PositionManager} from
     "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2PositionManager.sol";
+import {IVotingEscrow} from "../../../../src/callbacks/liquidity/Ramses/lib/IVotingEscrow.sol";
+import {IRAM} from "../../../../src/callbacks/liquidity/Ramses/lib/IRAM.sol";
 
 // Axis core
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.0/modules/Keycode.sol";
@@ -48,10 +50,14 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     address internal _dtlAddress;
     IRamsesV2Factory internal _factory;
     IRamsesV2PositionManager internal _positionManager;
+    IRAM internal _ram;
     MockBatchAuctionModule internal _batchAuctionModule;
 
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
+
+    uint96 internal _proceeds;
+    uint96 internal _refund;
 
     // Inputs
     RamsesV2DirectToLiquidity.RamsesV2OnCreateParams internal _ramsesCreateParams =
@@ -87,6 +93,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
 
         _factory = IRamsesV2Factory(_RAMSES_V2_FACTORY);
         _positionManager = IRamsesV2PositionManager(payable(_RAMSES_V2_POSITION_MANAGER));
+        _ram = IRAM(IVotingEscrow(_positionManager.veRam()).token());
 
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
 
@@ -180,6 +187,23 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
         _;
     }
 
+    function _performOnCreate(address seller_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCreate(
+            _lotId,
+            seller_,
+            address(_baseToken),
+            address(_quoteToken),
+            _LOT_CAPACITY,
+            false,
+            abi.encode(_dtlCreateParams)
+        );
+    }
+
+    function _performOnCreate() internal {
+        _performOnCreate(_SELLER);
+    }
+
     function _performOnCurate(uint96 curatorPayout_) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorPayout_, false, abi.encode(""));
@@ -188,6 +212,24 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     modifier givenOnCurate(uint96 curatorPayout_) {
         _performOnCurate(curatorPayout_);
         _;
+    }
+
+    function _performOnCancel(uint96 lotId_, uint256 refundAmount_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCancel(lotId_, refundAmount_, false, abi.encode(""));
+    }
+
+    function _performOnCancel() internal {
+        _performOnCancel(_lotId, 0);
+    }
+
+    function _performOnSettle(uint96 lotId_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
+    }
+
+    function _performOnSettle() internal {
+        _performOnSettle(_lotId);
     }
 
     modifier givenProceedsUtilisationPercent(uint24 percent_) {
@@ -213,13 +255,13 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
         _;
     }
 
-    function _setVmRamTokenId(uint24 vmRamTokenId_) internal {
-        _ramsesCreateParams.veRamTokenId = vmRamTokenId_;
+    function _setVeRamTokenId(uint256 veRamTokenId_) internal {
+        _ramsesCreateParams.veRamTokenId = veRamTokenId_;
         _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
     }
 
-    modifier givenVmRamTokenId(uint24 vmRamTokenId_) {
-        _setVmRamTokenId(vmRamTokenId_);
+    modifier givenVeRamTokenId() {
+        _createVeRamDeposit();
         _;
     }
 
@@ -235,6 +277,56 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
 
     modifier whenRecipientIsNotSeller() {
         _dtlCreateParams.recipient = _NOT_SELLER;
+        _;
+    }
+
+    function _createPool() internal returns (address) {
+        (address token0, address token1) = address(_baseToken) < address(_quoteToken)
+            ? (address(_baseToken), address(_quoteToken))
+            : (address(_quoteToken), address(_baseToken));
+
+        return _factory.createPool(token0, token1, _ramsesCreateParams.poolFee);
+    }
+
+    modifier givenPoolIsCreated() {
+        _createPool();
+        _;
+    }
+
+    function _createVeRamDeposit() internal {
+        // Mint RAM
+        vm.prank(address(_ram.minter()));
+        _ram.mint(_SELLER, 1e18);
+
+        // Approve spending
+        address veRam = address(_positionManager.veRam());
+        vm.prank(_SELLER);
+        _ram.approve(veRam, 1e18);
+
+        // Deposit into the voting escrow
+        vm.startPrank(_SELLER);
+        uint256 tokenId = IVotingEscrow(veRam).create_lock_for(
+            1e18, 24 hours * 365, _SELLER
+        );
+        vm.stopPrank();
+
+        // Update the callback
+        _setVeRamTokenId(tokenId);
+    }
+
+    function _mockVeRamTokenIdApproved(uint256 veRamTokenId_, bool approved_) internal {
+        // TODO this could be shifted to an actual approval, but I couldn't figure out how
+        vm.mockCall(
+            address(_positionManager.veRam()),
+            abi.encodeWithSelector(
+                IVotingEscrow.isApprovedOrOwner.selector, address(_dtl), veRamTokenId_
+            ),
+            abi.encode(approved_)
+        );
+    }
+
+    modifier givenVeRamTokenIdApproval(bool approved_) {
+        _mockVeRamTokenIdApproved(_ramsesCreateParams.veRamTokenId, approved_);
         _;
     }
 

@@ -45,6 +45,9 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     /// @notice The auction lot has already been completed
     error Callback_AlreadyComplete();
 
+    /// @notice Indicates that the feature is not supported by the contract
+    error Callback_NotSupported();
+
     // ========== STRUCTS ========== //
 
     /// @notice     Configuration for the DTL callback
@@ -160,6 +163,11 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
         // If vesting is enabled
         if (params.vestingStart != 0 || params.vestingExpiry != 0) {
+            // Check if linear vesting is supported
+            if (!_isLinearVestingSupported()) {
+                revert Callback_NotSupported();
+            }
+
             // Get the linear vesting module (or revert)
             linearVestingModule = LinearVesting(_getLatestLinearVestingModule());
 
@@ -512,5 +520,11 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         );
 
         // The LinearVesting module will use all of `poolTokenQuantity`, so there is no need to clean up dangling approvals
+    }
+
+    /// @notice Indicates if linear vesting is supported by the callback
+    /// @dev    Implementing contracts can opt to override this in order to disable linear vesting
+    function _isLinearVestingSupported() internal pure virtual returns (bool) {
+        return true;
     }
 }

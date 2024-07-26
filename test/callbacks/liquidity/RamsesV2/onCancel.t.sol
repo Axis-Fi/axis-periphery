@@ -11,22 +11,21 @@ contract RamsesV2DTLOnCancelForkTest is RamsesV2DirectToLiquidityTest {
 
     // ============ Modifiers ============ //
 
-    function _performCallback(uint96 lotId_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCancel(lotId_, _REFUND_AMOUNT, false, abi.encode(""));
+    function _performOnCancel(uint96 lotId_) internal {
+        _performOnCancel(lotId_, _REFUND_AMOUNT);
     }
 
     // ============ Tests ============ //
 
     // [X] given the onCancel callback has already been called
     //  [X] when onSettle is called
-    //   [ ] it reverts
+    //   [X] it reverts
     //  [X] when onCancel is called
-    //   [ ] it reverts
+    //   [X] it reverts
     //  [X] when onCurate is called
-    //   [ ] it reverts
+    //   [X] it reverts
     //  [X] when onCreate is called
-    //   [ ] it reverts
+    //   [X] it reverts
     // [X] when the lot has not been registered
     //  [X] it reverts
     // [X] when multiple lots are created
@@ -39,12 +38,12 @@ contract RamsesV2DTLOnCancelForkTest is RamsesV2DirectToLiquidityTest {
         vm.expectRevert(err);
 
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
     }
 
     function test_success() public givenCallbackIsCreated givenOnCreate {
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
 
         // Check the values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -61,7 +60,7 @@ contract RamsesV2DTLOnCancelForkTest is RamsesV2DirectToLiquidityTest {
 
         // Create a second lot and cancel it
         uint96 lotIdTwo = _createLot(_NOT_SELLER);
-        _performCallback(lotIdTwo);
+        _performOnCancel(lotIdTwo);
 
         // Check the values
         BaseDirectToLiquidity.DTLConfiguration memory configurationOne =
@@ -76,5 +75,56 @@ contract RamsesV2DTLOnCancelForkTest is RamsesV2DirectToLiquidityTest {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token balance");
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller base token balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller base token balance");
+    }
+
+    function test_auctionCancelled_onCreate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel(_lotId);
+
+        // Expect revert
+        // BaseCallback determines if the lot has already been registered
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_auctionCancelled_onCurate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCurate(0);
+    }
+
+    function test_auctionCancelled_onCancel_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCancel();
+    }
+
+    function test_auctionCancelled_onSettle_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnSettle();
     }
 }

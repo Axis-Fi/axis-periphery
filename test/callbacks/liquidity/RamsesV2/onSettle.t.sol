@@ -11,14 +11,13 @@ import {IRamsesV2Pool} from "../../../../src/callbacks/liquidity/Ramses/lib/IRam
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 // AuctionHouse
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
 contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
     uint96 internal constant _REFUND = 0;
 
-    uint96 internal _proceeds;
-    uint96 internal _refund;
     uint96 internal _capacityUtilised;
     uint96 internal _quoteTokensToDeposit;
     uint96 internal _baseTokensToDeposit;
@@ -84,30 +83,8 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
 
     // ========== Modifiers ========== //
 
-    function _performCallback(uint96 lotId_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
-    }
-
-    function _performCallback() internal {
-        _performCallback(_lotId);
-    }
-
-    function _createPool() internal returns (address) {
-        (address token0, address token1) = address(_baseToken) < address(_quoteToken)
-            ? (address(_baseToken), address(_quoteToken))
-            : (address(_quoteToken), address(_baseToken));
-
-        return _factory.createPool(token0, token1, _ramsesCreateParams.poolFee);
-    }
-
     function _initializePool(address pool_, uint160 sqrtPriceX96_) internal {
         IRamsesV2Pool(pool_).initialize(sqrtPriceX96_);
-    }
-
-    modifier givenPoolIsCreated() {
-        _createPool();
-        _;
     }
 
     modifier givenPoolIsCreatedAndInitialized(uint160 sqrtPriceX96_) {
@@ -191,13 +168,13 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
 
     // [X] given the onSettle callback has already been called
     //  [X] when onSettle is called
-    //   [ ] it reverts
+    //   [X] it reverts
     //  [X] when onCancel is called
-    //   [ ] it reverts
+    //   [X] it reverts
     //  [X] when onCreate is called
-    //   [ ] it reverts
+    //   [X] it reverts
     //  [X] when onCurate is called
-    //   [ ] it reverts
+    //   [X] it reverts
     // [X] given the pool is created
     //  [X] it initializes the pool
     // [X] given the pool is created and initialized
@@ -218,6 +195,8 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
     //  [X] it mints the LP token to the recipient
     // [X] when multiple lots are created
     //  [X] it performs actions on the correct pool
+    // [X] given the veRamTokenId is set
+    //  [X] it succeeds
     // [X] it creates and initializes the pool, mints the position, transfers the LP token to the seller and transfers any excess back to the seller
 
     function test_givenPoolIsCreated()
@@ -230,7 +209,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -250,7 +229,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_SQRT_PRICE_X96_OVERRIDE);
         _assertLpTokenBalance();
@@ -272,7 +251,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         // Expect revert
         vm.expectRevert("Price slippage check");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
@@ -285,7 +264,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -304,7 +283,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -327,7 +306,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -346,7 +325,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -367,7 +346,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -388,7 +367,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -407,7 +386,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -422,6 +401,8 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenMaxSlippage(0) // 0%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasDepositHigherPrice
+        givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -429,7 +410,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         // Expect revert
         vm.expectRevert("Price slippage check");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenInsufficientBaseTokenBalance_reverts()
@@ -451,7 +432,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenInsufficientBaseTokenAllowance_reverts()
@@ -466,7 +447,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         // Expect revert
         vm.expectRevert("TRANSFER_FROM_FAILED");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_success()
@@ -478,7 +459,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
@@ -500,7 +481,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         // Create second lot
         uint96 lotIdTwo = _createLot(_NOT_SELLER);
 
-        _performCallback(lotIdTwo);
+        _performOnSettle(lotIdTwo);
 
         _assertLpTokenBalance(lotIdTwo, _NOT_SELLER);
         _assertQuoteTokenBalance();
@@ -518,7 +499,110 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
+
+        _assertPoolState(_sqrtPriceX96);
+        _assertLpTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_auctionCompleted_onCreate_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseCallback determines if the lot has already been registered
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCreate again
+        _performOnCreate();
+    }
+
+    function test_auctionCompleted_onCurate_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCurate
+        _performOnCurate(_curatorPayout);
+    }
+
+    function test_auctionCompleted_onCancel_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCancel
+        _performOnCancel();
+    }
+
+    function test_auctionCompleted_onSettle_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onSettle
+        _performOnSettle();
+    }
+
+    function test_veRamTokenId()
+        public
+        givenCallbackIsCreated
+        givenVeRamTokenId
+        givenVeRamTokenIdApproval(true)
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
 
         _assertPoolState(_sqrtPriceX96);
         _assertLpTokenBalance();
