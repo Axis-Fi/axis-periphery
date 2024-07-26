@@ -12,6 +12,7 @@ import {
     fromKeycode as fromAxisKeycode
 } from "@axis-core-1.0.0/modules/Keycode.sol";
 import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
+import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
 
 // Baseline dependencies
 import {
@@ -332,7 +333,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Get the auction format
         AxisKeycode auctionFormat = keycodeFromVeecode(
-            AxisModule(address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId))).VEECODE()
+            AxisModule(address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))).VEECODE(
+            )
         );
 
         // Only supports Fixed Price Batch Auctions initially
@@ -382,6 +384,73 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // If the discovery range upper tick (or any other below it) is above the max tick, it will cause problems
             if (floorRangeLower < _MIN_TICK || discoveryRangeUpper > _MAX_TICK) {
                 revert Callback_Params_RangeOutOfBounds();
+            }
+        }
+
+        // Perform a pre-check to make sure the setup can be valid
+        // This avoids certain bad configurations that would lead to failed initializations
+        // Specifically, we check that the pool can support the intended supply
+        // factoring in the capacity, curator fee, and any additional spot or collateralized supply
+        // that already exists.
+        // We assume that the auction capacity will be completely filled. This can be guaranteed by
+        // setting the minFillPercent to 100e2 on the auction.
+        {
+            // Calculate the initial circulating supply
+            uint256 initialCircSupply;
+            {
+                // Get the current supply values
+                uint256 currentSupply = bAsset.totalSupply(); // can use totalSupply here since no bAssets are in the pool yet
+                uint256 currentCollatSupply = CREDT.totalCollateralized();
+                (,, uint48 curatorFeePerc,,) = IAuctionHouse(AUCTION_HOUSE).lotFees(lotId_);
+                uint256 curatorFee = (capacity_ * curatorFeePerc) / ONE_HUNDRED_PERCENT;
+                initialCircSupply = currentSupply + currentCollatSupply + capacity_ + curatorFee;
+            }
+
+            // Calculate the initial capacity of the pool based on the ticks set and the expected proceeds to deposit in the pool
+            uint256 initialCapacity;
+            {
+                IFixedPriceBatch auctionModule = IFixedPriceBatch(
+                    address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))
+                );
+
+                // Get the fixed price from the auction module
+                // This value is in the number of reserve tokens per baseline token
+                uint256 auctionPrice = auctionModule.getAuctionData(lotId_).price;
+
+                // Calculate the expected proceeds from the auction and how much will be deposited in the pool
+                uint256 expectedProceeds = (auctionPrice * capacity_) / (10 ** bAsset.decimals());
+                uint256 poolProceeds = (expectedProceeds * poolPercent) / ONE_HUNDRED_PERCENT;
+
+                // Calculate the expected reserves for the floor and anchor ranges
+                uint256 floorReserves = (poolProceeds * floorReservesPercent) / ONE_HUNDRED_PERCENT;
+                uint256 anchorReserves = poolProceeds - floorReserves;
+
+                // Calculate the expected capacity of the pool
+                // Skip discovery range since no reserves will be deposited in it
+                Position memory floor = BPOOL.getPosition(Range.FLOOR);
+                Position memory anchor = BPOOL.getPosition(Range.ANCHOR);
+
+                uint256 floorCapacity =
+                    BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, floorReserves);
+                uint256 anchorCapacity = BPOOL.getCapacityForReserves(
+                    anchor.sqrtPriceL, anchor.sqrtPriceU, anchorReserves
+                );
+
+                // Calculate the debt capacity at the floor range
+                uint256 currentCredit = CREDT.totalCreditIssued();
+                uint256 debtCapacity =
+                    BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
+
+                // Calculate the total initial capacity of the pool
+                initialCapacity = debtCapacity + floorCapacity + anchorCapacity;
+            }
+
+            // verify the liquidity can support the intended supply
+            // and that there is no significant initial surplus
+            uint256 capacityRatio = initialCapacity.divWad(initialCircSupply);
+            console2.log("capacityRatio", capacityRatio);
+            if (capacityRatio < 100e16 || capacityRatio > 102e16) {
+                revert Callback_InvalidInitialization();
             }
         }
 
