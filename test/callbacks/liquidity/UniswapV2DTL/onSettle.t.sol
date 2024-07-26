@@ -270,7 +270,14 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     // ========== Tests ========== //
 
     // [ ] given the onSettle callback has already been called
-    //  [ ] it reverts
+    //  [ ] when onSettle is called
+    //   [ ] it reverts
+    //  [ ] when onCancel is called
+    //   [ ] it reverts
+    //  [ ] when onCurate is called
+    //   [ ] it reverts
+    //  [ ] when onCreate is called
+    //   [ ] it reverts
     // [X] given the pool is created
     //  [X] it initializes the pool
     // [X] given the pool is created and initialized
