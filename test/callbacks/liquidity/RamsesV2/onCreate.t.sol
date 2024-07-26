@@ -163,22 +163,6 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
         _performCallback();
     }
 
-    function test_givenRamsesV2PoolAlreadyExists_reverts()
-        public
-        givenCallbackIsCreated
-        givenPoolFee(500)
-    {
-        // Create the pool
-        _factory.createPool(address(_baseToken), address(_quoteToken), 500);
-
-        // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_Params_PoolExists.selector);
-        vm.expectRevert(err);
-
-        _performCallback();
-    }
-
     function test_whenRecipientIsZeroAddress_reverts() public givenCallbackIsCreated {
         _dtlCreateParams.recipient = address(0);
 
@@ -225,8 +209,7 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
         RamsesV2DirectToLiquidity.RamsesV2OnCreateParams memory _ramsesCreateParams = abi.decode(
-            _dtlCreateParams.implParams,
-            (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams)
+            _dtlCreateParams.implParams, (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams)
         );
         assertEq(_ramsesCreateParams.poolFee, _ramsesCreateParams.poolFee, "poolFee");
         assertEq(_ramsesCreateParams.maxSlippage, _ramsesCreateParams.maxSlippage, "maxSlippage");

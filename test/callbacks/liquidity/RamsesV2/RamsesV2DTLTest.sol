@@ -6,7 +6,6 @@ import {Test} from "@forge-std-1.9.1/Test.sol";
 import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
 import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
 import {WithSalts} from "../../../lib/WithSalts.sol";
-import {console2} from "@forge-std-1.9.1/console2.sol";
 import {TestConstants} from "../../../Constants.sol";
 
 // Mocks
@@ -20,7 +19,6 @@ import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL
 // Ramses
 import {RamsesV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
 import {IRamsesV2Factory} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2Factory.sol";
-import {IRamsesV2Pool} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2Pool.sol";
 import {IRamsesV2PositionManager} from
     "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2PositionManager.sol";
 
@@ -56,10 +54,10 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     MockERC20 internal _baseToken;
 
     // Inputs
-    RamsesV2DirectToLiquidity.RamsesV2OnCreateParams internal _ramsesCreateParams = RamsesV2DirectToLiquidity
-        .RamsesV2OnCreateParams({
+    RamsesV2DirectToLiquidity.RamsesV2OnCreateParams internal _ramsesCreateParams =
+    RamsesV2DirectToLiquidity.RamsesV2OnCreateParams({
         poolFee: 500,
-        maxSlippage: 0,
+        maxSlippage: 1, // 0.01%, to handle rounding errors
         veRamTokenId: 0
     });
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity

@@ -5,21 +5,15 @@ import {RamsesV2DirectToLiquidityTest} from "./RamsesV2DTLTest.sol";
 
 // Libraries
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
-import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 
-// Uniswap
-import {IUniswapV3Pool} from
-    "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
+// Ramses
+import {IRamsesV2Pool} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2Pool.sol";
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
-
-// G-UNI
-import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
 
 // AuctionHouse
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {RamsesV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
 
-contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
+contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
     uint96 internal constant _REFUND = 0;
 
@@ -38,8 +32,12 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
 
     // ========== Internal functions ========== //
 
+    function _getTokenId(uint96 lotId_) internal view returns (uint256) {
+        return _dtl.lotIdToTokenId(lotId_);
+    }
+
     function _getTokenId() internal view returns (uint256) {
-        return _dtl.lotIdToTokenId(_lotId);
+        return _getTokenId(_lotId);
     }
 
     // ========== Assertions ========== //
@@ -48,14 +46,18 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
         // Get the pool
         address pool = _getPool();
 
-        (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
+        (uint160 sqrtPriceX96,,,,,,) = IRamsesV2Pool(pool).slot0();
         assertEq(sqrtPriceX96, sqrtPriceX96_, "pool sqrt price");
     }
 
-    function _assertLpTokenBalance() internal view {
-        uint256 tokenId = _getTokenId();
+    function _assertLpTokenBalance(uint96 lotId_, address recipient_) internal view {
+        uint256 tokenId = _getTokenId(lotId_);
 
-        assertEq(_positionManager.ownerOf(tokenId), _dtlCreateParams.recipient, "LP token owner");
+        assertEq(_positionManager.ownerOf(tokenId), recipient_, "LP token owner");
+    }
+
+    function _assertLpTokenBalance() internal view {
+        _assertLpTokenBalance(_lotId, _dtlCreateParams.recipient);
     }
 
     function _assertQuoteTokenBalance() internal view {
@@ -84,12 +86,7 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
 
     function _performCallback(uint96 lotId_) internal {
         vm.prank(address(_auctionHouse));
-        _dtl.onSettle(
-            lotId_,
-            _proceeds,
-            _refund,
-            abi.encode("")
-        );
+        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
     }
 
     function _performCallback() internal {
@@ -105,7 +102,7 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
     }
 
     function _initializePool(address pool_, uint160 sqrtPriceX96_) internal {
-        IUniswapV3Pool(pool_).initialize(sqrtPriceX96_);
+        IRamsesV2Pool(pool_).initialize(sqrtPriceX96_);
     }
 
     modifier givenPoolIsCreated() {
@@ -245,13 +242,13 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
     function test_givenPoolIsCreatedAndInitialized_givenMaxSlippage()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(8100) // 81%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreatedAndInitialized(_SQRT_PRICE_X96_OVERRIDE)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
-        givenMaxSlippage(8100) // 81%
     {
         _performCallback();
 
@@ -361,11 +358,11 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
     function test_givenPoolHasDepositWithLowerPrice()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(5100) // 51%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositLowerPrice
         givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
-        givenMaxSlippage(5100) // 51%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -382,11 +379,11 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
     function test_givenPoolHasDepositWithHigherPrice()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(5100) // 51%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositHigherPrice
         givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
-        givenMaxSlippage(5100) // 51%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -403,9 +400,9 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
     function test_lessThanMaxSlippage()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(1) // 0.01%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
-        givenMaxSlippage(1) // 0.01%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -422,9 +419,9 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
     function test_greaterThanMaxSlippage_reverts()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(0) // 0%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
-        givenMaxSlippage(0) // 0%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -498,13 +495,14 @@ contract RamsesV2OnSettleForkTest is RamsesV2DirectToLiquidityTest {
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_NOT_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_NOT_SELLER, _dtlAddress, _capacityUtilised)
+        whenRecipientIsNotSeller // Affects the second lot
     {
         // Create second lot
         uint96 lotIdTwo = _createLot(_NOT_SELLER);
 
         _performCallback(lotIdTwo);
 
-        _assertLpTokenBalance();
+        _assertLpTokenBalance(lotIdTwo, _NOT_SELLER);
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
         _assertApprovals();
