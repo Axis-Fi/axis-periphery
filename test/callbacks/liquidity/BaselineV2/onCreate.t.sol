@@ -201,18 +201,21 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the discoveryTickWidth is <= 0
     //  [X] it reverts
+    // [ ] when the discoveryTickWidth is > 350
+    //  [ ] it reverts
     // [X] when the auction format is not FPB
     //  [X] it reverts
     // [X] when the auction is not prefunded
     //  [X] it reverts
-    // [X] when the auction price does not match the pool active tick
-    //  [X] it succeeds
+    // [ ] when the pool active tick is higher than the auction price
+    //  [ ] it reverts
     // [X] when the floorReservesPercent is 0-99%
     //  [X] it correctly records the allocation
     // [X] when the tick spacing is narrow
     //  [X] the ticks do not overlap
     // [X] when the auction fixed price is very high
     //  [X] it correctly sets the active tick
+    // TODO check this
     // [X] when the auction fixed price is very low
     //  [X] it correctly sets the active tick
     // [X] when the quote token decimals are higher than the base token decimals

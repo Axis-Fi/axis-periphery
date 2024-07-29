@@ -52,7 +52,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     uint96 internal constant _REFUND_AMOUNT = 2e18;
     uint256 internal constant _PROCEEDS_AMOUNT = 24e18;
     int24 internal constant _ANCHOR_TICK_WIDTH = 3;
-    int24 internal constant _DISCOVERY_TICK_WIDTH = 500;
+    int24 internal constant _DISCOVERY_TICK_WIDTH = 350;
     uint24 internal constant _FLOOR_RESERVES_PERCENT = 50e2; // 50%
     uint256 internal constant _FIXED_PRICE = 3e18;
     uint24 internal constant _FEE_TIER = 10_000;
@@ -167,14 +167,23 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     // ========== MODIFIERS ========== //
 
     function _updatePoolInitialTick() internal {
+        console2.log("Price: ", _fpbParams.price);
+        console2.log(
+            "Tick based on auction price: ",
+            _getTickFromPrice(_fpbParams.price, _baseTokenDecimals, _isBaseTokenAddressLower)
+        );
+
+        // Adjust the pool price (tick) to be lower than the auction price
+        uint256 adjustedPrice = _fpbParams.price * 100 / 108;
+        console2.log("Adjusted price: ", adjustedPrice);
         _poolInitialTick =
-            _getTickFromPrice(_fpbParams.price, _baseTokenDecimals, _isBaseTokenAddressLower);
+            _getTickFromPrice(adjustedPrice, _baseTokenDecimals, _isBaseTokenAddressLower);
         console2.log("Pool initial tick set to: ", _poolInitialTick);
     }
 
     modifier givenPoolInitialTick(int24 poolInitialTick_) {
         _poolInitialTick = poolInitialTick_;
-        console2.log("Pool initial tick set to: ", _poolInitialTick);
+        console2.log("Pool initial tick directly set to: ", _poolInitialTick);
         _;
     }
 
