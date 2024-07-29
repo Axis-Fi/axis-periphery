@@ -174,7 +174,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         );
 
         // Adjust the pool price (tick) to be lower than the auction price
-        uint256 adjustedPrice = _fpbParams.price * 100 / 108;
+        uint256 adjustedPrice = _fpbParams.price * 95 / 100;
         console2.log("Adjusted price: ", adjustedPrice);
         _poolInitialTick =
             _getTickFromPrice(adjustedPrice, _baseTokenDecimals, _isBaseTokenAddressLower);
