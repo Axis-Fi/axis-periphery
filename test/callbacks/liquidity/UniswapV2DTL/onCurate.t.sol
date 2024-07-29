@@ -18,6 +18,8 @@ contract UniswapV2DirectToLiquidityOnCurateTest is UniswapV2DirectToLiquidityTes
 
     // ============ Tests ============ //
 
+    // [ ] when the auction lot has already been completed
+    //  [ ] it reverts
     // [X] when the lot has not been registered
     //  [X] it reverts
     // [X] when multiple lots are created

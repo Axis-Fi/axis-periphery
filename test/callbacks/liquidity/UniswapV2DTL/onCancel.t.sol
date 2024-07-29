@@ -18,6 +18,15 @@ contract UniswapV2DirectToLiquidityOnCancelTest is UniswapV2DirectToLiquidityTes
 
     // ============ Tests ============ //
 
+    // [ ] given the onCancel callback has already been called
+    //  [ ] when onSettle is called
+    //   [ ] it reverts
+    //  [ ] when onCancel is called
+    //   [ ] it reverts
+    //  [ ] when onCurate is called
+    //   [ ] it reverts
+    //  [ ] when onCreate is called
+    //   [ ] it reverts
     // [X] when the lot has not been registered
     //  [X] it reverts
     // [X] when multiple lots are created

@@ -33,6 +33,16 @@ import {BALwithCappedAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 import {BALwithTokenAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
+import {CleopatraV1DirectToLiquidity} from
+    "../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {CleopatraV2DirectToLiquidity} from
+    "../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
+
+// Cleopatra
+import {ICleopatraV1Router} from
+    "../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Router.sol";
+import {ICleopatraV2PositionManager} from
+    "../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2PositionManager.sol";
 
 // Baseline
 import {
@@ -970,6 +980,95 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("    Policy activated in Baseline Kernel");
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
+    }
+
+    function deployBatchCleopatraV1DirectToLiquidity(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address cleopatraV1PairFactory = _getEnvAddressOrOverride(
+            "constants.cleopatraV1.pairFactory", sequenceName_, "args.pairFactory"
+        );
+        address payable cleopatraV1Router = payable(
+            _getEnvAddressOrOverride("constants.cleopatraV1.router", sequenceName_, "args.router")
+        );
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
+
+        // Check that the router and factory match
+        require(
+            ICleopatraV1Router(cleopatraV1Router).factory() == cleopatraV1PairFactory,
+            "ICleopatraV1Router.factory() does not match given Cleopatra V1 pair factory address"
+        );
+
+        // Get the salt
+        bytes32 salt_ = _getSalt(
+            deploymentKey,
+            type(CleopatraV1DirectToLiquidity).creationCode,
+            abi.encode(batchAuctionHouse, cleopatraV1PairFactory, cleopatraV1Router)
+        );
+
+        // Revert if the salt is not set
+        require(salt_ != bytes32(0), "Salt not set");
+
+        // Deploy the module
+        console2.log("    salt:", vm.toString(salt_));
+
+        vm.broadcast();
+        CleopatraV1DirectToLiquidity dtl = new CleopatraV1DirectToLiquidity{salt: salt_}(
+            batchAuctionHouse, cleopatraV1PairFactory, cleopatraV1Router
+        );
+        console2.log("");
+        console2.log("    deployed at:", address(dtl));
+
+        return (address(dtl), _PREFIX_CALLBACKS, deploymentKey);
+    }
+
+    function deployBatchCleopatraV2DirectToLiquidity(string memory sequenceName_)
+        public
+        returns (address, string memory, string memory)
+    {
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address cleopatraV2Factory =
+            _getEnvAddressOrOverride("constants.cleopatraV2.factory", sequenceName_, "args.factory");
+        address payable cleopatraV2PositionManager = payable(
+            _getEnvAddressOrOverride(
+                "constants.cleopatraV2.positionManager", sequenceName_, "args.positionManager"
+            )
+        );
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
+
+        // Check that the router and factory match
+        require(
+            ICleopatraV2PositionManager(cleopatraV2PositionManager).factory() == cleopatraV2Factory,
+            "ICleopatraV2PositionManager.factory() does not match given Cleopatra V2 factory address"
+        );
+
+        // Get the salt
+        bytes32 salt_ = _getSalt(
+            deploymentKey,
+            type(CleopatraV2DirectToLiquidity).creationCode,
+            abi.encode(batchAuctionHouse, cleopatraV2Factory, cleopatraV2PositionManager)
+        );
+
+        // Revert if the salt is not set
+        require(salt_ != bytes32(0), "Salt not set");
+
+        // Deploy the module
+        console2.log("    salt:", vm.toString(salt_));
+
+        vm.broadcast();
+        CleopatraV2DirectToLiquidity dtl = new CleopatraV2DirectToLiquidity{salt: salt_}(
+            batchAuctionHouse, cleopatraV2Factory, cleopatraV2PositionManager
+        );
+        console2.log("");
+        console2.log("    deployed at:", address(dtl));
+
+        return (address(dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
     // ========== HELPER FUNCTIONS ========== //

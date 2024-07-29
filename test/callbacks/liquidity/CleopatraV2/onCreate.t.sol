@@ -1,30 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {UniswapV2DirectToLiquidityTest} from "./UniswapV2DTLTest.sol";
+import {CleopatraV2DirectToLiquidityTest} from "./CleopatraV2DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {CleopatraV2DirectToLiquidity} from
+    "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
-contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTest {
+contract CleopatraV2DTLOnCreateForkTest is CleopatraV2DirectToLiquidityTest {
     // ============ Modifiers ============ //
-
-    function _performCallback(address seller_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCreate(
-            _lotId,
-            seller_,
-            address(_baseToken),
-            address(_quoteToken),
-            _LOT_CAPACITY,
-            false,
-            abi.encode(_dtlCreateParams)
-        );
-    }
-
-    function _performCallback() internal {
-        _performCallback(_SELLER);
-    }
 
     // ============ Assertions ============ //
 
@@ -50,8 +35,6 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
 
     // ============ Tests ============ //
 
-    // [ ] when the auction lot has already been completed
-    //  [ ] it reverts
     // [X] when the callback data is incorrect
     //  [X] it reverts
     // [X] when the callback is not called by the auction house
@@ -62,24 +45,28 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     //  [X] it reverts
     // [X] when the proceeds utilisation is greater than 100%
     //  [X] it reverts
-    // [X] given uniswap v2 pool already exists
+    // [X] when the implParams is not the correct length
     //  [X] it reverts
-    // [X] when the start and expiry timestamps are the same
-    //  [X] it reverts
-    // [X] when the start timestamp is after the expiry timestamp
-    //  [X] it reverts
-    // [X] when the start timestamp is before the current timestamp
+    // [X] when the max slippage is between 0 and 100%
     //  [X] it succeeds
-    // [X] when the expiry timestamp is before the current timestamp
+    // [X] when the max slippage is greater than 100%
     //  [X] it reverts
-    // [X] when the start timestamp and expiry timestamp are specified
-    //  [X] given the linear vesting module is not installed
-    //   [X] it reverts
-    //  [X] it records the address of the linear vesting module
+    // [X] given the pool fee is not enabled
+    //  [X] it reverts
+    // [X] given cleopatra v2 pool already exists
+    //  [X] it succeeds
+    // [X] when the vesting start timestamp is set
+    //  [X] it reverts
+    // [X] when the vesting expiry timestamp is set
+    //  [X] it reverts
     // [X] when the recipient is the zero address
     //  [X] it reverts
     // [X] when the recipient is not the seller
     //  [X] it records the recipient
+    // [ ] when the veRamTokenId is set
+    //  [ ] given the DTL contract is approved to use the veRamTokenId
+    //   [ ] it succeeds
+    //  [ ] it reverts
     // [X] when multiple lots are created
     //  [X] it registers each lot
     // [X] it registers the lot
@@ -115,11 +102,11 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     }
 
     function test_whenLotHasAlreadyBeenRegistered_reverts() public givenCallbackIsCreated {
-        _performCallback();
+        _performOnCreate();
 
         _expectInvalidParams();
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenProceedsUtilisationIs0_reverts()
@@ -133,7 +120,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenProceedsUtilisationIsGreaterThan100Percent_reverts()
@@ -147,128 +134,100 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
-    function test_givenUniswapV2PoolAlreadyExists_reverts() public givenCallbackIsCreated {
-        // Create the pool
-        _uniV2Factory.createPair(address(_baseToken), address(_quoteToken));
+    function test_paramsIncorrectLength_reverts() public givenCallbackIsCreated {
+        // Set the implParams to an incorrect length
+        _dtlCreateParams.implParams = abi.encode(uint256(10));
 
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_maxSlippageGreaterThan100Percent_reverts(uint24 maxSlippage_)
+        public
+        givenCallbackIsCreated
+    {
+        uint24 maxSlippage = uint24(bound(maxSlippage_, 100e2 + 1, type(uint24).max));
+        _setMaxSlippage(maxSlippage);
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector, maxSlippage, 0, 100e2
+        );
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_givenPoolExists()
+        public
+        givenCallbackIsCreated
+        givenPoolIsCreatedAndInitialized(0)
+    {
+        _performOnCreate();
+
+        // Assert values
+        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+        assertEq(configuration.active, true, "active");
+    }
+
+    function test_givenVestingStartParameterIsSet()
+        public
+        givenCallbackIsCreated
+        givenVestingStart(_initialTimestamp + 1)
+    {
         // Expect revert
         bytes memory err =
-            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_Params_PoolExists.selector);
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_NotSupported.selector);
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
-    function test_whenStartAndExpiryTimestampsAreTheSame_reverts()
+    function test_givenVestingExpiryParameterIsSet()
         public
         givenCallbackIsCreated
-        givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 1)
+        givenVestingExpiry(_initialTimestamp + 1)
+    {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_NotSupported.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_givenVestingStartAndExpiryParameterIsSet()
+        public
+        givenCallbackIsCreated
+        givenVestingStart(_initialTimestamp + 1)
+        givenVestingExpiry(_initialTimestamp + 2)
+    {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_NotSupported.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_givenPoolFeeIsNotEnabled_reverts()
+        public
+        givenCallbackIsCreated
+        givenPoolFee(0)
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
+            CleopatraV2DirectToLiquidity.Callback_Params_PoolFeeNotEnabled.selector
         );
         vm.expectRevert(err);
 
-        _performCallback();
-    }
-
-    function test_whenStartTimestampIsAfterExpiryTimestamp_reverts()
-        public
-        givenCallbackIsCreated
-        givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 2)
-        givenVestingExpiry(_START + 1)
-    {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
-        );
-        vm.expectRevert(err);
-
-        _performCallback();
-    }
-
-    function test_whenStartTimestampIsBeforeCurrentTimestamp_succeeds()
-        public
-        givenCallbackIsCreated
-        givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START - 1)
-        givenVestingExpiry(_START + 1)
-    {
-        _performCallback();
-
-        // Assert values
-        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
-        assertEq(configuration.vestingStart, _START - 1, "vestingStart");
-        assertEq(configuration.vestingExpiry, _START + 1, "vestingExpiry");
-        assertEq(
-            address(configuration.linearVestingModule),
-            address(_linearVesting),
-            "linearVestingModule"
-        );
-
-        // Assert balances
-        _assertBaseTokenBalances();
-    }
-
-    function test_whenExpiryTimestampIsBeforeCurrentTimestamp_reverts()
-        public
-        givenCallbackIsCreated
-        givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START - 1)
-    {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
-        );
-        vm.expectRevert(err);
-
-        _performCallback();
-    }
-
-    function test_whenVestingSpecified_givenLinearVestingModuleNotInstalled_reverts()
-        public
-        givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
-    {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_LinearVestingModuleNotFound.selector
-        );
-        vm.expectRevert(err);
-
-        _performCallback();
-    }
-
-    function test_whenVestingSpecified()
-        public
-        givenCallbackIsCreated
-        givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
-    {
-        _performCallback();
-
-        // Assert values
-        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
-        assertEq(configuration.vestingStart, _START + 1, "vestingStart");
-        assertEq(configuration.vestingExpiry, _START + 2, "vestingExpiry");
-        assertEq(
-            address(configuration.linearVestingModule),
-            address(_linearVesting),
-            "linearVestingModule"
-        );
-
-        // Assert balances
-        _assertBaseTokenBalances();
+        _performOnCreate();
     }
 
     function test_whenRecipientIsZeroAddress_reverts() public givenCallbackIsCreated {
@@ -279,7 +238,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
             abi.encodeWithSelector(BaseDirectToLiquidity.Callback_Params_InvalidAddress.selector);
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenRecipientIsNotSeller_succeeds()
@@ -287,7 +246,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         givenCallbackIsCreated
         whenRecipientIsNotSeller
     {
-        _performCallback();
+        _performOnCreate();
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -298,7 +257,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     }
 
     function test_succeeds() public givenCallbackIsCreated {
-        _performCallback();
+        _performOnCreate();
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -316,18 +275,26 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
+        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory _cleopatraCreateParams = abi
+            .decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+        assertEq(_cleopatraCreateParams.poolFee, _cleopatraCreateParams.poolFee, "poolFee");
+        assertEq(
+            _cleopatraCreateParams.maxSlippage, _cleopatraCreateParams.maxSlippage, "maxSlippage"
+        );
+        // assertEq(_cleopatraCreateParams.veRamTokenId, _cleopatraCreateParams.veRamTokenId, "veRamTokenId");
+
         // Assert balances
         _assertBaseTokenBalances();
     }
 
     function test_succeeds_multiple() public givenCallbackIsCreated {
         // Lot one
-        _performCallback();
+        _performOnCreate();
 
         // Lot two
         _dtlCreateParams.recipient = _NOT_SELLER;
         _lotId = 2;
-        _performCallback(_NOT_SELLER);
+        _performOnCreate(_NOT_SELLER);
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -348,4 +315,50 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         // Assert balances
         _assertBaseTokenBalances();
     }
+
+    function test_maxSlippage_fuzz(uint24 maxSlippage_) public givenCallbackIsCreated {
+        uint24 maxSlippage = uint24(bound(maxSlippage_, 0, 100e2));
+        _setMaxSlippage(maxSlippage);
+
+        _performOnCreate();
+
+        // Assert values
+        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+        assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
+
+        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory cleopatraCreateParams = abi
+            .decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+        assertEq(cleopatraCreateParams.maxSlippage, maxSlippage, "maxSlippage");
+    }
+
+    // function test_veRamTokenId()
+    //     public
+    //     givenCallbackIsCreated
+    //     givenVeRamTokenId
+    //     givenVeRamTokenIdApproval(true)
+    // {
+    //     _performOnCreate();
+
+    //     // Assert values
+    //     BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+
+    //     CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory cleopatraCreateParams =
+    //         abi.decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+    //     assertEq(cleopatraCreateParams.veRamTokenId, 1000, "veRamTokenId");
+    // }
+
+    // function test_veRamTokenId_notApproved_reverts()
+    //     public
+    //     givenCallbackIsCreated
+    //     givenVeRamTokenId
+    //     givenVeRamTokenIdApproval(false)
+    // {
+    //     // Expect revert
+    //     bytes memory err = abi.encodeWithSelector(
+    //         CleopatraV2DirectToLiquidity.Callback_Params_VeRamTokenIdNotApproved.selector
+    //     );
+    //     vm.expectRevert(err);
+
+    //     _performOnCreate();
+    // }
 }

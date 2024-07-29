@@ -5,15 +5,15 @@ pragma solidity ^0.8.19;
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 
-// Uniswap
-import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
-import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";
-
 // Callbacks
-import {BaseDirectToLiquidity} from "./BaseDTL.sol";
+import {BaseDirectToLiquidity} from "../BaseDTL.sol";
 
-/// @title      UniswapV2DirectToLiquidity
-/// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V2 pool
+// Cleopatra
+import {ICleopatraV1Factory} from "./lib/ICleopatraV1Factory.sol";
+import {ICleopatraV1Router} from "./lib/ICleopatraV1Router.sol";
+
+/// @title      CleopatraV1DirectToLiquidity
+/// @notice     This Callback contract deposits the proceeds from a batch auction into a Cleopatra V1 pool
 ///             in order to create liquidity immediately.
 ///
 ///             The LP tokens are transferred to `DTLConfiguration.recipient`, or can optionally vest to the auction seller.
@@ -24,49 +24,49 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 ///
 /// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
 ///             Transfers are performed within the same function that requires the balance.
-contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
+contract CleopatraV1DirectToLiquidity is BaseDirectToLiquidity {
     using SafeTransferLib for ERC20;
 
     // ========== STRUCTS ========== //
 
-    /// @notice     Parameters for the onSettle callback
+    /// @notice     Parameters for the onCreate callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
-    /// @param      maxSlippage             The maximum slippage allowed when adding liquidity (in terms of `ONE_HUNDRED_PERCENT`)
-    struct OnSettleParams {
+    /// @param      stable          Whether the pool will be stable or volatile
+    /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
+    struct CleopatraV1OnCreateParams {
+        bool stable;
         uint24 maxSlippage;
     }
 
     // ========== STATE VARIABLES ========== //
 
-    /// @notice     The Uniswap V2 factory
-    /// @dev        This contract is used to create Uniswap V2 pools
-    IUniswapV2Factory public uniV2Factory;
+    /// @notice     The Cleopatra PairFactory contract
+    /// @dev        This contract is used to create Cleopatra pairs
+    ICleopatraV1Factory public pairFactory;
 
-    /// @notice     The Uniswap V2 router
-    /// @dev        This contract is used to add liquidity to Uniswap V2 pools
-    IUniswapV2Router02 public uniV2Router;
+    /// @notice     The Cleopatra Router contract
+    /// @dev        This contract is used to add liquidity to Cleopatra pairs
+    ICleopatraV1Router public router;
 
     /// @notice     Mapping of lot ID to pool token
-    /// @dev        This is used to track the pool token for each lot
-    mapping(uint96 lotId => address poolToken) public lotIdToPoolToken;
+    mapping(uint96 => address) public lotIdToPoolToken;
 
     // ========== CONSTRUCTOR ========== //
 
     constructor(
         address auctionHouse_,
-        address uniswapV2Factory_,
-        address uniswapV2Router_
+        address pairFactory_,
+        address payable router_
     ) BaseDirectToLiquidity(auctionHouse_) {
-        if (uniswapV2Factory_ == address(0)) {
+        if (pairFactory_ == address(0)) {
             revert Callback_Params_InvalidAddress();
         }
-        uniV2Factory = IUniswapV2Factory(uniswapV2Factory_);
-
-        if (uniswapV2Router_ == address(0)) {
+        if (router_ == address(0)) {
             revert Callback_Params_InvalidAddress();
         }
-        uniV2Router = IUniswapV2Router02(uniswapV2Router_);
+        pairFactory = ICleopatraV1Factory(pairFactory_);
+        router = ICleopatraV1Router(router_);
     }
 
     // ========== CALLBACK FUNCTIONS ========== //
@@ -76,24 +76,30 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the parameters
     ///
     ///             This function reverts if:
-    ///             - The pool for the token combination already exists
+    ///             - The callback data is of the incorrect length
+    ///             - `CleopatraV1OnCreateParams.maxSlippage` is out of bounds
     function __onCreate(
-        uint96,
+        uint96 lotId_,
         address,
-        address baseToken_,
-        address quoteToken_,
+        address,
+        address,
         uint256,
         bool,
         bytes calldata
     ) internal virtual override {
-        // Check that the pool does not exist
-        if (uniV2Factory.getPair(baseToken_, quoteToken_) != address(0)) {
-            revert Callback_Params_PoolExists();
+        CleopatraV1OnCreateParams memory params = _decodeParameters(lotId_);
+
+        // Check that the slippage amount is within bounds
+        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
+        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
+        if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
         }
     }
 
     /// @inheritdoc BaseDirectToLiquidity
     /// @dev        This function implements the following:
+    ///             - Validates the parameters
     ///             - Creates the pool if necessary
     ///             - Deposits the tokens into the pool
     function _mintAndDeposit(
@@ -102,16 +108,15 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_,
-        bytes memory callbackData_
+        bytes memory
     ) internal virtual override {
-        // Decode the callback data
-        OnSettleParams memory params = abi.decode(callbackData_, (OnSettleParams));
+        CleopatraV1OnCreateParams memory params = _decodeParameters(lotId_);
 
         // Create and initialize the pool if necessary
         // Token orientation is irrelevant
-        address pairAddress = uniV2Factory.getPair(baseToken_, quoteToken_);
+        address pairAddress = pairFactory.getPair(baseToken_, quoteToken_, params.stable);
         if (pairAddress == address(0)) {
-            pairAddress = uniV2Factory.createPair(baseToken_, quoteToken_);
+            pairAddress = pairFactory.createPair(baseToken_, quoteToken_, params.stable);
         }
 
         // Calculate the minimum amount out for each token
@@ -119,13 +124,17 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokenAmount_, params.maxSlippage);
 
         // Approve the router to spend the tokens
-        ERC20(quoteToken_).approve(address(uniV2Router), quoteTokenAmount_);
-        ERC20(baseToken_).approve(address(uniV2Router), baseTokenAmount_);
+        ERC20(quoteToken_).approve(address(router), quoteTokenAmount_);
+        ERC20(baseToken_).approve(address(router), baseTokenAmount_);
 
         // Deposit into the pool
-        uniV2Router.addLiquidity(
+        // Token orientation is irrelevant
+        // If the pool is liquid and initialised at a price different to the auction, this will revert
+        // The auction would fail to settle, and bidders could be refunded by an abort() call
+        router.addLiquidity(
             quoteToken_,
             baseToken_,
+            params.stable,
             quoteTokenAmount_,
             baseTokenAmount_,
             quoteTokenAmountMin,
@@ -136,8 +145,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Remove any dangling approvals
         // This is necessary, since the router may not spend all available tokens
-        ERC20(quoteToken_).approve(address(uniV2Router), 0);
-        ERC20(baseToken_).approve(address(uniV2Router), 0);
+        ERC20(quoteToken_).approve(address(router), 0);
+        ERC20(baseToken_).approve(address(router), 0);
 
         // Store the pool token for later
         lotIdToPoolToken[lotId_] = pairAddress;
@@ -172,5 +181,19 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         else {
             poolToken.safeTransfer(config.recipient, poolTokenQuantity);
         }
+    }
+
+    function _decodeParameters(uint96 lotId_)
+        internal
+        view
+        returns (CleopatraV1OnCreateParams memory)
+    {
+        DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
+        // Validate that the callback data is of the correct length
+        if (lotConfig.implParams.length != 64) {
+            revert Callback_InvalidParams();
+        }
+
+        return abi.decode(lotConfig.implParams, (CleopatraV1OnCreateParams));
     }
 }

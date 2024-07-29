@@ -52,6 +52,8 @@ jobs:
         run: |
           forge test -vvv
         id: test
+        env:
+          ARBITRUM_RPC_URL: ${{ secrets.ARBITRUM_RPC_URL }}
 
       - name: Contract Sizes
         run: |

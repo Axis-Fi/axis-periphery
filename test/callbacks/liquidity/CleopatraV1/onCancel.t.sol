@@ -1,32 +1,31 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {UniswapV3DirectToLiquidityTest} from "./UniswapV3DTLTest.sol";
+import {CleopatraV1DirectToLiquidityTest} from "./CleopatraV1DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
-contract UniswapV3DirectToLiquidityOnCancelTest is UniswapV3DirectToLiquidityTest {
+contract CleopatraV1DTLOnCancelForkTest is CleopatraV1DirectToLiquidityTest {
     uint96 internal constant _REFUND_AMOUNT = 2e18;
 
     // ============ Modifiers ============ //
 
     function _performCallback(uint96 lotId_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCancel(lotId_, _REFUND_AMOUNT, false, abi.encode(""));
+        _performOnCancel(lotId_, _REFUND_AMOUNT);
     }
 
     // ============ Tests ============ //
 
-    // [ ] given the onCancel callback has already been called
-    //  [ ] when onSettle is called
-    //   [ ] it reverts
-    //  [ ] when onCancel is called
-    //   [ ] it reverts
-    //  [ ] when onCurate is called
-    //   [ ] it reverts
-    //  [ ] when onCreate is called
-    //   [ ] it reverts
+    // [X] given the onCancel callback has already been called
+    //  [X] when onSettle is called
+    //   [X] it reverts
+    //  [X] when onCancel is called
+    //   [X] it reverts
+    //  [X] when onCurate is called
+    //   [X] it reverts
+    //  [X] when onCreate is called
+    //   [X] it reverts
     // [X] when the lot has not been registered
     //  [X] it reverts
     // [X] when multiple lots are created
@@ -76,5 +75,56 @@ contract UniswapV3DirectToLiquidityOnCancelTest is UniswapV3DirectToLiquidityTes
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token balance");
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller base token balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller base token balance");
+    }
+
+    function test_auctionCancelled_onCreate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseCallback determines if the lot has already been registered
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_auctionCancelled_onCurate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCurate(0);
+    }
+
+    function test_auctionCancelled_onCancel_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCancel();
+    }
+
+    function test_auctionCancelled_onSettle_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performCallback(_lotId);
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnSettle();
     }
 }

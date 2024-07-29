@@ -43,7 +43,7 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         vm.expectRevert(err);
     }
 
-    function _assertBaseTokenBalances() internal {
+    function _assertBaseTokenBalances() internal view {
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller balance");
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "dtl balance");
@@ -57,6 +57,8 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
     //  [X] it reverts
     // [X] when the lot has already been registered
     //  [X] it reverts
+    // [ ] when the auction lot has already been completed
+    //  [ ] it reverts
     // [X] when the proceeds utilisation is 0
     //  [X] it reverts
     // [X] when the proceeds utilisation is greater than 100%

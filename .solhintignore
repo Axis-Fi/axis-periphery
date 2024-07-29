@@ -5,3 +5,4 @@ test/lib/uniswap-v2/**
 test/lib/uniswap-v3/**
 
 src/callbacks/liquidity/BaselineV2/lib/**
+src/callbacks/liquidity/Cleopatra/lib/**

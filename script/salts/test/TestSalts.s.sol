@@ -34,6 +34,10 @@ import {BALwithCappedAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 import {BALwithTokenAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
+import {CleopatraV1DirectToLiquidity} from
+    "../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {CleopatraV2DirectToLiquidity} from
+    "../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
 contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConstants {
     string internal constant _CAPPED_MERKLE_ALLOWLIST = "CappedMerkleAllowlist";
@@ -311,5 +315,22 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
             "BaselineTokenAllowlist", type(BALwithTokenAllowlist).creationCode, callbackArgs
         );
         _setTestSalt(callbackBytecodePath, "EF", "BaselineTokenAllowlist", callbackBytecodeHash);
+    }
+
+    function generateCleopatraV1DirectToLiquidity() public {
+        bytes memory args = abi.encode(_AUCTION_HOUSE, _CLEOPATRA_V1_FACTORY, _CLEOPATRA_V1_ROUTER);
+        bytes memory contractCode = type(CleopatraV1DirectToLiquidity).creationCode;
+        (string memory bytecodePath, bytes32 bytecodeHash) =
+            _writeBytecode("CleopatraV1DirectToLiquidity", contractCode, args);
+        _setTestSalt(bytecodePath, "E6", "CleopatraV1DirectToLiquidity", bytecodeHash);
+    }
+
+    function generateCleopatraV2DirectToLiquidity() public {
+        bytes memory args =
+            abi.encode(_AUCTION_HOUSE, _CLEOPATRA_V2_FACTORY, _CLEOPATRA_V2_POSITION_MANAGER);
+        bytes memory contractCode = type(CleopatraV2DirectToLiquidity).creationCode;
+        (string memory bytecodePath, bytes32 bytecodeHash) =
+            _writeBytecode("CleopatraV2DirectToLiquidity", contractCode, args);
+        _setTestSalt(bytecodePath, "E6", "CleopatraV2DirectToLiquidity", bytecodeHash);
     }
 }

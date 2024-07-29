@@ -15,6 +15,12 @@ import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.
 import {AuctionHouse} from "@axis-core-1.0.0/bases/AuctionHouse.sol";
 import {Keycode, wrapVeecode} from "@axis-core-1.0.0/modules/Modules.sol";
 
+/// @notice     Base contract for DirectToLiquidity callbacks
+/// @dev        This contract is intended to be inherited by a callback contract that supports a particular liquidity platform, such as Uniswap V2 or V3.
+///
+///             It provides integration points that enable the implementing contract to support different liquidity platforms.
+///
+///             NOTE: The parameters to the functions in this contract refer to linear vesting, which is currently only supported for ERC20 pool tokens. A future version could improve upon this by shifting the (ERC20) linear vesting functionality into a variant that inherits from this contract.
 abstract contract BaseDirectToLiquidity is BaseCallback {
     using SafeTransferLib for ERC20;
 
@@ -33,6 +39,14 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     error Callback_Params_InvalidVestingParams();
 
     error Callback_LinearVestingModuleNotFound();
+
+    error Callback_PoolTokenNotFound();
+
+    /// @notice The auction lot has already been completed
+    error Callback_AlreadyComplete();
+
+    /// @notice Indicates that the feature is not supported by the contract
+    error Callback_NotSupported();
 
     // ========== STRUCTS ========== //
 
@@ -68,6 +82,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     /// @param      implParams                   The implementation-specific parameters
     struct OnCreateParams {
         uint24 proceedsUtilisationPercent;
+        // TODO ideally move the vesting parameters into an inheriting contract that accesses implParams
         uint48 vestingStart;
         uint48 vestingExpiry;
         address recipient;
@@ -148,6 +163,11 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
         // If vesting is enabled
         if (params.vestingStart != 0 || params.vestingExpiry != 0) {
+            // Check if linear vesting is supported
+            if (!_isLinearVestingSupported()) {
+                revert Callback_NotSupported();
+            }
+
             // Get the linear vesting module (or revert)
             linearVestingModule = LinearVesting(_getLatestLinearVestingModule());
 
@@ -216,9 +236,15 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot has already been completed
     ///
     /// @param      lotId_          The lot ID
     function _onCancel(uint96 lotId_, uint256, bool, bytes calldata) internal override {
+        // Check that the lot is active
+        if (!lotConfiguration[lotId_].active) {
+            revert Callback_AlreadyComplete();
+        }
+
         // Mark the lot as inactive to prevent further actions
         DTLConfiguration storage config = lotConfiguration[lotId_];
         config.active = false;
@@ -230,6 +256,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot has already been completed
     ///
     /// @param      lotId_          The lot ID
     /// @param      curatorPayout_  The maximum curator payout
@@ -239,6 +266,11 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         bool,
         bytes calldata
     ) internal override {
+        // Check that the lot is active
+        if (!lotConfiguration[lotId_].active) {
+            revert Callback_AlreadyComplete();
+        }
+
         // Update the funding
         DTLConfiguration storage config = lotConfiguration[lotId_];
         config.lotCuratorPayout = curatorPayout_;
@@ -279,6 +311,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot is already complete
     ///
     /// @param      lotId_          The lot ID
     /// @param      proceeds_       The proceeds from the auction
@@ -290,7 +323,16 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         uint256 refund_,
         bytes calldata callbackData_
     ) internal virtual override {
-        DTLConfiguration memory config = lotConfiguration[lotId_];
+        DTLConfiguration storage config = lotConfiguration[lotId_];
+
+        // Check that the lot is active
+        if (!config.active) {
+            revert Callback_AlreadyComplete();
+        }
+
+        // Mark the lot as inactive
+        lotConfiguration[lotId_].active = false;
+
         address seller;
         address baseToken;
         address quoteToken;
@@ -323,7 +365,18 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
                 _tokensRequiredForPool(proceeds_, config.proceedsUtilisationPercent);
         }
 
-        // Ensure the required tokens are present before minting
+        // Ensure the required quote tokens are present in this contract before minting
+        {
+            // Check that sufficient balance exists
+            uint256 quoteTokenBalance = ERC20(quoteToken).balanceOf(address(this));
+            if (quoteTokenBalance < quoteTokensRequired) {
+                revert Callback_InsufficientBalance(
+                    quoteToken, address(this), quoteTokensRequired, quoteTokenBalance
+                );
+            }
+        }
+
+        // Ensure the required base tokens are present on the seller address before minting
         {
             // Check that sufficient balance exists
             uint256 baseTokenBalance = ERC20(baseToken).balanceOf(seller);
@@ -333,33 +386,17 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
                 );
             }
 
+            // Transfer the base tokens from the seller to this contract
             ERC20(baseToken).safeTransferFrom(seller, address(this), baseTokensRequired);
         }
 
         // Mint and deposit into the pool
-        (ERC20 poolToken) = _mintAndDeposit(
+        _mintAndDeposit(
             lotId_, quoteToken, quoteTokensRequired, baseToken, baseTokensRequired, callbackData_
         );
-        uint256 poolTokenQuantity = poolToken.balanceOf(address(this));
 
-        // If vesting is enabled, create the vesting tokens
-        if (address(config.linearVestingModule) != address(0)) {
-            // Approve spending of the tokens
-            poolToken.approve(address(config.linearVestingModule), poolTokenQuantity);
-
-            // Mint the vesting tokens (it will deploy if necessary)
-            config.linearVestingModule.mint(
-                config.recipient,
-                address(poolToken),
-                _getEncodedVestingParams(config.vestingStart, config.vestingExpiry),
-                poolTokenQuantity,
-                true // Wrap vesting LP tokens so they are easily visible
-            );
-        }
-        // Send the LP tokens to the seller
-        else {
-            poolToken.safeTransfer(config.recipient, poolTokenQuantity);
-        }
+        // Transfer the pool token to the recipient
+        _transferPoolToken(lotId_);
 
         // Send any remaining quote tokens to the seller
         {
@@ -385,7 +422,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///             - Create and initialize the pool
     ///             - Deposit the quote and base tokens into the pool
     ///             - The pool tokens should be received by this contract
-    ///             - Return the ERC20 pool token
+    ///             - Store the details of the pool token (ERC20 or ERC721) in the state
     ///
     /// @param      lotId_              The lot ID
     /// @param      quoteToken_         The quote token address
@@ -393,7 +430,6 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     /// @param      baseToken_          The base token address
     /// @param      baseTokenAmount_    The amount of base tokens to deposit
     /// @param      callbackData_       Implementation-specific data
-    /// @return     poolToken           The ERC20 pool token
     function _mintAndDeposit(
         uint96 lotId_,
         address quoteToken_,
@@ -401,7 +437,16 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         address baseToken_,
         uint256 baseTokenAmount_,
         bytes memory callbackData_
-    ) internal virtual returns (ERC20 poolToken);
+    ) internal virtual;
+
+    /// @notice    Transfer the pool token to the recipient
+    /// @dev       This function should be implemented by the Uniswap-specific callback
+    ///
+    ///            It is expected to:
+    ///            - Transfer the pool token (ERC20 or ERC721) to the recipient
+    ///
+    /// @param      lotId_          The lot ID
+    function _transferPoolToken(uint96 lotId_) internal virtual;
 
     // ========== INTERNAL FUNCTIONS ========== //
 
@@ -444,5 +489,42 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         uint48 expiry_
     ) internal pure returns (bytes memory) {
         return abi.encode(ILinearVesting.VestingParams({start: start_, expiry: expiry_}));
+    }
+
+    /// @notice Mint vesting tokens from an ERC20 token
+    ///
+    /// @param  token_          The ERC20 token to mint the vesting tokens from
+    /// @param  quantity_       The quantity of tokens to mint
+    /// @param  module_         The LinearVesting module to mint the tokens with
+    /// @param  recipient_      The recipient of the vesting tokens
+    /// @param  vestingStart_   The start of the vesting period
+    /// @param  vestingExpiry_  The end of the vesting period
+    function _mintVestingTokens(
+        ERC20 token_,
+        uint256 quantity_,
+        LinearVesting module_,
+        address recipient_,
+        uint48 vestingStart_,
+        uint48 vestingExpiry_
+    ) internal {
+        // Approve spending of the tokens
+        token_.approve(address(module_), quantity_);
+
+        // Mint the vesting tokens (it will deploy if necessary)
+        module_.mint(
+            recipient_,
+            address(token_),
+            _getEncodedVestingParams(vestingStart_, vestingExpiry_),
+            quantity_,
+            true // Wrap vesting LP tokens so they are easily visible
+        );
+
+        // The LinearVesting module will use all of `poolTokenQuantity`, so there is no need to clean up dangling approvals
+    }
+
+    /// @notice Indicates if linear vesting is supported by the callback
+    /// @dev    Implementing contracts can opt to override this in order to disable linear vesting
+    function _isLinearVestingSupported() internal pure virtual returns (bool) {
+        return true;
     }
 }

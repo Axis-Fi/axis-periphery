@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {UniswapV3DirectToLiquidityTest} from "./UniswapV3DTLTest.sol";
+import {CleopatraV2DirectToLiquidityTest} from "./CleopatraV2DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
-contract UniswapV3DirectToLiquidityOnCurateTest is UniswapV3DirectToLiquidityTest {
+contract CleopatraV2DTLOnCurateForkTest is CleopatraV2DirectToLiquidityTest {
     uint96 internal constant _PAYOUT_AMOUNT = 1e18;
 
     // ============ Modifiers ============ //
@@ -20,8 +20,6 @@ contract UniswapV3DirectToLiquidityOnCurateTest is UniswapV3DirectToLiquidityTes
 
     // [X] when the lot has not been registered
     //  [X] it reverts
-    // [ ] when the auction lot has already been completed
-    //  [ ] it reverts
     // [X] when multiple lots are created
     //  [X] it marks the correct lot as inactive
     // [X] it registers the curator payout

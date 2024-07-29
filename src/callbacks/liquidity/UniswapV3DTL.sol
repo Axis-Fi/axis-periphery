@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 
 // Uniswap
 import {IUniswapV3Pool} from
@@ -21,7 +22,7 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 
 /// @title      UniswapV3DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V3 pool
-///             in order to create liquidity immediately.
+///             in order to create full-range liquidity immediately.
 ///
 ///             The Uniswap V3 position is tokenised as an ERC-20 using [G-UNI](https://github.com/gelatodigital/g-uni-v1-core).
 ///
@@ -34,6 +35,8 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 /// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
 ///             Transfers are performed within the same function that requires the balance.
 contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
+    using SafeTransferLib for ERC20;
+
     // ========== ERRORS ========== //
 
     error Callback_Params_PoolFeeNotEnabled();
@@ -59,6 +62,11 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
     /// @notice     The G-UNI Factory contract
     /// @dev        This contract is used to create the ERC20 LP tokens
     IGUniFactory public gUniFactory;
+
+    /// @notice     Mapping of lot ID to pool token
+    /// @dev        This is used to track the pool token for each lot.
+    ///             As this contract uses G-UNI to tokenise the Uniswap V3 position, the pool token is an ERC-20.
+    mapping(uint96 => address) public lotIdToPoolToken;
 
     // ========== CONSTRUCTOR ========== //
 
@@ -129,7 +137,7 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
         address baseToken_,
         uint256 baseTokenAmount_,
         bytes memory callbackData_
-    ) internal virtual override returns (ERC20 poolToken) {
+    ) internal virtual override {
         // Decode the callback data
         OnSettleParams memory params = abi.decode(callbackData_, (OnSettleParams));
 
@@ -214,9 +222,46 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
             // Mint the LP tokens
             // The parent callback is responsible for transferring any leftover quote and base tokens
             gUniPoolToken.mint(poolTokenQuantity, address(this));
+
+            // Remove any dangling approvals
+            // This is necessary, since the G-UNI pool may not spend all available tokens
+            ERC20(quoteToken_).approve(address(poolTokenAddress), 0);
+            ERC20(baseToken_).approve(address(poolTokenAddress), 0);
         }
 
-        poolToken = ERC20(poolTokenAddress);
+        // Store the pool token for later
+        lotIdToPoolToken[lotId_] = poolTokenAddress;
+    }
+
+    /// @inheritdoc BaseDirectToLiquidity
+    /// @dev        This function implements the following:
+    ///             - If LinearVesting is enabled, mints derivative tokens
+    ///             - Otherwise, transfers the pool tokens to the recipient
+    function _transferPoolToken(uint96 lotId_) internal virtual override {
+        address poolTokenAddress = lotIdToPoolToken[lotId_];
+        if (poolTokenAddress == address(0)) {
+            revert Callback_PoolTokenNotFound();
+        }
+
+        ERC20 poolToken = ERC20(poolTokenAddress);
+        uint256 poolTokenQuantity = poolToken.balanceOf(address(this));
+        DTLConfiguration memory config = lotConfiguration[lotId_];
+
+        // If vesting is enabled, create the vesting tokens
+        if (address(config.linearVestingModule) != address(0)) {
+            _mintVestingTokens(
+                poolToken,
+                poolTokenQuantity,
+                config.linearVestingModule,
+                config.recipient,
+                config.vestingStart,
+                config.vestingExpiry
+            );
+        }
+        // Otherwise, send the LP tokens to the seller
+        else {
+            poolToken.safeTransfer(config.recipient, poolTokenQuantity);
+        }
     }
 
     // ========== INTERNAL FUNCTIONS ========== //

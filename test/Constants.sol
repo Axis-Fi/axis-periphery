@@ -16,4 +16,14 @@ abstract contract TestConstants is TestConstantsCore {
         address(0xAA22883d39ea4e42f7033e3e931aA476DEe30b73);
     address internal constant _CREATE2_DEPLOYER =
         address(0x4e59b44847b379578588920cA78FbF26c0B4956C);
+
+    // Cleopatra addresses on Mantle
+    address internal constant _CLEOPATRA_V1_FACTORY =
+        address(0xAAA16c016BF556fcD620328f0759252E29b1AB57);
+    address internal constant _CLEOPATRA_V1_ROUTER =
+        address(0xAAA45c8F5ef92a000a121d102F4e89278a711Faa);
+    address internal constant _CLEOPATRA_V2_FACTORY =
+        address(0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42);
+    address internal constant _CLEOPATRA_V2_POSITION_MANAGER =
+        address(0xAAA78E8C4241990B4ce159E105dA08129345946A);
 }
