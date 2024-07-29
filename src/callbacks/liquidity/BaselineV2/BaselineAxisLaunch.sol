@@ -14,9 +14,6 @@ import {
 import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
 import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
 
-// Uniswap dependencies
-import {OracleLibrary} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/OracleLibrary.sol";
-
 // Baseline dependencies
 import {
     Kernel,
@@ -417,19 +414,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // Calculate the initial capacity of the pool based on the ticks set and the expected proceeds to deposit in the pool
             uint256 initialCapacity;
             {
-                // Get the price from the pool, which was initialised at the time of the BPOOL deployment
-                // The pool price is used, as the calculations are determined by the pool's state, not the auction's state
-                (, int24 poolTick,,,,,) = BPOOL.pool().slot0();
-
-                // Determine the quote (reserve) tokens per base (baseline) token
-                uint256 auctionPrice = OracleLibrary.getQuoteAtTick(
-                    poolTick,
-                    uint128(10 ** ERC20(address(BPOOL)).decimals()),
-                    address(BPOOL),
-                    address(RESERVE)
+                IFixedPriceBatch auctionModule = IFixedPriceBatch(
+                    address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))
                 );
+
+                // Get the fixed price from the auction module
+                // This value is in the number of reserve tokens per baseline token
+                uint256 auctionPrice = auctionModule.getAuctionData(lotId_).price;
                 console2.log("auctionPrice", auctionPrice);
-                // TODO validate that the poolPrice is X% lower than the auction price
 
                 // Calculate the expected proceeds from the auction and how much will be deposited in the pool
                 uint256 expectedProceeds = (auctionPrice * capacity_) / (10 ** bAsset.decimals());
@@ -472,9 +464,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // and that there is no significant initial surplus
             //
             // If the solvency check is failing, it can be resolved by adjusting the following:
-            // - Increase the premium price
-            // - Increase the system liquidity
-            // - Decrease the overall system liquidity
+            // - auction price (via the auction fixed price)
+            // - system liquidity (via the pool allocation and floor reserves allocation)
             uint256 capacityRatio = initialCapacity.divWad(initialCircSupply);
             console2.log("capacityRatio", capacityRatio);
             if (capacityRatio < 100e16 || capacityRatio > 102e16) {
