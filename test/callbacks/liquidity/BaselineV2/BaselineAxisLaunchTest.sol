@@ -289,6 +289,8 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _createAuction() internal {
+        console2.log("Creating auction in FPB module");
+
         // Create a dummy auction in the module
         IAuction.AuctionParams memory auctionParams = IAuction.AuctionParams({
             start: _START,
@@ -308,6 +310,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onCreate() internal {
+        console2.log("Calling onCreate callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCreate(
             _lotId,
@@ -405,11 +408,13 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     modifier givenAddressHasQuoteTokenBalance(address account_, uint256 amount_) {
+        console2.log("Minting quote tokens to: ", account_);
         _quoteToken.mint(account_, amount_);
         _;
     }
 
     function _transferBaseTokenRefund(uint256 amount_) internal {
+        console2.log("Transferring base token refund to DTL: ", amount_);
         // Transfer refund from auction house to the callback
         // We transfer instead of minting to not affect the supply
         vm.prank(address(_auctionHouse));

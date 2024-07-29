@@ -9,6 +9,8 @@ import {BaselineAxisLaunch} from
 import {Range, Position} from "@baseline/modules/BPOOL.v1.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 
+import {console2} from "@forge-std-1.9.1/console2.sol";
+
 contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     using FixedPointMathLib for uint256;
 
@@ -24,7 +26,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
             _quoteToken.balanceOf(address(_baseToken.pool())), poolProceeds, "quote token: pool"
         );
         assertEq(
-            _quoteToken.balanceOf(_OWNER), _PROCEEDS_AMOUNT - poolProceeds, "quote token: owner"
+            _quoteToken.balanceOf(_SELLER), _PROCEEDS_AMOUNT - poolProceeds, "quote token: seller"
         );
     }
 
@@ -33,9 +35,15 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
 
         uint256 totalSupply = _baseToken.totalSupply();
-        uint256 poolSupply = totalSupply - _LOT_CAPACITY + _REFUND_AMOUNT - curatorFee_;
+        console2.log("totalSupply", totalSupply);
+
+        // No payout distributed to "bidders", so don't account for it here
+        uint256 spotSupply = 0;
+        console2.log("spotSupply", spotSupply);
+
+        uint256 poolSupply = totalSupply - spotSupply - curatorFee_;
         assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
-        assertEq(_baseToken.balanceOf(_OWNER), 0, "base token: owner");
+        assertEq(_baseToken.balanceOf(_SELLER), 0, "base token: seller");
     }
 
     function _assertCirculatingSupply(uint256 curatorFee_) internal view {
@@ -56,7 +64,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     }
 
     function _assertPoolReserves() internal view {
-        uint256 floorProceeds = _PROCEEDS_AMOUNT * _createData.floorReservesPercent / 100e2;
+        uint256 poolProceeds = _PROCEEDS_AMOUNT * _createData.poolPercent / 100e2;
+        uint256 floorProceeds = poolProceeds * _createData.floorReservesPercent / 100e2;
         assertApproxEqAbs(
             _getRangeReserves(Range.FLOOR),
             floorProceeds,
@@ -65,7 +74,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         );
         assertApproxEqAbs(
             _getRangeReserves(Range.ANCHOR),
-            _PROCEEDS_AMOUNT - floorProceeds,
+            poolProceeds - floorProceeds,
             1, // There is a difference (rounding error?) of 1
             "reserves: anchor"
         );
@@ -287,21 +296,12 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenPoolPercent(91e2) // For the solvency check
+        givenFloorReservesPercent(0)
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        uint24 floorReservesPercent = 0;
-
-        // Update the callback parameters
-        _createData.floorReservesPercent = floorReservesPercent;
-
-        // Call onCreate
-        _onCreate();
-
-        // Mint tokens
-        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-
-        // Transfer refund from auction house to the callback
-        _transferBaseTokenRefund(_REFUND_AMOUNT);
-
         // Perform callback
         _onSettle();
 
@@ -317,21 +317,12 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenPoolPercent(82e2) // For the solvency check
+        givenFloorReservesPercent(99e2)
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        uint24 floorReservesPercent = _NINETY_NINE_PERCENT;
-
-        // Update the callback parameters
-        _createData.floorReservesPercent = floorReservesPercent;
-
-        // Call onCreate
-        _onCreate();
-
-        // Mint tokens
-        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-
-        // Transfer refund from auction house to the callback
-        _transferBaseTokenRefund(_REFUND_AMOUNT);
-
         // Perform callback
         _onSettle();
 
