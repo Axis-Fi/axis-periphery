@@ -396,7 +396,7 @@ contract CleopatraV1OnSettleForkTest is CleopatraV1DirectToLiquidityTest {
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
         // Expect revert
-        vm.expectRevert("Router: INSUFFICIENT_B_AMOUNT");
+        vm.expectRevert("INSUFFICIENT B");
 
         _performOnSettle();
     }
@@ -434,7 +434,7 @@ contract CleopatraV1OnSettleForkTest is CleopatraV1DirectToLiquidityTest {
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
         // Expect revert
-        vm.expectRevert("Router: INSUFFICIENT_A_AMOUNT");
+        vm.expectRevert("INSUFFICIENT A");
 
         _performOnSettle();
     }
