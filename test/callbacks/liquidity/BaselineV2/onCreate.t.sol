@@ -207,14 +207,14 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the auction is not prefunded
     //  [X] it reverts
-    // [ ] when the floor reserves are too high
-    //  [ ] it reverts
-    // [ ] when the pool percent is too high
-    //  [ ] it reverts
-    // [ ] when the price premium is too low
-    //  [ ] it reverts
-    // [ ] when the pool active tick is higher than the auction price
-    //  [ ] it reverts
+    // [X] when the floor reserves are too low
+    //  [X] it reverts due to the solvency check
+    // [X] when the floor reserves are too high
+    //  [X] it reverts due to the solvency check
+    // [X] when the pool percent is too low
+    //  [X] it reverts due to the solvency check
+    // [X] when the pool percent is too high
+    //  [X] it reverts due to the solvency check
     // [X] when the floorReservesPercent is 0-99%
     //  [X] it correctly records the allocation
     // [X] when the tick spacing is narrow
@@ -624,6 +624,22 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.floorReservesPercent(), 0, "floor reserves percent");
     }
 
+    function test_floorReservesPercent_zero_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenFloorReservesPercent(0)
+    {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
     function test_floorReservesPercent_fiftyPercent()
         public
         givenBPoolIsCreated
@@ -651,6 +667,84 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         // Assert
         assertEq(_dtl.floorReservesPercent(), 99e2, "floor reserves percent");
+    }
+
+    function test_floorReservesPercent_ninetyNine_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenFloorReservesPercent(99e2)
+    {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolPercent_lowPercent()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenPoolPercent(82e2)
+        givenFloorReservesPercent(99e2) // For the solvency check
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert
+        assertEq(_dtl.poolPercent(), 82e2, "pool percent");
+    }
+
+    function test_poolPercent_lowPercent_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenPoolPercent(82e2)
+    {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolPercent_highPercent()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenPoolPercent(92e2)
+        givenFloorReservesPercent(1) // For the solvency check
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert
+        assertEq(_dtl.poolPercent(), 92e2, "pool percent");
+    }
+
+    function test_poolPercent_highPercent_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenPoolPercent(99e2)
+    {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
     }
 
     function test_tickSpacingNarrow()
