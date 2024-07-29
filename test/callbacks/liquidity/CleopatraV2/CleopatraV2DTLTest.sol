@@ -21,8 +21,8 @@ import {CleopatraV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/
 import {ICleopatraV2Factory} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2Factory.sol";
 import {ICleopatraV2PositionManager} from
     "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2PositionManager.sol";
-import {IVotingEscrow} from "../../../../src/callbacks/liquidity/Cleopatra/lib/IVotingEscrow.sol";
-import {IRAM} from "../../../../src/callbacks/liquidity/Cleopatra/lib/IRAM.sol";
+// import {IVotingEscrow} from "../../../../src/callbacks/liquidity/Cleopatra/lib/IVotingEscrow.sol";
+// import {IRAM} from "../../../../src/callbacks/liquidity/Cleopatra/lib/IRAM.sol";
 
 // Axis core
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.0/modules/Keycode.sol";
@@ -292,42 +292,42 @@ abstract contract CleopatraV2DirectToLiquidityTest is Test, Permit2User, WithSal
         _;
     }
 
-    function _createVeRamDeposit() internal {
-        // Mint RAM
-        vm.prank(address(_ram.minter()));
-        _ram.mint(_SELLER, 1e18);
+    // function _createVeRamDeposit() internal {
+    //     // Mint RAM
+    //     vm.prank(address(_ram.minter()));
+    //     _ram.mint(_SELLER, 1e18);
 
-        // Approve spending
-        address veRam = address(_positionManager.veRam());
-        vm.prank(_SELLER);
-        _ram.approve(veRam, 1e18);
+    //     // Approve spending
+    //     address veRam = address(_positionManager.veRam());
+    //     vm.prank(_SELLER);
+    //     _ram.approve(veRam, 1e18);
 
-        // Deposit into the voting escrow
-        vm.startPrank(_SELLER);
-        uint256 tokenId = IVotingEscrow(veRam).create_lock_for(
-            1e18, 24 hours * 365, _SELLER
-        );
-        vm.stopPrank();
+    //     // Deposit into the voting escrow
+    //     vm.startPrank(_SELLER);
+    //     uint256 tokenId = IVotingEscrow(veRam).create_lock_for(
+    //         1e18, 24 hours * 365, _SELLER
+    //     );
+    //     vm.stopPrank();
 
-        // Update the callback
-        _setVeRamTokenId(tokenId);
-    }
+    //     // Update the callback
+    //     _setVeRamTokenId(tokenId);
+    // }
 
-    function _mockVeRamTokenIdApproved(uint256 veRamTokenId_, bool approved_) internal {
-        // TODO this could be shifted to an actual approval, but I couldn't figure out how
-        vm.mockCall(
-            address(_positionManager.veRam()),
-            abi.encodeWithSelector(
-                IVotingEscrow.isApprovedOrOwner.selector, address(_dtl), veRamTokenId_
-            ),
-            abi.encode(approved_)
-        );
-    }
+    // function _mockVeRamTokenIdApproved(uint256 veRamTokenId_, bool approved_) internal {
+    //     // TODO this could be shifted to an actual approval, but I couldn't figure out how
+    //     vm.mockCall(
+    //         address(_positionManager.veRam()),
+    //         abi.encodeWithSelector(
+    //             IVotingEscrow.isApprovedOrOwner.selector, address(_dtl), veRamTokenId_
+    //         ),
+    //         abi.encode(approved_)
+    //     );
+    // }
 
-    modifier givenVeRamTokenIdApproval(bool approved_) {
-        // _mockVeRamTokenIdApproved(_cleopatraCreateParams.veRamTokenId, approved_);
-        _;
-    }
+    // modifier givenVeRamTokenIdApproval(bool approved_) {
+    //     _mockVeRamTokenIdApproved(_cleopatraCreateParams.veRamTokenId, approved_);
+    //     _;
+    // }
 
     // ========== FUNCTIONS ========== //
 
