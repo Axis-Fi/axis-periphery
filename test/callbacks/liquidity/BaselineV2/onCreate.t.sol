@@ -201,8 +201,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the discoveryTickWidth is <= 0
     //  [X] it reverts
-    // [ ] when the discoveryTickWidth is > 350
-    //  [ ] it reverts
+    // [X] when the discoveryTickWidth is > 350
+    //  [X] it reverts
     // [X] when the auction format is not FPB
     //  [X] it reverts
     // [X] when the auction is not prefunded
@@ -214,14 +214,13 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     // [X] when the tick spacing is narrow
     //  [X] the ticks do not overlap
     // [X] when the auction fixed price is very high
-    //  [X] it correctly sets the active tick
-    // TODO check this
+    //  [X] it handles the active tick correctly
     // [X] when the auction fixed price is very low
-    //  [X] it correctly sets the active tick
+    //  [X] it handles the active tick correctly
     // [X] when the quote token decimals are higher than the base token decimals
-    //  [X] it correctly sets the active tick
+    //  [X] it handles it correctly
     // [X] when the quote token decimals are lower than the base token decimals
-    //  [X] it correctly sets the active tick
+    //  [X] it handles it correctly
     // [X] when the anchorTickWidth is small
     //  [X] it correctly sets the anchor ticks to not overlap with the other ranges
     // [X] when the anchorTickWidth is greater than 10
@@ -428,6 +427,25 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
+    function test_discoveryTickWidthAboveMax_reverts(int24 discoveryTickWidth_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        int24 discoveryTickWidth = int24(bound(discoveryTickWidth_, 351, type(int24).max));
+        _createData.discoveryTickWidth = discoveryTickWidth;
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_InvalidDiscoveryTickWidth.selector
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
     function test_recipientZero_reverts()
         public
         givenBPoolIsCreated
@@ -453,7 +471,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
     {
         uint24 poolPercent = uint24(bound(poolPercent_, 0, 1e2 - 1));
-        _createData.poolPercent = poolPercent;
+        _setPoolPercent(poolPercent);
 
         // Expect revert
         bytes memory err =
@@ -471,7 +489,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
     {
         uint24 poolPercent = uint24(bound(poolPercent_, 100e2 + 1, type(uint24).max));
-        _createData.poolPercent = poolPercent;
+        _setPoolPercent(poolPercent);
 
         // Expect revert
         bytes memory err =

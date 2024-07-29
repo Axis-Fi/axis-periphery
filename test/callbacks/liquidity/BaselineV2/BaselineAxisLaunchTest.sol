@@ -54,7 +54,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     int24 internal constant _ANCHOR_TICK_WIDTH = 10;
     int24 internal constant _DISCOVERY_TICK_WIDTH = 350;
     uint24 internal constant _FLOOR_RESERVES_PERCENT = 50e2; // 50%
+    uint24 internal constant _POOL_PERCENT = 87e2; // 88%
     uint256 internal constant _FIXED_PRICE = 3e18;
+    uint256 internal constant _INITIAL_POOL_PRICE = 3e18; // 3
     uint24 internal constant _FEE_TIER = 10_000;
     uint256 internal constant _BASE_SCALE = 1e18;
     uint8 internal _quoteTokenDecimals = 18;
@@ -95,7 +97,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
     BaselineAxisLaunch.CreateData internal _createData = BaselineAxisLaunch.CreateData({
         recipient: _SELLER,
-        poolPercent: _ONE_HUNDRED_PERCENT,
+        poolPercent: _POOL_PERCENT,
         floorReservesPercent: _FLOOR_RESERVES_PERCENT,
         anchorTickWidth: _ANCHOR_TICK_WIDTH,
         discoveryTickWidth: _DISCOVERY_TICK_WIDTH,
@@ -161,10 +163,22 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _bPoolMinter = new BPOOLMinter(_baselineKernel);
 
         // Calculate the initial tick
-        _updatePoolInitialTick();
+        _setPoolInitialTickFromPrice(_INITIAL_POOL_PRICE);
     }
 
     // ========== MODIFIERS ========== //
+
+    function _setPoolInitialTickFromTick(int24 tick_) internal {
+        _poolInitialTick = tick_;
+        console2.log("Pool initial tick (using tick) set to: ", _poolInitialTick);
+    }
+
+    function _setPoolInitialTickFromPrice(uint256 price_) internal {
+        _poolInitialTick = _getTickFromPrice(
+            price_, _baseTokenDecimals, _isBaseTokenAddressLower
+        );
+        console2.log("Pool initial tick (using price) set to: ", _poolInitialTick);
+    }
 
     function _updatePoolInitialTick() internal {
         console2.log("Price: ", _fpbParams.price);
@@ -172,23 +186,24 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
             "Tick based on auction price: ",
             _getTickFromPrice(_fpbParams.price, _baseTokenDecimals, _isBaseTokenAddressLower)
         );
+        // TODO manually adjust tick on a per-case basis
 
         // Adjust the pool price (tick) to be lower than the auction price
         uint256 adjustedPrice = _fpbParams.price * 95 / 100;
         console2.log("Adjusted price: ", adjustedPrice);
         _poolInitialTick =
             _getTickFromPrice(adjustedPrice, _baseTokenDecimals, _isBaseTokenAddressLower);
-        console2.log("Pool initial tick set to: ", _poolInitialTick);
+        console2.log("Pool initial tick (using adjusted price) set to: ", _poolInitialTick);
     }
 
     modifier givenPoolInitialTick(int24 poolInitialTick_) {
-        _poolInitialTick = poolInitialTick_;
-        console2.log("Pool initial tick directly set to: ", _poolInitialTick);
+        _setPoolInitialTickFromTick(poolInitialTick_);
         _;
     }
 
     function _createBPOOL() internal {
         // Generate a salt so that the base token address is higher (or lower) than the quote token
+        console2.log("Generating salt for BPOOL");
         bytes32 baseTokenSalt = ComputeAddress.generateSalt(
             _BASELINE_QUOTE_TOKEN,
             !_isBaseTokenAddressLower,
@@ -207,6 +222,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         );
 
         // Create a new BPOOL with the given fee tier
+        console2.log("Creating BPOOL");
         _baseToken = new BPOOLv1{salt: baseTokenSalt}(
             _baselineKernel,
             "Base Token",
@@ -450,6 +466,15 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     function _mintBaseTokens(address account_, uint256 amount_) internal {
         vm.prank(_OWNER);
         _bPoolMinter.mint(account_, amount_);
+    }
+
+    function _setPoolPercent(uint24 poolPercent_) internal {
+        _createData.poolPercent = poolPercent_;
+    }
+
+    modifier givenPoolPercent(uint24 poolPercent_) {
+        _setPoolPercent(poolPercent_);
+        _;
     }
 
     // ========== MOCKS ========== //

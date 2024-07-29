@@ -468,8 +468,13 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 console2.log("initialCapacity", initialCapacity);
             }
 
-            // verify the liquidity can support the intended supply
+            // Verify the liquidity can support the intended supply
             // and that there is no significant initial surplus
+            //
+            // If the solvency check is failing, it can be resolved by adjusting the following:
+            // - Increase the premium price
+            // - Increase the system liquidity
+            // - Decrease the overall system liquidity
             uint256 capacityRatio = initialCapacity.divWad(initialCircSupply);
             console2.log("capacityRatio", capacityRatio);
             if (capacityRatio < 100e16 || capacityRatio > 102e16) {
