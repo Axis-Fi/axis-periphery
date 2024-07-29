@@ -689,15 +689,16 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
+        givenFixedPrice(25e18) // For the solvency check
         givenAuctionIsCreated
-        givenPoolPercent(82e2)
-        givenFloorReservesPercent(99e2) // For the solvency check
+        givenPoolPercent(10e2)
+        givenFloorReservesPercent(90e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
 
         // Assert
-        assertEq(_dtl.poolPercent(), 82e2, "pool percent");
+        assertEq(_dtl.poolPercent(), 10e2, "pool percent");
     }
 
     function test_poolPercent_lowPercent_reverts()
@@ -705,7 +706,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenPoolPercent(82e2)
+        givenPoolPercent(10e2)
     {
         // Expect revert
         bytes memory err =
