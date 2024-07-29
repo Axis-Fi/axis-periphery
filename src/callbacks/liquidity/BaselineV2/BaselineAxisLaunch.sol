@@ -404,6 +404,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 (,, uint48 curatorFeePerc,,) = IAuctionHouse(AUCTION_HOUSE).lotFees(lotId_);
                 uint256 curatorFee = (capacity_ * curatorFeePerc) / ONE_HUNDRED_PERCENT;
                 initialCircSupply = currentSupply + currentCollatSupply + capacity_ + curatorFee;
+                console2.log("initialCircSupply", initialCircSupply);
             }
 
             // Calculate the initial capacity of the pool based on the ticks set and the expected proceeds to deposit in the pool
@@ -633,14 +634,15 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         {
             uint256 totalSupply = bAsset.totalSupply();
             uint256 totalCollatSupply = CREDT.totalCollateralized();
-            uint256 initialBlv = BPOOL.getBaselineValue();
 
             Position memory floor = BPOOL.getPosition(Range.FLOOR);
             Position memory anchor = BPOOL.getPosition(Range.ANCHOR);
             Position memory discovery = BPOOL.getPosition(Range.DISCOVERY);
 
+            // Calculate the debt capacity at the floor range
+            uint256 currentCredit = CREDT.totalCreditIssued();
             uint256 debtCapacity = BPOOL.getCapacityForReserves(
-                floor.sqrtPriceL, floor.sqrtPriceU, totalCollatSupply.mulWad(initialBlv)
+                floor.sqrtPriceL, floor.sqrtPriceU, currentCredit
             );
 
             uint256 totalCapacity =
