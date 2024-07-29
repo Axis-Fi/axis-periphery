@@ -16,10 +16,10 @@ import {MockBatchAuctionModule} from
 // Callbacks
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
-// Ramses
-import {RamsesV1DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
-import {IRamsesV1Factory} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV1Factory.sol";
-import {IRamsesV1Router} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV1Router.sol";
+// Cleopatra
+import {CleopatraV1DirectToLiquidity} from "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {ICleopatraV1Factory} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Factory.sol";
+import {ICleopatraV1Router} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Router.sol";
 
 // Axis core
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.0/modules/Keycode.sol";
@@ -28,8 +28,8 @@ import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
 import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
 import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.sol";
 
-abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
-    using Callbacks for RamsesV1DirectToLiquidity;
+abstract contract CleopatraV1DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
+    using Callbacks for CleopatraV1DirectToLiquidity;
 
     address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
@@ -43,11 +43,11 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
     uint96 internal _lotId = 1;
 
     BatchAuctionHouse internal _auctionHouse;
-    RamsesV1DirectToLiquidity internal _dtl;
+    CleopatraV1DirectToLiquidity internal _dtl;
     address internal _dtlAddress;
 
-    IRamsesV1Factory internal _factory;
-    IRamsesV1Router internal _router;
+    ICleopatraV1Factory internal _factory;
+    ICleopatraV1Router internal _router;
     LinearVesting internal _linearVesting;
     MockBatchAuctionModule internal _batchAuctionModule;
 
@@ -58,15 +58,15 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
     uint96 internal _refund;
 
     // Inputs
-    RamsesV1DirectToLiquidity.RamsesV1OnCreateParams internal _ramsesCreateParams =
-        RamsesV1DirectToLiquidity.RamsesV1OnCreateParams({stable: false, maxSlippage: uint24(0)});
+    CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams internal _cleopatraCreateParams =
+        CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams({stable: false, maxSlippage: uint24(0)});
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
         proceedsUtilisationPercent: 100e2,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
-        implParams: abi.encode(_ramsesCreateParams)
+        implParams: abi.encode(_cleopatraCreateParams)
     });
 
     function setUp() public {
@@ -85,8 +85,8 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        _factory = IRamsesV1Factory(_RAMSES_V1_FACTORY);
-        _router = IRamsesV1Router(payable(_RAMSES_V1_ROUTER));
+        _factory = ICleopatraV1Factory(_CLEOPATRA_V1_FACTORY);
+        _router = ICleopatraV1Router(payable(_CLEOPATRA_V1_ROUTER));
 
         _linearVesting = new LinearVesting(address(_auctionHouse));
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
@@ -111,13 +111,13 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
         // Get the salt
         bytes memory args = abi.encode(address(_auctionHouse), address(_factory), address(_router));
         bytes32 salt = _getTestSalt(
-            "RamsesV1DirectToLiquidity", type(RamsesV1DirectToLiquidity).creationCode, args
+            "CleopatraV1DirectToLiquidity", type(CleopatraV1DirectToLiquidity).creationCode, args
         );
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
-        _dtl = new RamsesV1DirectToLiquidity{salt: salt}(
+        _dtl = new CleopatraV1DirectToLiquidity{salt: salt}(
             address(_auctionHouse), address(_factory), payable(_router)
         );
         vm.stopBroadcast();
@@ -252,16 +252,16 @@ abstract contract RamsesV1DirectToLiquidityTest is Test, Permit2User, WithSalts,
     }
 
     modifier givenStable(bool stable_) {
-        _ramsesCreateParams.stable = stable_;
+        _cleopatraCreateParams.stable = stable_;
 
         // Update the callback data
-        _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
+        _dtlCreateParams.implParams = abi.encode(_cleopatraCreateParams);
         _;
     }
 
     function _setMaxSlippage(uint24 maxSlippage_) internal {
-        _ramsesCreateParams.maxSlippage = maxSlippage_;
-        _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
+        _cleopatraCreateParams.maxSlippage = maxSlippage_;
+        _dtlCreateParams.implParams = abi.encode(_cleopatraCreateParams);
     }
 
     modifier givenMaxSlippage(uint24 maxSlippage_) {

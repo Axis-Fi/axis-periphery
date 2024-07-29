@@ -33,13 +33,13 @@ import {BALwithCappedAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 import {BALwithTokenAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
-import {RamsesV1DirectToLiquidity} from "../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
-import {RamsesV2DirectToLiquidity} from "../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
+import {CleopatraV1DirectToLiquidity} from "../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {CleopatraV2DirectToLiquidity} from "../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
-// Ramses
-import {IRamsesV1Router} from "../../src/callbacks/liquidity/Ramses/lib/IRamsesV1Router.sol";
-import {IRamsesV2PositionManager} from
-    "../../src/callbacks/liquidity/Ramses/lib/IRamsesV2PositionManager.sol";
+// Cleopatra
+import {ICleopatraV1Router} from "../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Router.sol";
+import {ICleopatraV2PositionManager} from
+    "../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2PositionManager.sol";
 
 // Baseline
 import {
@@ -979,32 +979,32 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchRamsesV1DirectToLiquidity(string memory sequenceName_)
+    function deployBatchCleopatraV1DirectToLiquidity(string memory sequenceName_)
         public
         returns (address, string memory, string memory)
     {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        address ramsesV1PairFactory = _getEnvAddressOrOverride(
-            "constants.ramsesV1.pairFactory", sequenceName_, "args.pairFactory"
+        address cleopatraV1PairFactory = _getEnvAddressOrOverride(
+            "constants.cleopatraV1.pairFactory", sequenceName_, "args.pairFactory"
         );
-        address payable ramsesV1Router = payable(
-            _getEnvAddressOrOverride("constants.ramsesV1.router", sequenceName_, "args.router")
+        address payable cleopatraV1Router = payable(
+            _getEnvAddressOrOverride("constants.cleopatraV1.router", sequenceName_, "args.router")
         );
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
 
         // Check that the router and factory match
         require(
-            IRamsesV1Router(ramsesV1Router).factory() == ramsesV1PairFactory,
-            "IRamsesV1Router.factory() does not match given Ramses V1 pair factory address"
+            ICleopatraV1Router(cleopatraV1Router).factory() == cleopatraV1PairFactory,
+            "ICleopatraV1Router.factory() does not match given Cleopatra V1 pair factory address"
         );
 
         // Get the salt
         bytes32 salt_ = _getSalt(
             deploymentKey,
-            type(RamsesV1DirectToLiquidity).creationCode,
-            abi.encode(batchAuctionHouse, ramsesV1PairFactory, ramsesV1Router)
+            type(CleopatraV1DirectToLiquidity).creationCode,
+            abi.encode(batchAuctionHouse, cleopatraV1PairFactory, cleopatraV1Router)
         );
 
         // Revert if the salt is not set
@@ -1014,8 +1014,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("    salt:", vm.toString(salt_));
 
         vm.broadcast();
-        RamsesV1DirectToLiquidity dtl = new RamsesV1DirectToLiquidity{salt: salt_}(
-            batchAuctionHouse, ramsesV1PairFactory, ramsesV1Router
+        CleopatraV1DirectToLiquidity dtl = new CleopatraV1DirectToLiquidity{salt: salt_}(
+            batchAuctionHouse, cleopatraV1PairFactory, cleopatraV1Router
         );
         console2.log("");
         console2.log("    deployed at:", address(dtl));
@@ -1023,17 +1023,17 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchRamsesV2DirectToLiquidity(string memory sequenceName_)
+    function deployBatchCleopatraV2DirectToLiquidity(string memory sequenceName_)
         public
         returns (address, string memory, string memory)
     {
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
-        address ramsesV2Factory =
-            _getEnvAddressOrOverride("constants.ramsesV2.factory", sequenceName_, "args.factory");
-        address payable ramsesV2PositionManager = payable(
+        address cleopatraV2Factory =
+            _getEnvAddressOrOverride("constants.cleopatraV2.factory", sequenceName_, "args.factory");
+        address payable cleopatraV2PositionManager = payable(
             _getEnvAddressOrOverride(
-                "constants.ramsesV2.positionManager", sequenceName_, "args.positionManager"
+                "constants.cleopatraV2.positionManager", sequenceName_, "args.positionManager"
             )
         );
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -1041,15 +1041,15 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
 
         // Check that the router and factory match
         require(
-            IRamsesV2PositionManager(ramsesV2PositionManager).factory() == ramsesV2Factory,
-            "IRamsesV2PositionManager.factory() does not match given Ramses V2 factory address"
+            ICleopatraV2PositionManager(cleopatraV2PositionManager).factory() == cleopatraV2Factory,
+            "ICleopatraV2PositionManager.factory() does not match given Cleopatra V2 factory address"
         );
 
         // Get the salt
         bytes32 salt_ = _getSalt(
             deploymentKey,
-            type(RamsesV1DirectToLiquidity).creationCode,
-            abi.encode(batchAuctionHouse, ramsesV2Factory, ramsesV2PositionManager)
+            type(CleopatraV1DirectToLiquidity).creationCode,
+            abi.encode(batchAuctionHouse, cleopatraV2Factory, cleopatraV2PositionManager)
         );
 
         // Revert if the salt is not set
@@ -1059,8 +1059,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("    salt:", vm.toString(salt_));
 
         vm.broadcast();
-        RamsesV2DirectToLiquidity dtl = new RamsesV2DirectToLiquidity{salt: salt_}(
-            batchAuctionHouse, ramsesV2Factory, ramsesV2PositionManager
+        CleopatraV2DirectToLiquidity dtl = new CleopatraV2DirectToLiquidity{salt: salt_}(
+            batchAuctionHouse, cleopatraV2Factory, cleopatraV2PositionManager
         );
         console2.log("");
         console2.log("    deployed at:", address(dtl));

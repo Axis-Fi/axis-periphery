@@ -97,10 +97,10 @@
   "Test_QuoteToken": {
     "0x73857a6649000d8d1c6d627e9eda2a6079605eda4cd860cffe3bb939dfe3e3ef": "0xe9bd28f6c7d9ac5ecc0f59b51855093220efab06f25f16c4d0e82f04eabaf13c"
   },
-  "Test_RamsesV1DirectToLiquidity": {
+  "Test_CleopatraV1DirectToLiquidity": {
     "0xa39d2640eec5bd97dd5073b05dccd616857fdca9f9e1ccf1894340217e109b4f": "0xf0401a9a5af98fccfba400ba36143831ea05ea5b0c734cb1478c227115322dcd"
   },
-  "Test_RamsesV2DirectToLiquidity": {
+  "Test_CleopatraV2DirectToLiquidity": {
     "0xfa9378779c19bf226919c2116dc8e8c5eda1d74f888d67a122685e7fd9be77de": "0x5b3de30d1297453a8f0901d01dcba86a83418e2ae11d1f9bc638d680fbbc09f4"
   },
   "Test_TokenAllowlist": {

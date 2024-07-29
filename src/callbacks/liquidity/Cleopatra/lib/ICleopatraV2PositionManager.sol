@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 /// @dev Generated from https://arbiscan.io/address/0xac9d1dfa5483ebb06e623df31547b2a4dc8bf7ca
-interface IRamsesV2PositionManager {
+interface ICleopatraV2PositionManager {
     struct CollectParams {
         uint256 tokenId;
         address recipient;
@@ -121,7 +121,7 @@ interface IRamsesV2PositionManager {
             uint128 tokensOwed0,
             uint128 tokensOwed1
         );
-    function ramsesV2MintCallback(
+    function cleopatraV2MintCallback(
         uint256 amount0Owed,
         uint256 amount1Owed,
         bytes memory data

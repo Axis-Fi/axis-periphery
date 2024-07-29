@@ -8,12 +8,12 @@ import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 // Callbacks
 import {BaseDirectToLiquidity} from "../BaseDTL.sol";
 
-// Ramses
-import {IRamsesV1Factory} from "./lib/IRamsesV1Factory.sol";
-import {IRamsesV1Router} from "./lib/IRamsesV1Router.sol";
+// Cleopatra
+import {ICleopatraV1Factory} from "./lib/ICleopatraV1Factory.sol";
+import {ICleopatraV1Router} from "./lib/ICleopatraV1Router.sol";
 
-/// @title      RamsesV1DirectToLiquidity
-/// @notice     This Callback contract deposits the proceeds from a batch auction into a Ramses V1 pool
+/// @title      CleopatraV1DirectToLiquidity
+/// @notice     This Callback contract deposits the proceeds from a batch auction into a Cleopatra V1 pool
 ///             in order to create liquidity immediately.
 ///
 ///             The LP tokens are transferred to `DTLConfiguration.recipient`, or can optionally vest to the auction seller.
@@ -24,7 +24,7 @@ import {IRamsesV1Router} from "./lib/IRamsesV1Router.sol";
 ///
 /// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
 ///             Transfers are performed within the same function that requires the balance.
-contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
+contract CleopatraV1DirectToLiquidity is BaseDirectToLiquidity {
     using SafeTransferLib for ERC20;
 
     // ========== STRUCTS ========== //
@@ -34,20 +34,20 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     ///
     /// @param      stable          Whether the pool will be stable or volatile
     /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
-    struct RamsesV1OnCreateParams {
+    struct CleopatraV1OnCreateParams {
         bool stable;
         uint24 maxSlippage;
     }
 
     // ========== STATE VARIABLES ========== //
 
-    /// @notice     The Ramses PairFactory contract
-    /// @dev        This contract is used to create Ramses pairs
-    IRamsesV1Factory public pairFactory;
+    /// @notice     The Cleopatra PairFactory contract
+    /// @dev        This contract is used to create Cleopatra pairs
+    ICleopatraV1Factory public pairFactory;
 
-    /// @notice     The Ramses Router contract
-    /// @dev        This contract is used to add liquidity to Ramses pairs
-    IRamsesV1Router public router;
+    /// @notice     The Cleopatra Router contract
+    /// @dev        This contract is used to add liquidity to Cleopatra pairs
+    ICleopatraV1Router public router;
 
     /// @notice     Mapping of lot ID to pool token
     mapping(uint96 => address) public lotIdToPoolToken;
@@ -65,8 +65,8 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         if (router_ == address(0)) {
             revert Callback_Params_InvalidAddress();
         }
-        pairFactory = IRamsesV1Factory(pairFactory_);
-        router = IRamsesV1Router(router_);
+        pairFactory = ICleopatraV1Factory(pairFactory_);
+        router = ICleopatraV1Router(router_);
     }
 
     // ========== CALLBACK FUNCTIONS ========== //
@@ -77,7 +77,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     ///
     ///             This function reverts if:
     ///             - The callback data is of the incorrect length
-    ///             - `RamsesV1OnCreateParams.maxSlippage` is out of bounds
+    ///             - `CleopatraV1OnCreateParams.maxSlippage` is out of bounds
     function __onCreate(
         uint96 lotId_,
         address,
@@ -87,7 +87,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         bool,
         bytes calldata
     ) internal virtual override {
-        RamsesV1OnCreateParams memory params = _decodeParameters(lotId_);
+        CleopatraV1OnCreateParams memory params = _decodeParameters(lotId_);
 
         // Check that the slippage amount is within bounds
         // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
@@ -110,7 +110,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
         uint256 baseTokenAmount_,
         bytes memory
     ) internal virtual override {
-        RamsesV1OnCreateParams memory params = _decodeParameters(lotId_);
+        CleopatraV1OnCreateParams memory params = _decodeParameters(lotId_);
 
         // Create and initialize the pool if necessary
         // Token orientation is irrelevant
@@ -186,7 +186,7 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
     function _decodeParameters(uint96 lotId_)
         internal
         view
-        returns (RamsesV1OnCreateParams memory)
+        returns (CleopatraV1OnCreateParams memory)
     {
         DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
         // Validate that the callback data is of the correct length
@@ -194,6 +194,6 @@ contract RamsesV1DirectToLiquidity is BaseDirectToLiquidity {
             revert Callback_InvalidParams();
         }
 
-        return abi.decode(lotConfig.implParams, (RamsesV1OnCreateParams));
+        return abi.decode(lotConfig.implParams, (CleopatraV1OnCreateParams));
     }
 }

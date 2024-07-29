@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 /// @dev Generated from https://arbiscan.io/address/0xf896d16fa56a625802b6013f9f9202790ec69908
-interface IRamsesV2Factory {
+interface ICleopatraV2Factory {
     event FeeAmountEnabled(uint24 indexed fee, int24 indexed tickSpacing);
     event FeeCollectorChanged(address indexed oldFeeCollector, address indexed newFeeCollector);
     event FeeSetterChanged(address indexed oldSetter, address indexed newSetter);

@@ -16,13 +16,13 @@ import {MockBatchAuctionModule} from
 // Callbacks
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
-// Ramses
-import {RamsesV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
-import {IRamsesV2Factory} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2Factory.sol";
-import {IRamsesV2PositionManager} from
-    "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2PositionManager.sol";
-import {IVotingEscrow} from "../../../../src/callbacks/liquidity/Ramses/lib/IVotingEscrow.sol";
-import {IRAM} from "../../../../src/callbacks/liquidity/Ramses/lib/IRAM.sol";
+// Cleopatra
+import {CleopatraV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
+import {ICleopatraV2Factory} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2Factory.sol";
+import {ICleopatraV2PositionManager} from
+    "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2PositionManager.sol";
+import {IVotingEscrow} from "../../../../src/callbacks/liquidity/Cleopatra/lib/IVotingEscrow.sol";
+import {IRAM} from "../../../../src/callbacks/liquidity/Cleopatra/lib/IRAM.sol";
 
 // Axis core
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.0/modules/Keycode.sol";
@@ -31,8 +31,8 @@ import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
 import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
 import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.sol";
 
-abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
-    using Callbacks for RamsesV2DirectToLiquidity;
+abstract contract CleopatraV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
+    using Callbacks for CleopatraV2DirectToLiquidity;
 
     address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
@@ -46,10 +46,10 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     uint96 internal _lotId = 1;
 
     BatchAuctionHouse internal _auctionHouse;
-    RamsesV2DirectToLiquidity internal _dtl;
+    CleopatraV2DirectToLiquidity internal _dtl;
     address internal _dtlAddress;
-    IRamsesV2Factory internal _factory;
-    IRamsesV2PositionManager internal _positionManager;
+    ICleopatraV2Factory internal _factory;
+    ICleopatraV2PositionManager internal _positionManager;
     IRAM internal _ram;
     MockBatchAuctionModule internal _batchAuctionModule;
 
@@ -60,8 +60,8 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     uint96 internal _refund;
 
     // Inputs
-    RamsesV2DirectToLiquidity.RamsesV2OnCreateParams internal _ramsesCreateParams =
-    RamsesV2DirectToLiquidity.RamsesV2OnCreateParams({
+    CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams internal _cleopatraCreateParams =
+    CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams({
         poolFee: 500,
         maxSlippage: 1 // 0.01%, to handle rounding errors
     });
@@ -71,7 +71,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
-        implParams: abi.encode(_ramsesCreateParams)
+        implParams: abi.encode(_cleopatraCreateParams)
     });
 
     function setUp() public {
@@ -90,8 +90,8 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        _factory = IRamsesV2Factory(_RAMSES_V2_FACTORY);
-        _positionManager = IRamsesV2PositionManager(payable(_RAMSES_V2_POSITION_MANAGER));
+        _factory = ICleopatraV2Factory(_CLEOPATRA_V2_FACTORY);
+        _positionManager = ICleopatraV2PositionManager(payable(_CLEOPATRA_V2_POSITION_MANAGER));
         // _ram = IRAM(IVotingEscrow(_positionManager.veRam()).token());
 
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
@@ -111,13 +111,13 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
         bytes memory args =
             abi.encode(address(_auctionHouse), address(_factory), address(_positionManager));
         bytes32 salt = _getTestSalt(
-            "RamsesV2DirectToLiquidity", type(RamsesV2DirectToLiquidity).creationCode, args
+            "CleopatraV2DirectToLiquidity", type(CleopatraV2DirectToLiquidity).creationCode, args
         );
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
-        _dtl = new RamsesV2DirectToLiquidity{salt: salt}(
+        _dtl = new CleopatraV2DirectToLiquidity{salt: salt}(
             address(_auctionHouse), address(_factory), payable(_positionManager)
         );
         vm.stopBroadcast();
@@ -237,16 +237,16 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     }
 
     modifier givenPoolFee(uint24 fee_) {
-        _ramsesCreateParams.poolFee = fee_;
+        _cleopatraCreateParams.poolFee = fee_;
 
         // Update the callback data
-        _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
+        _dtlCreateParams.implParams = abi.encode(_cleopatraCreateParams);
         _;
     }
 
     function _setMaxSlippage(uint24 maxSlippage_) internal {
-        _ramsesCreateParams.maxSlippage = maxSlippage_;
-        _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
+        _cleopatraCreateParams.maxSlippage = maxSlippage_;
+        _dtlCreateParams.implParams = abi.encode(_cleopatraCreateParams);
     }
 
     modifier givenMaxSlippage(uint24 maxSlippage_) {
@@ -255,8 +255,8 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     }
 
     function _setVeRamTokenId(uint256 veRamTokenId_) internal {
-        // _ramsesCreateParams.veRamTokenId = veRamTokenId_;
-        _dtlCreateParams.implParams = abi.encode(_ramsesCreateParams);
+        // _cleopatraCreateParams.veRamTokenId = veRamTokenId_;
+        _dtlCreateParams.implParams = abi.encode(_cleopatraCreateParams);
     }
 
     modifier givenVeRamTokenId() {
@@ -284,7 +284,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
             ? (address(_baseToken), address(_quoteToken))
             : (address(_quoteToken), address(_baseToken));
 
-        return _factory.createPool(token0, token1, _ramsesCreateParams.poolFee);
+        return _factory.createPool(token0, token1, _cleopatraCreateParams.poolFee);
     }
 
     modifier givenPoolIsCreated() {
@@ -325,7 +325,7 @@ abstract contract RamsesV2DirectToLiquidityTest is Test, Permit2User, WithSalts,
     }
 
     modifier givenVeRamTokenIdApproval(bool approved_) {
-        // _mockVeRamTokenIdApproved(_ramsesCreateParams.veRamTokenId, approved_);
+        // _mockVeRamTokenIdApproved(_cleopatraCreateParams.veRamTokenId, approved_);
         _;
     }
 

@@ -6,11 +6,11 @@ import {Script, console2} from "@forge-std-1.9.1/Script.sol";
 import {WithSalts} from "../WithSalts.s.sol";
 import {WithDeploySequence} from "../../deploy/WithDeploySequence.s.sol";
 
-// Ramses
-import {RamsesV1DirectToLiquidity} from "../../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
-import {RamsesV2DirectToLiquidity} from "../../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
+// Cleopatra
+import {CleopatraV1DirectToLiquidity} from "../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {CleopatraV2DirectToLiquidity} from "../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
-contract RamsesDTLSalts is Script, WithDeploySequence, WithSalts {
+contract CleopatraDTLSalts is Script, WithDeploySequence, WithSalts {
     string internal constant _ADDRESS_PREFIX = "E6";
 
     function _setUp(string calldata chain_, string calldata sequenceFilePath_) internal {
@@ -31,37 +31,37 @@ contract RamsesDTLSalts is Script, WithDeploySequence, WithSalts {
             string memory deploymentKey = _getDeploymentKey(sequenceName);
             console2.log("    deploymentKey: %s", deploymentKey);
 
-            // Atomic Ramses V1
+            // Atomic Cleopatra V1
             if (
                 keccak256(abi.encodePacked(sequenceName))
-                    == keccak256(abi.encodePacked("AtomicRamsesV1DirectToLiquidity"))
+                    == keccak256(abi.encodePacked("AtomicCleopatraV1DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.AtomicAuctionHouse");
 
                 _generateV1(sequenceName, auctionHouse, deploymentKey);
             }
-            // Batch Ramses V1
+            // Batch Cleopatra V1
             else if (
                 keccak256(abi.encodePacked(sequenceName))
-                    == keccak256(abi.encodePacked("BatchRamsesV1DirectToLiquidity"))
+                    == keccak256(abi.encodePacked("BatchCleopatraV1DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.BatchAuctionHouse");
 
                 _generateV1(sequenceName, auctionHouse, deploymentKey);
             }
-            // Atomic Ramses V2
+            // Atomic Cleopatra V2
             else if (
                 keccak256(abi.encodePacked(sequenceName))
-                    == keccak256(abi.encodePacked("AtomicRamsesV2DirectToLiquidity"))
+                    == keccak256(abi.encodePacked("AtomicCleopatraV2DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.AtomicAuctionHouse");
 
                 _generateV2(sequenceName, auctionHouse, deploymentKey);
             }
-            // Batch Ramses V2
+            // Batch Cleopatra V2
             else if (
                 keccak256(abi.encodePacked(sequenceName))
-                    == keccak256(abi.encodePacked("BatchRamsesV2DirectToLiquidity"))
+                    == keccak256(abi.encodePacked("BatchCleopatraV2DirectToLiquidity"))
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.BatchAuctionHouse");
 
@@ -80,18 +80,18 @@ contract RamsesDTLSalts is Script, WithDeploySequence, WithSalts {
         string memory deploymentKey_
     ) internal {
         // Get input variables or overrides
-        address envRamsesV1PairFactory = _getEnvAddressOrOverride(
-            "constants.ramsesV1.pairFactory", sequenceName_, "args.pairFactory"
+        address envCleopatraV1PairFactory = _getEnvAddressOrOverride(
+            "constants.cleopatraV1.pairFactory", sequenceName_, "args.pairFactory"
         );
-        address envRamsesV1Router =
-            _getEnvAddressOrOverride("constants.ramsesV1.router", sequenceName_, "args.router");
+        address envCleopatraV1Router =
+            _getEnvAddressOrOverride("constants.cleopatraV1.router", sequenceName_, "args.router");
 
-        // Calculate salt for the RamsesV1DirectToLiquidity
-        bytes memory contractCode = type(RamsesV1DirectToLiquidity).creationCode;
+        // Calculate salt for the CleopatraV1DirectToLiquidity
+        bytes memory contractCode = type(CleopatraV1DirectToLiquidity).creationCode;
         (string memory bytecodePath, bytes32 bytecodeHash) = _writeBytecode(
             deploymentKey_,
             contractCode,
-            abi.encode(auctionHouse_, envRamsesV1PairFactory, envRamsesV1Router)
+            abi.encode(auctionHouse_, envCleopatraV1PairFactory, envCleopatraV1Router)
         );
         _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
     }
@@ -102,18 +102,18 @@ contract RamsesDTLSalts is Script, WithDeploySequence, WithSalts {
         string memory deploymentKey_
     ) internal {
         // Get input variables or overrides
-        address envRamsesV2Factory =
-            _getEnvAddressOrOverride("constants.ramsesV2.factory", sequenceName_, "args.factory");
-        address envRamsesV2PositionManager = _getEnvAddressOrOverride(
-            "constants.ramsesV2.positionManager", sequenceName_, "args.positionManager"
+        address envCleopatraV2Factory =
+            _getEnvAddressOrOverride("constants.cleopatraV2.factory", sequenceName_, "args.factory");
+        address envCleopatraV2PositionManager = _getEnvAddressOrOverride(
+            "constants.cleopatraV2.positionManager", sequenceName_, "args.positionManager"
         );
 
-        // Calculate salt for the RamsesV2DirectToLiquidity
-        bytes memory contractCode = type(RamsesV2DirectToLiquidity).creationCode;
+        // Calculate salt for the CleopatraV2DirectToLiquidity
+        bytes memory contractCode = type(CleopatraV2DirectToLiquidity).creationCode;
         (string memory bytecodePath, bytes32 bytecodeHash) = _writeBytecode(
             deploymentKey_,
             contractCode,
-            abi.encode(auctionHouse_, envRamsesV2Factory, envRamsesV2PositionManager)
+            abi.encode(auctionHouse_, envCleopatraV2Factory, envCleopatraV2PositionManager)
         );
         _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
     }

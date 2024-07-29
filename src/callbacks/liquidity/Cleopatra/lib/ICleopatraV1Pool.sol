@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-interface IRamsesV1Pool {
+interface ICleopatraV1Pool {
     struct Observation {
         uint256 timestamp;
         uint256 reserve0Cumulative;

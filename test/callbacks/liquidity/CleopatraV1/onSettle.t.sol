@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {RamsesV1DirectToLiquidityTest} from "./RamsesV1DTLTest.sol";
+import {CleopatraV1DirectToLiquidityTest} from "./CleopatraV1DTLTest.sol";
 
 // Libraries
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 
-// Ramses
-import {IRamsesV1Pool} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV1Pool.sol";
+// Cleopatra
+import {ICleopatraV1Pool} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Pool.sol";
 
 // AuctionHouse
 import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
-contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
+contract CleopatraV1OnSettleForkTest is CleopatraV1DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
     uint96 internal constant _REFUND = 0;
 
@@ -31,17 +31,17 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
 
     // ========== Internal functions ========== //
 
-    function _getRamsesV1Pool(bool stable_) internal view returns (IRamsesV1Pool) {
-        return IRamsesV1Pool(_factory.getPair(address(_quoteToken), address(_baseToken), stable_));
+    function _getCleopatraV1Pool(bool stable_) internal view returns (ICleopatraV1Pool) {
+        return ICleopatraV1Pool(_factory.getPair(address(_quoteToken), address(_baseToken), stable_));
     }
 
-    function _getRamsesV1Pool() internal view returns (IRamsesV1Pool) {
-        return _getRamsesV1Pool(_ramsesCreateParams.stable);
+    function _getCleopatraV1Pool() internal view returns (ICleopatraV1Pool) {
+        return _getCleopatraV1Pool(_cleopatraCreateParams.stable);
     }
 
     function _getVestingTokenId() internal view returns (uint256) {
         // Get the pools deployed by the DTL callback
-        address pool = address(_getRamsesV1Pool());
+        address pool = address(_getCleopatraV1Pool());
 
         return _linearVesting.computeId(
             pool,
@@ -58,7 +58,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
 
     function _assertLpTokenBalance() internal view {
         // Get the pools deployed by the DTL callback
-        IRamsesV1Pool pool = _getRamsesV1Pool();
+        ICleopatraV1Pool pool = _getCleopatraV1Pool();
 
         // Exclude the LP token balance on this contract
         uint256 testBalance = pool.balanceOf(address(this));
@@ -96,7 +96,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         }
 
         // Get the pools deployed by the DTL callback
-        address pool = address(_getRamsesV1Pool());
+        address pool = address(_getCleopatraV1Pool());
 
         // Get the wrapped address
         (, address wrappedVestingTokenAddress) = _linearVesting.deploy(
@@ -136,7 +136,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
 
     function _createPool() internal returns (address) {
         return _factory.createPair(
-            address(_quoteToken), address(_baseToken), _ramsesCreateParams.stable
+            address(_quoteToken), address(_baseToken), _cleopatraCreateParams.stable
         );
     }
 
@@ -204,7 +204,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         _router.addLiquidity(
             address(_quoteToken),
             address(_baseToken),
-            _ramsesCreateParams.stable,
+            _cleopatraCreateParams.stable,
             quoteTokensToDeposit,
             baseTokensToDeposit,
             quoteTokensToDeposit,
@@ -231,7 +231,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         _router.addLiquidity(
             address(_quoteToken),
             address(_baseToken),
-            _ramsesCreateParams.stable,
+            _cleopatraCreateParams.stable,
             quoteTokensToDeposit,
             baseTokensToDeposit,
             quoteTokensToDeposit,
@@ -524,7 +524,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         _linearVesting.redeemMax(tokenId);
 
         // Assert that the LP token has been transferred to the seller
-        IRamsesV1Pool pool = _getRamsesV1Pool();
+        ICleopatraV1Pool pool = _getCleopatraV1Pool();
         assertEq(
             pool.balanceOf(_SELLER),
             pool.totalSupply() - _MINIMUM_LIQUIDITY,
@@ -545,7 +545,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         _performOnSettle();
 
         // Get the pools deployed by the DTL callback
-        IRamsesV1Pool pool = _getRamsesV1Pool();
+        ICleopatraV1Pool pool = _getCleopatraV1Pool();
 
         // Approve the spending of the LP token
         uint256 lpTokenAmount = pool.balanceOf(_SELLER);
@@ -557,7 +557,7 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
         _router.removeLiquidity(
             address(_quoteToken),
             address(_baseToken),
-            _ramsesCreateParams.stable,
+            _cleopatraCreateParams.stable,
             lpTokenAmount,
             _quoteTokensToDeposit * 99 / 100,
             _baseTokensToDeposit * 99 / 100,
@@ -673,8 +673,8 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     {
         _performOnSettle();
 
-        address stablePool = address(_getRamsesV1Pool(true));
-        address volatilePool = address(_getRamsesV1Pool(false));
+        address stablePool = address(_getCleopatraV1Pool(true));
+        address volatilePool = address(_getCleopatraV1Pool(false));
 
         assertNotEq(stablePool, address(0), "stable pool address");
         assertEq(volatilePool, address(0), "volatile pool address");
@@ -692,8 +692,8 @@ contract RamsesV1OnSettleForkTest is RamsesV1DirectToLiquidityTest {
     {
         _performOnSettle();
 
-        address stablePool = address(_getRamsesV1Pool(true));
-        address volatilePool = address(_getRamsesV1Pool(false));
+        address stablePool = address(_getCleopatraV1Pool(true));
+        address volatilePool = address(_getCleopatraV1Pool(false));
 
         assertEq(stablePool, address(0), "stable pool address");
         assertNotEq(volatilePool, address(0), "volatile pool address");

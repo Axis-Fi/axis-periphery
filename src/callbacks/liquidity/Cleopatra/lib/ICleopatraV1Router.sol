@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 /// @dev Generated from https://arbiscan.io/address/0x0e216dd4f1b5ea81006d41b79f9a1a69a38f3e37
-interface IRamsesV1Router {
+interface ICleopatraV1Router {
     struct route {
         address from;
         address to;

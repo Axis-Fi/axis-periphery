@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {RamsesV2DirectToLiquidityTest} from "./RamsesV2DTLTest.sol";
+import {CleopatraV2DirectToLiquidityTest} from "./CleopatraV2DTLTest.sol";
 
 // Libraries
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 
-// Ramses
-import {IRamsesV2Pool} from "../../../../src/callbacks/liquidity/Ramses/lib/IRamsesV2Pool.sol";
+// Cleopatra
+import {ICleopatraV2Pool} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2Pool.sol";
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 // AuctionHouse
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
-contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
+contract CleopatraV2DTLOnSettleForkTest is CleopatraV2DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
     uint96 internal constant _REFUND = 0;
 
@@ -45,7 +45,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         // Get the pool
         address pool = _getPool();
 
-        (uint160 sqrtPriceX96,,,,,,) = IRamsesV2Pool(pool).slot0();
+        (uint160 sqrtPriceX96,,,,,,) = ICleopatraV2Pool(pool).slot0();
         assertEq(sqrtPriceX96, sqrtPriceX96_, "pool sqrt price");
     }
 
@@ -84,7 +84,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
     // ========== Modifiers ========== //
 
     function _initializePool(address pool_, uint160 sqrtPriceX96_) internal {
-        IRamsesV2Pool(pool_).initialize(sqrtPriceX96_);
+        ICleopatraV2Pool(pool_).initialize(sqrtPriceX96_);
     }
 
     modifier givenPoolIsCreatedAndInitialized(uint160 sqrtPriceX96_) {
@@ -161,7 +161,7 @@ contract RamsesV2DTLOnSettleForkTest is RamsesV2DirectToLiquidityTest {
         (address token0, address token1) = address(_baseToken) < address(_quoteToken)
             ? (address(_baseToken), address(_quoteToken))
             : (address(_quoteToken), address(_baseToken));
-        return _factory.getPool(token0, token1, _ramsesCreateParams.poolFee);
+        return _factory.getPool(token0, token1, _cleopatraCreateParams.poolFee);
     }
 
     // ========== Tests ========== //

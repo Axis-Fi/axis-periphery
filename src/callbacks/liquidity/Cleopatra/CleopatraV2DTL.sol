@@ -7,18 +7,18 @@ import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 // Callbacks
 import {BaseDirectToLiquidity} from "../BaseDTL.sol";
 
-// Ramses
-import {IRamsesV2Pool} from "./lib/IRamsesV2Pool.sol";
-import {IRamsesV2Factory} from "./lib/IRamsesV2Factory.sol";
-import {IRamsesV2PositionManager} from "./lib/IRamsesV2PositionManager.sol";
+// Cleopatra
+import {ICleopatraV2Pool} from "./lib/ICleopatraV2Pool.sol";
+import {ICleopatraV2Factory} from "./lib/ICleopatraV2Factory.sol";
+import {ICleopatraV2PositionManager} from "./lib/ICleopatraV2PositionManager.sol";
 import {IVotingEscrow} from "./lib/IVotingEscrow.sol";
 
 // Uniswap
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
-/// @title      RamsesV2DirectToLiquidity
-/// @notice     This Callback contract deposits the proceeds from a batch auction into a Ramses V2 pool
+/// @title      CleopatraV2DirectToLiquidity
+/// @notice     This Callback contract deposits the proceeds from a batch auction into a Cleopatra V2 pool
 ///             in order to create full-range liquidity immediately.
 ///
 ///             The LP tokens are transferred to `DTLConfiguration.recipient`, which must be an EOA or a contract that can receive ERC721 tokens.
@@ -29,10 +29,10 @@ import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 ///
 /// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
 ///             Transfers are performed within the same function that requires the balance.
-contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
+contract CleopatraV2DirectToLiquidity is BaseDirectToLiquidity {
     // ========== ERRORS ========== //
 
-    /// @notice The specified pool fee is not enabled in the Ramses V2 Factory
+    /// @notice The specified pool fee is not enabled in the Cleopatra V2 Factory
     error Callback_Params_PoolFeeNotEnabled();
 
     // ========== STRUCTS ========== //
@@ -41,38 +41,38 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
     /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
-    struct RamsesV2OnCreateParams {
+    struct CleopatraV2OnCreateParams {
         uint24 poolFee;
         uint24 maxSlippage;
     }
 
     // ========== STATE VARIABLES ========== //
 
-    /// @notice     The Ramses V2 factory
-    IRamsesV2Factory public ramsesV2Factory;
+    /// @notice     The Cleopatra V2 factory
+    ICleopatraV2Factory public cleopatraV2Factory;
 
-    /// @notice     The Ramses V2 position manager
-    IRamsesV2PositionManager public ramsesV2PositionManager;
+    /// @notice     The Cleopatra V2 position manager
+    ICleopatraV2PositionManager public cleopatraV2PositionManager;
 
-    /// @notice     Mapping of lot ID to Ramses V2 token ID
+    /// @notice     Mapping of lot ID to Cleopatra V2 token ID
     mapping(uint96 => uint256) public lotIdToTokenId;
 
     // ========== CONSTRUCTOR ========== //
 
     constructor(
         address auctionHouse_,
-        address ramsesV2Factory_,
-        address payable ramsesV2PositionManager_
+        address cleopatraV2Factory_,
+        address payable cleopatraV2PositionManager_
     ) BaseDirectToLiquidity(auctionHouse_) {
-        if (ramsesV2Factory_ == address(0)) {
+        if (cleopatraV2Factory_ == address(0)) {
             revert Callback_Params_InvalidAddress();
         }
-        ramsesV2Factory = IRamsesV2Factory(ramsesV2Factory_);
+        cleopatraV2Factory = ICleopatraV2Factory(cleopatraV2Factory_);
 
-        if (ramsesV2PositionManager_ == address(0)) {
+        if (cleopatraV2PositionManager_ == address(0)) {
             revert Callback_Params_InvalidAddress();
         }
-        ramsesV2PositionManager = IRamsesV2PositionManager(ramsesV2PositionManager_);
+        cleopatraV2PositionManager = ICleopatraV2PositionManager(cleopatraV2PositionManager_);
     }
 
     // ========== CALLBACK FUNCTIONS ========== //
@@ -82,8 +82,8 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the input data
     ///
     ///             This function reverts if:
-    ///             - `RamsesV2OnCreateParams.poolFee` is not enabled
-    ///             - `RamsesV2OnCreateParams.maxSlippage` is out of bounds
+    ///             - `CleopatraV2OnCreateParams.poolFee` is not enabled
+    ///             - `CleopatraV2OnCreateParams.maxSlippage` is out of bounds
     function __onCreate(
         uint96 lotId_,
         address,
@@ -93,12 +93,12 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         bool,
         bytes calldata
     ) internal virtual override {
-        RamsesV2OnCreateParams memory params = _decodeParameters(lotId_);
+        CleopatraV2OnCreateParams memory params = _decodeParameters(lotId_);
 
         // Validate the parameters
         // Pool fee
         // Fee not enabled
-        if (ramsesV2Factory.feeAmountTickSpacing(params.poolFee) == 0) {
+        if (cleopatraV2Factory.feeAmountTickSpacing(params.poolFee) == 0) {
             revert Callback_Params_PoolFeeNotEnabled();
         }
 
@@ -149,21 +149,21 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Mint the position and add liquidity
         {
-            IRamsesV2PositionManager.MintParams memory mintParams =
+            ICleopatraV2PositionManager.MintParams memory mintParams =
                 _getMintParams(lotId_, quoteToken_, quoteTokenAmount_, baseToken_, baseTokenAmount_);
 
             // Approve spending
-            ERC20(quoteToken_).approve(address(ramsesV2PositionManager), quoteTokenAmount_);
-            ERC20(baseToken_).approve(address(ramsesV2PositionManager), baseTokenAmount_);
+            ERC20(quoteToken_).approve(address(cleopatraV2PositionManager), quoteTokenAmount_);
+            ERC20(baseToken_).approve(address(cleopatraV2PositionManager), baseTokenAmount_);
 
             // Mint the position
-            (uint256 tokenId,,,) = ramsesV2PositionManager.mint(mintParams);
+            (uint256 tokenId,,,) = cleopatraV2PositionManager.mint(mintParams);
             lotIdToTokenId[lotId_] = tokenId;
 
             // Reset dangling approvals
             // The position manager may not spend all tokens
-            ERC20(quoteToken_).approve(address(ramsesV2PositionManager), 0);
-            ERC20(baseToken_).approve(address(ramsesV2PositionManager), 0);
+            ERC20(quoteToken_).approve(address(cleopatraV2PositionManager), 0);
+            ERC20(baseToken_).approve(address(cleopatraV2PositionManager), 0);
         }
     }
 
@@ -190,15 +190,15 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         uint160 sqrtPriceX96
     ) internal returns (address pool) {
         require(token0 < token1);
-        pool = ramsesV2Factory.getPool(token0, token1, fee);
+        pool = cleopatraV2Factory.getPool(token0, token1, fee);
 
         if (pool == address(0)) {
-            pool = ramsesV2Factory.createPool(token0, token1, fee);
-            IRamsesV2Pool(pool).initialize(sqrtPriceX96);
+            pool = cleopatraV2Factory.createPool(token0, token1, fee);
+            ICleopatraV2Pool(pool).initialize(sqrtPriceX96);
         } else {
-            (uint160 sqrtPriceX96Existing,,,,,,) = IRamsesV2Pool(pool).slot0();
+            (uint160 sqrtPriceX96Existing,,,,,,) = ICleopatraV2Pool(pool).slot0();
             if (sqrtPriceX96Existing == 0) {
-                IRamsesV2Pool(pool).initialize(sqrtPriceX96);
+                ICleopatraV2Pool(pool).initialize(sqrtPriceX96);
             }
         }
     }
@@ -209,10 +209,10 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_
-    ) internal view returns (IRamsesV2PositionManager.MintParams memory) {
-        RamsesV2OnCreateParams memory params = _decodeParameters(lotId_);
+    ) internal view returns (ICleopatraV2PositionManager.MintParams memory) {
+        CleopatraV2OnCreateParams memory params = _decodeParameters(lotId_);
 
-        int24 tickSpacing = ramsesV2Factory.feeAmountTickSpacing(params.poolFee);
+        int24 tickSpacing = cleopatraV2Factory.feeAmountTickSpacing(params.poolFee);
 
         // Determine the ordering of tokens
         bool quoteTokenIsToken0 = quoteToken_ < baseToken_;
@@ -221,7 +221,7 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 amount0 = quoteTokenIsToken0 ? quoteTokenAmount_ : baseTokenAmount_;
         uint256 amount1 = quoteTokenIsToken0 ? baseTokenAmount_ : quoteTokenAmount_;
 
-        return IRamsesV2PositionManager.MintParams({
+        return ICleopatraV2PositionManager.MintParams({
             token0: quoteTokenIsToken0 ? quoteToken_ : baseToken_,
             token1: quoteTokenIsToken0 ? baseToken_ : quoteToken_,
             fee: params.poolFee,
@@ -242,7 +242,7 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
     function _decodeParameters(uint96 lotId_)
         internal
         view
-        returns (RamsesV2OnCreateParams memory)
+        returns (CleopatraV2OnCreateParams memory)
     {
         DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
         // Validate that the callback data is of the correct length
@@ -250,6 +250,6 @@ contract RamsesV2DirectToLiquidity is BaseDirectToLiquidity {
             revert Callback_InvalidParams();
         }
 
-        return abi.decode(lotConfig.implParams, (RamsesV2OnCreateParams));
+        return abi.decode(lotConfig.implParams, (CleopatraV2OnCreateParams));
     }
 }

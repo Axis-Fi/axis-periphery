@@ -2,7 +2,7 @@
 pragma solidity ^0.8.4;
 
 /// @dev Generated from https://arbiscan.io/address/0xaa9b8a7430474119a442ef0c2bf88f7c3c776f2f
-interface IRamsesV1Factory {
+interface ICleopatraV1Factory {
     event Initialized(uint8 version);
     event PairCreated(
         address indexed token0, address indexed token1, bool stable, address pair, uint256

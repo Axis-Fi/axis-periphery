@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {RamsesV2DirectToLiquidityTest} from "./RamsesV2DTLTest.sol";
+import {CleopatraV2DirectToLiquidityTest} from "./CleopatraV2DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {RamsesV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV2DTL.sol";
+import {CleopatraV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
-contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
+contract CleopatraV2DTLOnCreateForkTest is CleopatraV2DirectToLiquidityTest {
     // ============ Modifiers ============ //
 
     // ============ Assertions ============ //
@@ -52,7 +52,7 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
     //  [X] it reverts
     // [X] given the pool fee is not enabled
     //  [X] it reverts
-    // [X] given ramses v2 pool already exists
+    // [X] given cleopatra v2 pool already exists
     //  [X] it succeeds
     // [X] when the vesting start timestamp is set
     //  [X] it reverts
@@ -218,7 +218,7 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            RamsesV2DirectToLiquidity.Callback_Params_PoolFeeNotEnabled.selector
+            CleopatraV2DirectToLiquidity.Callback_Params_PoolFeeNotEnabled.selector
         );
         vm.expectRevert(err);
 
@@ -270,11 +270,11 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
-        RamsesV2DirectToLiquidity.RamsesV2OnCreateParams memory _ramsesCreateParams =
-            abi.decode(configuration.implParams, (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams));
-        assertEq(_ramsesCreateParams.poolFee, _ramsesCreateParams.poolFee, "poolFee");
-        assertEq(_ramsesCreateParams.maxSlippage, _ramsesCreateParams.maxSlippage, "maxSlippage");
-        // assertEq(_ramsesCreateParams.veRamTokenId, _ramsesCreateParams.veRamTokenId, "veRamTokenId");
+        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory _cleopatraCreateParams =
+            abi.decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+        assertEq(_cleopatraCreateParams.poolFee, _cleopatraCreateParams.poolFee, "poolFee");
+        assertEq(_cleopatraCreateParams.maxSlippage, _cleopatraCreateParams.maxSlippage, "maxSlippage");
+        // assertEq(_cleopatraCreateParams.veRamTokenId, _cleopatraCreateParams.veRamTokenId, "veRamTokenId");
 
         // Assert balances
         _assertBaseTokenBalances();
@@ -319,9 +319,9 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
-        RamsesV2DirectToLiquidity.RamsesV2OnCreateParams memory ramsesCreateParams =
-            abi.decode(configuration.implParams, (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams));
-        assertEq(ramsesCreateParams.maxSlippage, maxSlippage, "maxSlippage");
+        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory cleopatraCreateParams =
+            abi.decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+        assertEq(cleopatraCreateParams.maxSlippage, maxSlippage, "maxSlippage");
     }
 
     // function test_veRamTokenId()
@@ -335,9 +335,9 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
     //     // Assert values
     //     BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
 
-    //     RamsesV2DirectToLiquidity.RamsesV2OnCreateParams memory ramsesCreateParams =
-    //         abi.decode(configuration.implParams, (RamsesV2DirectToLiquidity.RamsesV2OnCreateParams));
-    //     assertEq(ramsesCreateParams.veRamTokenId, 1000, "veRamTokenId");
+    //     CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory cleopatraCreateParams =
+    //         abi.decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+    //     assertEq(cleopatraCreateParams.veRamTokenId, 1000, "veRamTokenId");
     // }
 
     // function test_veRamTokenId_notApproved_reverts()
@@ -348,7 +348,7 @@ contract RamsesV2DTLOnCreateForkTest is RamsesV2DirectToLiquidityTest {
     // {
     //     // Expect revert
     //     bytes memory err = abi.encodeWithSelector(
-    //         RamsesV2DirectToLiquidity.Callback_Params_VeRamTokenIdNotApproved.selector
+    //         CleopatraV2DirectToLiquidity.Callback_Params_VeRamTokenIdNotApproved.selector
     //     );
     //     vm.expectRevert(err);
 

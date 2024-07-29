@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {RamsesV1DirectToLiquidityTest} from "./RamsesV1DTLTest.sol";
+import {CleopatraV2DirectToLiquidityTest} from "./CleopatraV2DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
-contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
+contract CleopatraV2DTLOnCancelForkTest is CleopatraV2DirectToLiquidityTest {
     uint96 internal constant _REFUND_AMOUNT = 2e18;
 
     // ============ Modifiers ============ //
 
-    function _performCallback(uint96 lotId_) internal {
+    function _performOnCancel(uint96 lotId_) internal {
         _performOnCancel(lotId_, _REFUND_AMOUNT);
     }
 
@@ -38,12 +38,12 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
         vm.expectRevert(err);
 
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
     }
 
     function test_success() public givenCallbackIsCreated givenOnCreate {
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
 
         // Check the values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -60,7 +60,7 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
 
         // Create a second lot and cancel it
         uint96 lotIdTwo = _createLot(_NOT_SELLER);
-        _performCallback(lotIdTwo);
+        _performOnCancel(lotIdTwo);
 
         // Check the values
         BaseDirectToLiquidity.DTLConfiguration memory configurationOne =
@@ -79,7 +79,7 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
 
     function test_auctionCancelled_onCreate_reverts() public givenCallbackIsCreated givenOnCreate {
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
 
         // Expect revert
         // BaseCallback determines if the lot has already been registered
@@ -91,7 +91,7 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
 
     function test_auctionCancelled_onCurate_reverts() public givenCallbackIsCreated givenOnCreate {
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
 
         // Expect revert
         // BaseDirectToLiquidity determines if the lot has already been completed
@@ -104,7 +104,7 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
 
     function test_auctionCancelled_onCancel_reverts() public givenCallbackIsCreated givenOnCreate {
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
 
         // Expect revert
         // BaseDirectToLiquidity determines if the lot has already been completed
@@ -117,7 +117,7 @@ contract RamsesV1DTLOnCancelForkTest is RamsesV1DirectToLiquidityTest {
 
     function test_auctionCancelled_onSettle_reverts() public givenCallbackIsCreated givenOnCreate {
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel(_lotId);
 
         // Expect revert
         // BaseDirectToLiquidity determines if the lot has already been completed

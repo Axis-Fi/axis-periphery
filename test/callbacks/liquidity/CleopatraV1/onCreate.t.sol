@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {RamsesV1DirectToLiquidityTest} from "./RamsesV1DTLTest.sol";
+import {CleopatraV1DirectToLiquidityTest} from "./CleopatraV1DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {RamsesV1DirectToLiquidity} from "../../../../src/callbacks/liquidity/Ramses/RamsesV1DTL.sol";
+import {CleopatraV1DirectToLiquidity} from "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
 
-contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
+contract CleopatraV1DTLOnCreateForkTest is CleopatraV1DirectToLiquidityTest {
     // ============ Modifiers ============ //
 
     // ============ Assertions ============ //
@@ -50,9 +50,9 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
     //  [X] it succeeds
     // [X] when the max slippage is greater than 100%
     //  [X] it reverts
-    // [X] given ramses v1 pool stable already exists
+    // [X] given cleopatra v1 pool stable already exists
     //  [X] it succeeds
-    // [X] given ramses v1 pool volatile already exists
+    // [X] given cleopatra v1 pool volatile already exists
     //  [X] it succeeds
     // [X] when the start and expiry timestamps are the same
     //  [X] it reverts
@@ -323,11 +323,11 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
-        RamsesV1DirectToLiquidity.RamsesV1OnCreateParams memory ramsesCreateParams = abi.decode(
-            _dtlCreateParams.implParams, (RamsesV1DirectToLiquidity.RamsesV1OnCreateParams)
+        CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams memory cleopatraCreateParams = abi.decode(
+            _dtlCreateParams.implParams, (CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams)
         );
-        assertEq(ramsesCreateParams.stable, _ramsesCreateParams.stable, "stable");
-        assertEq(ramsesCreateParams.maxSlippage, _ramsesCreateParams.maxSlippage, "maxSlippage");
+        assertEq(cleopatraCreateParams.stable, _cleopatraCreateParams.stable, "stable");
+        assertEq(cleopatraCreateParams.maxSlippage, _cleopatraCreateParams.maxSlippage, "maxSlippage");
 
         // Assert balances
         _assertBaseTokenBalances();
@@ -360,11 +360,11 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
-        RamsesV1DirectToLiquidity.RamsesV1OnCreateParams memory ramsesCreateParams = abi.decode(
-            _dtlCreateParams.implParams, (RamsesV1DirectToLiquidity.RamsesV1OnCreateParams)
+        CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams memory cleopatraCreateParams = abi.decode(
+            _dtlCreateParams.implParams, (CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams)
         );
-        assertEq(ramsesCreateParams.stable, _ramsesCreateParams.stable, "stable");
-        assertEq(ramsesCreateParams.maxSlippage, _ramsesCreateParams.maxSlippage, "maxSlippage");
+        assertEq(cleopatraCreateParams.stable, _cleopatraCreateParams.stable, "stable");
+        assertEq(cleopatraCreateParams.maxSlippage, _cleopatraCreateParams.maxSlippage, "maxSlippage");
 
         // Assert balances
         _assertBaseTokenBalances();
@@ -382,11 +382,11 @@ contract RamsesV1DTLOnCreateForkTest is RamsesV1DirectToLiquidityTest {
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
-        RamsesV1DirectToLiquidity.RamsesV1OnCreateParams memory ramsesCreateParams = abi.decode(
-            _dtlCreateParams.implParams, (RamsesV1DirectToLiquidity.RamsesV1OnCreateParams)
+        CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams memory cleopatraCreateParams = abi.decode(
+            _dtlCreateParams.implParams, (CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams)
         );
-        assertEq(ramsesCreateParams.stable, _ramsesCreateParams.stable, "stable");
-        assertEq(ramsesCreateParams.maxSlippage, maxSlippage, "maxSlippage");
+        assertEq(cleopatraCreateParams.stable, _cleopatraCreateParams.stable, "stable");
+        assertEq(cleopatraCreateParams.maxSlippage, maxSlippage, "maxSlippage");
     }
 
     function test_givenStablePoolExists() public givenCallbackIsCreated {

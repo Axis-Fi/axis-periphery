@@ -17,13 +17,13 @@ abstract contract TestConstants is TestConstantsCore {
     address internal constant _CREATE2_DEPLOYER =
         address(0x4e59b44847b379578588920cA78FbF26c0B4956C);
 
-    // Ramses addresses on Arbitrum
-    address internal constant _RAMSES_V1_FACTORY =
-        address(0xAAA20D08e59F6561f242b08513D36266C5A29415);
-    address internal constant _RAMSES_V1_ROUTER =
-        address(0xAAA87963EFeB6f7E0a2711F397663105Acb1805e);
-    address internal constant _RAMSES_V2_FACTORY =
-        address(0xAA2cd7477c451E703f3B9Ba5663334914763edF8);
-    address internal constant _RAMSES_V2_POSITION_MANAGER =
-        address(0xAA277CB7914b7e5514946Da92cb9De332Ce610EF);
+    // Cleopatra addresses on Mantle
+    address internal constant _CLEOPATRA_V1_FACTORY =
+        address(0xAAA16c016BF556fcD620328f0759252E29b1AB57);
+    address internal constant _CLEOPATRA_V1_ROUTER =
+        address(0xAAA45c8F5ef92a000a121d102F4e89278a711Faa);
+    address internal constant _CLEOPATRA_V2_FACTORY =
+        address(0xAAA32926fcE6bE95ea2c51cB4Fcb60836D320C42);
+    address internal constant _CLEOPATRA_V2_POSITION_MANAGER =
+        address(0xAAA78E8C4241990B4ce159E105dA08129345946A);
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-interface IRamsesV2Pool {
+interface ICleopatraV2Pool {
     event Burn(
         address indexed owner,
         int24 indexed tickLower,

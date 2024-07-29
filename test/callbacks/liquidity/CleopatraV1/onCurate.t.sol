@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {RamsesV1DirectToLiquidityTest} from "./RamsesV1DTLTest.sol";
+import {CleopatraV1DirectToLiquidityTest} from "./CleopatraV1DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
-contract RamsesV1DTLOnCurateForkTest is RamsesV1DirectToLiquidityTest {
+contract CleopatraV1DTLOnCurateForkTest is CleopatraV1DirectToLiquidityTest {
     uint96 internal constant _PAYOUT_AMOUNT = 1e18;
 
     // ============ Modifiers ============ //
