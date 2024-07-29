@@ -82,10 +82,10 @@ abstract contract CleopatraV2DirectToLiquidityTest is
     });
 
     function setUp() public {
-        // Create a fork on Arbitrum
-        string memory arbitrumRpcUrl = vm.envString("ARBITRUM_RPC_URL");
-        vm.createSelectFork(arbitrumRpcUrl);
-        require(block.chainid == 42_161, "Must be on Arbitrum");
+        // Create a fork on Mantle
+        string memory mantleRpcUrl = vm.envString("MANTLE_RPC_URL");
+        vm.createSelectFork(mantleRpcUrl);
+        require(block.chainid == 5000, "Must be on Mantle");
 
         _initialTimestamp = uint48(block.timestamp);
 
