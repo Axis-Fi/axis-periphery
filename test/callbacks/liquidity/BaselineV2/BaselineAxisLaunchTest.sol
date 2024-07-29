@@ -51,7 +51,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     uint96 internal constant _LOT_CAPACITY = 10e18;
     uint96 internal constant _REFUND_AMOUNT = 2e18;
     uint256 internal constant _PROCEEDS_AMOUNT = 24e18;
-    int24 internal constant _ANCHOR_TICK_WIDTH = 3;
+    int24 internal constant _ANCHOR_TICK_WIDTH = 10;
     int24 internal constant _DISCOVERY_TICK_WIDTH = 350;
     uint24 internal constant _FLOOR_RESERVES_PERCENT = 50e2; // 50%
     uint256 internal constant _FIXED_PRICE = 3e18;
