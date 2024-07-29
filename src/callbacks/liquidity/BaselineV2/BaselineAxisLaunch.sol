@@ -261,8 +261,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `lotId` is already set
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
     ///                 - `CreateData.poolPercent` is less than 1% or greater than 100%
-    ///                 - `CreateData.anchorTickWidth` is 0 or > 10
-    ///                 - `CreateData.discoveryTickWidth` is 0
+    ///                 - `CreateData.anchorTickWidth` is <= 0 or > 10
+    ///                 - `CreateData.discoveryTickWidth` is <= 0 or > 350
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
     ///                 - Any of the tick ranges would exceed the tick bounds
@@ -303,8 +303,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             revert Callback_Params_InvalidAnchorTickWidth();
         }
 
-        // Validate that the discovery tick width is at least 1 tick spacing
-        if (cbData.discoveryTickWidth <= 0) {
+        // Validate that the discovery tick width is at least 1 tick spacing and at most 350
+        if (cbData.discoveryTickWidth <= 0 || cbData.discoveryTickWidth > 350) {
             revert Callback_Params_InvalidDiscoveryTickWidth();
         }
 

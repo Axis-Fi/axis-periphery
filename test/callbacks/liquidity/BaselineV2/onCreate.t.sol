@@ -207,6 +207,12 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the auction is not prefunded
     //  [X] it reverts
+    // [ ] when the floor reserves are too high
+    //  [ ] it reverts
+    // [ ] when the pool percent is too high
+    //  [ ] it reverts
+    // [ ] when the price premium is too low
+    //  [ ] it reverts
     // [ ] when the pool active tick is higher than the auction price
     //  [ ] it reverts
     // [X] when the floorReservesPercent is 0-99%
@@ -612,6 +618,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         uint24 floorReservesPercent = uint24(bound(floorReservesPercent_, 0, _NINETY_NINE_PERCENT));
         _createData.floorReservesPercent = floorReservesPercent;
 
+        // TODO shift to checkpoints with working configurations
+
         // Perform the call
         _onCreate();
 
@@ -625,6 +633,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenPoolPercent(100e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
@@ -666,7 +675,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
     function test_auctionLowPrice()
         public
-        givenFixedPrice(1)
+        givenFixedPrice(1e6)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -685,13 +694,13 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         // The pool should be initialised with the tick equivalent to the auction's fixed price
         // By default, quote token is token1
-        // Fixed price = 1
-        // SqrtPriceX96 = sqrt(1 * 2^192 / 1e18)
-        //              = 7.9228162514e19
-        // Tick = log((7.9228162514e19 / 2^96)^2) / log(1.0001)
-        //      = -414,486.0396585868 (rounded down)
-        // Price = 1.0001^-414,486.0396585868 / (10^(18-18)) = 9.9999999999e-19
-        int24 fixedPriceTick = -414_487;
+        // Fixed price = 1e6
+        // SqrtPriceX96 = sqrt(1e6 * 2^192 / 1e18)
+        //              = 7.9228162514e22
+        // Tick = log((7.9228162514e22 / 2^96)^2) / log(1.0001)
+        //      = -276,324.02643908 (rounded down)
+        // Price = 1.0001^-276,324.02643908 / (10^(18-18)) = 9.9999999999e-13
+        int24 fixedPriceTick = -276_325;
 
         _assertTicks(fixedPriceTick);
     }
@@ -702,6 +711,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenAnchorTickWidth(1)
+        givenPoolPercent(100e2) // For the solvency check
     {
         // Perform the call
         _onCreate();

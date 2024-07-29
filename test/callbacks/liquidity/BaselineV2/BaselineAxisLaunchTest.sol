@@ -64,7 +64,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     bool internal _isBaseTokenAddressLower = true;
     /// @dev Set in `givenBPoolFeeTier()`
     uint24 internal _feeTier = _FEE_TIER;
-    /// @dev Set in `_updatePoolInitialTick()`
+    /// @dev Set in `_setPoolInitialTickFromAuctionPrice()`
     int24 internal _poolInitialTick;
 
     uint48 internal constant _START = 1_000_000;
@@ -174,26 +174,15 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _setPoolInitialTickFromPrice(uint256 price_) internal {
-        _poolInitialTick = _getTickFromPrice(
-            price_, _baseTokenDecimals, _isBaseTokenAddressLower
-        );
-        console2.log("Pool initial tick (using price) set to: ", _poolInitialTick);
+        _poolInitialTick = _getTickFromPrice(price_, _baseTokenDecimals, _isBaseTokenAddressLower);
+        console2.log("Pool initial tick (using specified price) set to: ", _poolInitialTick);
     }
 
-    function _updatePoolInitialTick() internal {
-        console2.log("Price: ", _fpbParams.price);
-        console2.log(
-            "Tick based on auction price: ",
-            _getTickFromPrice(_fpbParams.price, _baseTokenDecimals, _isBaseTokenAddressLower)
-        );
-        // TODO manually adjust tick on a per-case basis
-
-        // Adjust the pool price (tick) to be lower than the auction price
-        uint256 adjustedPrice = _fpbParams.price * 95 / 100;
-        console2.log("Adjusted price: ", adjustedPrice);
+    function _setPoolInitialTickFromAuctionPrice() internal {
+        console2.log("Auction price: ", _fpbParams.price);
         _poolInitialTick =
-            _getTickFromPrice(adjustedPrice, _baseTokenDecimals, _isBaseTokenAddressLower);
-        console2.log("Pool initial tick (using adjusted price) set to: ", _poolInitialTick);
+            _getTickFromPrice(_fpbParams.price, _baseTokenDecimals, _isBaseTokenAddressLower);
+        console2.log("Pool initial tick (using auction price) set to: ", _poolInitialTick);
     }
 
     modifier givenPoolInitialTick(int24 poolInitialTick_) {
@@ -377,14 +366,14 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     modifier givenBaseTokenAddressHigher() {
         _isBaseTokenAddressLower = false;
 
-        _updatePoolInitialTick();
+        _setPoolInitialTickFromAuctionPrice();
         _;
     }
 
     modifier givenBaseTokenDecimals(uint8 decimals_) {
         _baseTokenDecimals = decimals_;
 
-        _updatePoolInitialTick();
+        _setPoolInitialTickFromAuctionPrice();
         _;
     }
 
@@ -392,7 +381,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _fpbParams.price = fixedPrice_;
         console2.log("Fixed price set to: ", fixedPrice_);
 
-        _updatePoolInitialTick();
+        _setPoolInitialTickFromAuctionPrice();
         _;
     }
 
