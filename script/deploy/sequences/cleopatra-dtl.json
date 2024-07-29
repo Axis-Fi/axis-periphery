@@ -1,0 +1,10 @@
+{
+  "sequence": [
+    {
+      "name": "BatchCleopatraV1DirectToLiquidity"
+    },
+    {
+      "name": "BatchCleopatraV2DirectToLiquidity"
+    }
+  ]
+}

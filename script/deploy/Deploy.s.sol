@@ -1051,7 +1051,7 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         // Get the salt
         bytes32 salt_ = _getSalt(
             deploymentKey,
-            type(CleopatraV1DirectToLiquidity).creationCode,
+            type(CleopatraV2DirectToLiquidity).creationCode,
             abi.encode(batchAuctionHouse, cleopatraV2Factory, cleopatraV2PositionManager)
         );
 
