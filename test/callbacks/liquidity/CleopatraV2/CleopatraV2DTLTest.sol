@@ -57,7 +57,7 @@ abstract contract CleopatraV2DirectToLiquidityTest is
     address internal _dtlAddress;
     ICleopatraV2Factory internal _factory;
     ICleopatraV2PositionManager internal _positionManager;
-    IRAM internal _ram;
+    // IRAM internal _ram;
     MockBatchAuctionModule internal _batchAuctionModule;
 
     MockERC20 internal _quoteToken;
@@ -261,15 +261,15 @@ abstract contract CleopatraV2DirectToLiquidityTest is
         _;
     }
 
-    function _setVeRamTokenId(uint256 veRamTokenId_) internal {
-        // _cleopatraCreateParams.veRamTokenId = veRamTokenId_;
-        _dtlCreateParams.implParams = abi.encode(_cleopatraCreateParams);
-    }
+    // function _setVeRamTokenId(uint256 veRamTokenId_) internal {
+    //     _cleopatraCreateParams.veRamTokenId = veRamTokenId_;
+    //     _dtlCreateParams.implParams = abi.encode(_cleopatraCreateParams);
+    // }
 
-    modifier givenVeRamTokenId() {
-        _createVeRamDeposit();
-        _;
-    }
+    // modifier givenVeRamTokenId() {
+    //     _createVeRamDeposit();
+    //     _;
+    // }
 
     modifier givenVestingStart(uint48 start_) {
         _dtlCreateParams.vestingStart = start_;
