@@ -466,6 +466,15 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
+    function _setFloorReservesPercent(uint24 floorReservesPercent_) internal {
+        _createData.floorReservesPercent = floorReservesPercent_;
+    }
+
+    modifier givenFloorReservesPercent(uint24 floorReservesPercent_) {
+        _setFloorReservesPercent(floorReservesPercent_);
+        _;
+    }
+
     // ========== MOCKS ========== //
 
     function _mockGetAuctionModuleForId() internal {

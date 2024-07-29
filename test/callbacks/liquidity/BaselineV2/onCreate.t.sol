@@ -609,22 +609,48 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _assertTicks(fixedPriceTick);
     }
 
-    function test_floorReservesPercent(uint24 floorReservesPercent_)
+    function test_floorReservesPercent_zero()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenFloorReservesPercent(0)
+        givenPoolPercent(91e2) // For the solvency check
     {
-        uint24 floorReservesPercent = uint24(bound(floorReservesPercent_, 0, _NINETY_NINE_PERCENT));
-        _createData.floorReservesPercent = floorReservesPercent;
-
-        // TODO shift to checkpoints with working configurations
-
         // Perform the call
         _onCreate();
 
         // Assert
-        assertEq(_dtl.floorReservesPercent(), floorReservesPercent, "floor reserves percent");
+        assertEq(_dtl.floorReservesPercent(), 0, "floor reserves percent");
+    }
+
+    function test_floorReservesPercent_fiftyPercent()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenFloorReservesPercent(50e2)
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert
+        assertEq(_dtl.floorReservesPercent(), 50e2, "floor reserves percent");
+    }
+
+    function test_floorReservesPercent_ninetyNinePercent()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenFloorReservesPercent(99e2)
+        givenPoolPercent(82e2) // For the solvency check
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert
+        assertEq(_dtl.floorReservesPercent(), 99e2, "floor reserves percent");
     }
 
     function test_tickSpacingNarrow()
