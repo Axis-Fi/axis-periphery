@@ -14,6 +14,9 @@ import {
 import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
 import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
 
+// Uniswap dependencies
+import {OracleLibrary} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/OracleLibrary.sol";
+
 // Baseline dependencies
 import {
     Kernel,
@@ -400,9 +403,13 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             {
                 // Get the current supply values
                 uint256 currentSupply = bAsset.totalSupply(); // can use totalSupply here since no bAssets are in the pool yet
+                console2.log("currentSupply", currentSupply);
                 uint256 currentCollatSupply = CREDT.totalCollateralized();
+                console2.log("currentCollatSupply", currentCollatSupply);
                 (,, uint48 curatorFeePerc,,) = IAuctionHouse(AUCTION_HOUSE).lotFees(lotId_);
                 uint256 curatorFee = (capacity_ * curatorFeePerc) / ONE_HUNDRED_PERCENT;
+                console2.log("curatorFee", curatorFee);
+                console2.log("capacity", capacity_);
                 initialCircSupply = currentSupply + currentCollatSupply + capacity_ + curatorFee;
                 console2.log("initialCircSupply", initialCircSupply);
             }
@@ -410,21 +417,32 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // Calculate the initial capacity of the pool based on the ticks set and the expected proceeds to deposit in the pool
             uint256 initialCapacity;
             {
-                IFixedPriceBatch auctionModule = IFixedPriceBatch(
-                    address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))
-                );
+                // Get the price from the pool, which was initialised at the time of the BPOOL deployment
+                // The pool price is used, as the calculations are determined by the pool's state, not the auction's state
+                (, int24 poolTick,,,,,) = BPOOL.pool().slot0();
 
-                // Get the fixed price from the auction module
-                // This value is in the number of reserve tokens per baseline token
-                uint256 auctionPrice = auctionModule.getAuctionData(lotId_).price;
+                // Determine the quote (reserve) tokens per base (baseline) token
+                uint256 auctionPrice = OracleLibrary.getQuoteAtTick(
+                    poolTick,
+                    uint128(10 ** ERC20(address(BPOOL)).decimals()),
+                    address(BPOOL),
+                    address(RESERVE)
+                );
+                console2.log("auctionPrice", auctionPrice);
+                // TODO validate that the poolPrice is X% lower than the auction price
 
                 // Calculate the expected proceeds from the auction and how much will be deposited in the pool
                 uint256 expectedProceeds = (auctionPrice * capacity_) / (10 ** bAsset.decimals());
                 uint256 poolProceeds = (expectedProceeds * poolPercent) / ONE_HUNDRED_PERCENT;
+                console2.log("expectedProceeds", expectedProceeds);
+                console2.log("poolProceeds", poolProceeds);
+                console2.log("spotProceeds", expectedProceeds - poolProceeds);
 
                 // Calculate the expected reserves for the floor and anchor ranges
                 uint256 floorReserves = (poolProceeds * floorReservesPercent) / ONE_HUNDRED_PERCENT;
                 uint256 anchorReserves = poolProceeds - floorReserves;
+                console2.log("floorReserves", floorReserves);
+                console2.log("anchorReserves", anchorReserves);
 
                 // Calculate the expected capacity of the pool
                 // Skip discovery range since no reserves will be deposited in it
@@ -436,14 +454,18 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 uint256 anchorCapacity = BPOOL.getCapacityForReserves(
                     anchor.sqrtPriceL, anchor.sqrtPriceU, anchorReserves
                 );
+                console2.log("floorCapacity", floorCapacity);
+                console2.log("anchorCapacity", anchorCapacity);
 
                 // Calculate the debt capacity at the floor range
                 uint256 currentCredit = CREDT.totalCreditIssued();
                 uint256 debtCapacity =
                     BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
+                console2.log("debtCapacity", debtCapacity);
 
                 // Calculate the total initial capacity of the pool
                 initialCapacity = debtCapacity + floorCapacity + anchorCapacity;
+                console2.log("initialCapacity", initialCapacity);
             }
 
             // verify the liquidity can support the intended supply
@@ -641,9 +663,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
             // Calculate the debt capacity at the floor range
             uint256 currentCredit = CREDT.totalCreditIssued();
-            uint256 debtCapacity = BPOOL.getCapacityForReserves(
-                floor.sqrtPriceL, floor.sqrtPriceU, currentCredit
-            );
+            uint256 debtCapacity =
+                BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
 
             uint256 totalCapacity =
                 debtCapacity + floor.capacity + anchor.capacity + discovery.capacity;
