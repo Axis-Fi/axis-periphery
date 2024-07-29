@@ -552,8 +552,10 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBPoolIsCreated // BPOOL will have an active tick of _FIXED_PRICE
         givenCallbackIsCreated
-        givenFixedPrice(2e18)
+        givenFixedPrice(25e17)
         givenAuctionIsCreated // Has to be after the fixed price is set
+        givenPoolPercent(98e2) // For the solvency check
+        givenFloorReservesPercent(99e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
