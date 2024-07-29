@@ -11,7 +11,6 @@ import {BaseDirectToLiquidity} from "../BaseDTL.sol";
 import {ICleopatraV2Pool} from "./lib/ICleopatraV2Pool.sol";
 import {ICleopatraV2Factory} from "./lib/ICleopatraV2Factory.sol";
 import {ICleopatraV2PositionManager} from "./lib/ICleopatraV2PositionManager.sol";
-import {IVotingEscrow} from "./lib/IVotingEscrow.sol";
 
 // Uniswap
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
