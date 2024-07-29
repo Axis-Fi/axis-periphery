@@ -84,16 +84,6 @@ contract CleopatraV2DTLOnSettleForkTest is CleopatraV2DirectToLiquidityTest {
 
     // ========== Modifiers ========== //
 
-    function _initializePool(address pool_, uint160 sqrtPriceX96_) internal {
-        ICleopatraV2Pool(pool_).initialize(sqrtPriceX96_);
-    }
-
-    modifier givenPoolIsCreatedAndInitialized(uint160 sqrtPriceX96_) {
-        address pool = _createPool();
-        _initializePool(pool, sqrtPriceX96_);
-        _;
-    }
-
     function _calculateSqrtPriceX96(
         uint256 quoteTokenAmount_,
         uint256 baseTokenAmount_
@@ -204,8 +194,8 @@ contract CleopatraV2DTLOnSettleForkTest is CleopatraV2DirectToLiquidityTest {
         public
         givenCallbackIsCreated
         givenOnCreate
-        givenPoolIsCreated
         setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)

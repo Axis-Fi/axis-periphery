@@ -164,7 +164,11 @@ contract CleopatraV2DTLOnCreateForkTest is CleopatraV2DirectToLiquidityTest {
         _performOnCreate();
     }
 
-    function test_givenPoolExists() public givenCallbackIsCreated givenPoolIsCreated {
+    function test_givenPoolExists()
+        public
+        givenCallbackIsCreated
+        givenPoolIsCreatedAndInitialized(0)
+    {
         _performOnCreate();
 
         // Assert values

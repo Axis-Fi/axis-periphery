@@ -192,8 +192,7 @@ contract CleopatraV2DirectToLiquidity is BaseDirectToLiquidity {
         pool = cleopatraV2Factory.getPool(token0, token1, fee);
 
         if (pool == address(0)) {
-            pool = cleopatraV2Factory.createPool(token0, token1, fee);
-            ICleopatraV2Pool(pool).initialize(sqrtPriceX96);
+            pool = cleopatraV2Factory.createPool(token0, token1, fee, sqrtPriceX96);
         } else {
             (uint160 sqrtPriceX96Existing,,,,,,) = ICleopatraV2Pool(pool).slot0();
             if (sqrtPriceX96Existing == 0) {
@@ -232,7 +231,7 @@ contract CleopatraV2DirectToLiquidity is BaseDirectToLiquidity {
             amount1Min: _getAmountWithSlippage(amount1, params.maxSlippage),
             recipient: lotConfiguration[lotId_].recipient,
             deadline: block.timestamp,
-            veRamTokenId: 0 // Not supported at the moment
+            veNFTTokenId: 0 // Not supported at the moment
         });
     }
 

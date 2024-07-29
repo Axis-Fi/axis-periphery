@@ -286,16 +286,16 @@ abstract contract CleopatraV2DirectToLiquidityTest is
         _;
     }
 
-    function _createPool() internal returns (address) {
+    function _createPool(uint160 sqrtPriceX96_) internal returns (address) {
         (address token0, address token1) = address(_baseToken) < address(_quoteToken)
             ? (address(_baseToken), address(_quoteToken))
             : (address(_quoteToken), address(_baseToken));
 
-        return _factory.createPool(token0, token1, _cleopatraCreateParams.poolFee);
+        return _factory.createPool(token0, token1, _cleopatraCreateParams.poolFee, sqrtPriceX96_);
     }
 
-    modifier givenPoolIsCreated() {
-        _createPool();
+    modifier givenPoolIsCreatedAndInitialized(uint160 sqrtPriceX96_) {
+        address pool = _createPool(sqrtPriceX96_);
         _;
     }
 
