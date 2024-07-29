@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-/// @dev Generated from https://arbiscan.io/address/0xf896d16fa56a625802b6013f9f9202790ec69908
 interface ICleopatraV2Factory {
     event FeeAmountEnabled(uint24 indexed fee, int24 indexed tickSpacing);
     event FeeCollectorChanged(address indexed oldFeeCollector, address indexed newFeeCollector);
@@ -32,7 +31,8 @@ interface ICleopatraV2Factory {
     function createPool(
         address tokenA,
         address tokenB,
-        uint24 fee
+        uint24 fee,
+        uint160 sqrtPriceX96
     ) external returns (address pool);
     function enableFeeAmount(uint24 fee, int24 tickSpacing) external;
     function feeAmountTickSpacing(uint24) external view returns (int24);
@@ -43,10 +43,17 @@ interface ICleopatraV2Factory {
     function implementation() external view returns (address);
     function initialize(
         address _nfpManager,
-        address _veRam,
+        address _votingEscrow,
         address _voter,
         address _implementation
     ) external;
+    function initializeFeeSetter() external;
+    function initializePool(
+        address token0,
+        address token1,
+        uint24 fee,
+        uint160 sqrtPriceX96
+    ) external returns (address pool);
     function nfpManager() external view returns (address);
     function owner() external view returns (address);
     function poolFeeProtocol(address pool) external view returns (uint8 __poolFeeProtocol);
@@ -56,8 +63,7 @@ interface ICleopatraV2Factory {
     function setFeeSetter(address _newFeeSetter) external;
     function setImplementation(address _implementation) external;
     function setOwner(address _owner) external;
-    function setPoolFeeProtocol(address pool, uint8 _feeProtocol) external;
     function setPoolFeeProtocol(address pool, uint8 feeProtocol0, uint8 feeProtocol1) external;
-    function veRam() external view returns (address);
     function voter() external view returns (address);
+    function votingEscrow() external view returns (address);
 }

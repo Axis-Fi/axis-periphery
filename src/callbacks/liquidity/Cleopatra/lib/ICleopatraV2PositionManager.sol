@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-/// @dev Generated from https://arbiscan.io/address/0xac9d1dfa5483ebb06e623df31547b2a4dc8bf7ca
 interface ICleopatraV2PositionManager {
     struct CollectParams {
         uint256 tokenId;
@@ -39,7 +38,7 @@ interface ICleopatraV2PositionManager {
         uint256 amount1Min;
         address recipient;
         uint256 deadline;
-        uint256 veRamTokenId;
+        uint256 veNFTTokenId;
     }
 
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
@@ -51,9 +50,7 @@ interface ICleopatraV2PositionManager {
     event IncreaseLiquidity(
         uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1
     );
-    event SwitchAttachment(
-        uint256 indexed tokenId, uint256 oldVeRamTokenId, uint256 newVeRamTokenId
-    );
+    event SwitchAttachment(uint256 indexed tokenId, uint256 oldVeTokenId, uint256 newVeTokenId);
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     receive() external payable;
@@ -87,8 +84,8 @@ interface ICleopatraV2PositionManager {
         external
         payable
         returns (uint128 liquidity, uint256 amount0, uint256 amount1);
-    function initialize() external;
     function isApprovedForAll(address owner, address operator) external view returns (bool);
+    function isApprovedOrOwner(address spender, uint256 tokenId) external view returns (bool);
     function mint(MintParams memory params)
         external
         payable
@@ -121,7 +118,7 @@ interface ICleopatraV2PositionManager {
             uint128 tokensOwed0,
             uint128 tokensOwed1
         );
-    function cleopatraV2MintCallback(
+    function ramsesV2MintCallback(
         uint256 amount0Owed,
         uint256 amount1Owed,
         bytes memory data
@@ -169,15 +166,14 @@ interface ICleopatraV2PositionManager {
     function setApprovalForAll(address operator, bool approved) external;
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
     function sweepToken(address token, uint256 amountMinimum, address recipient) external payable;
-    function switchAttachment(uint256 tokenId, uint256 veRamTokenId) external;
+    function switchAttachment(uint256 tokenId, uint256 veNftTokenId) external;
     function symbol() external view returns (string memory);
-    function timelock() external pure returns (address _timelock);
     function tokenByIndex(uint256 index) external view returns (uint256);
     function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256);
     function tokenURI(uint256 tokenId) external view returns (string memory);
     function totalSupply() external view returns (uint256);
     function transferFrom(address from, address to, uint256 tokenId) external;
     function unwrapWETH9(uint256 amountMinimum, address recipient) external payable;
-    function veRam() external view returns (address);
-    function voter() external pure returns (address _voter);
+    function voter() external view returns (address);
+    function votingEscrow() external view returns (address);
 }

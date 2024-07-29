@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-/// @dev Generated from https://arbiscan.io/address/0x0e216dd4f1b5ea81006d41b79f9a1a69a38f3e37
 interface ICleopatraV1Router {
     struct route {
         address from;
@@ -54,7 +53,7 @@ interface ICleopatraV1Router {
         address tokenB,
         bool stable
     ) external view returns (uint256 reserveA, uint256 reserveB);
-    function initialize(address _factory, address _weth) external;
+    function initialize(address _factory, address _weth, address _timelock) external;
     function isPair(address pair) external view returns (bool);
     function pairFor(
         address tokenA,
@@ -196,5 +195,6 @@ interface ICleopatraV1Router {
         address to,
         uint256 deadline
     ) external;
+    function timelock() external view returns (address);
     function weth() external view returns (address);
 }
