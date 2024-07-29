@@ -5,7 +5,8 @@ import {CleopatraV2DirectToLiquidityTest} from "./CleopatraV2DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {CleopatraV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
+import {CleopatraV2DirectToLiquidity} from
+    "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
 contract CleopatraV2DTLOnCreateForkTest is CleopatraV2DirectToLiquidityTest {
     // ============ Modifiers ============ //
@@ -270,10 +271,12 @@ contract CleopatraV2DTLOnCreateForkTest is CleopatraV2DirectToLiquidityTest {
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
-        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory _cleopatraCreateParams =
-            abi.decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory _cleopatraCreateParams = abi
+            .decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
         assertEq(_cleopatraCreateParams.poolFee, _cleopatraCreateParams.poolFee, "poolFee");
-        assertEq(_cleopatraCreateParams.maxSlippage, _cleopatraCreateParams.maxSlippage, "maxSlippage");
+        assertEq(
+            _cleopatraCreateParams.maxSlippage, _cleopatraCreateParams.maxSlippage, "maxSlippage"
+        );
         // assertEq(_cleopatraCreateParams.veRamTokenId, _cleopatraCreateParams.veRamTokenId, "veRamTokenId");
 
         // Assert balances
@@ -319,8 +322,8 @@ contract CleopatraV2DTLOnCreateForkTest is CleopatraV2DirectToLiquidityTest {
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
-        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory cleopatraCreateParams =
-            abi.decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
+        CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams memory cleopatraCreateParams = abi
+            .decode(configuration.implParams, (CleopatraV2DirectToLiquidity.CleopatraV2OnCreateParams));
         assertEq(cleopatraCreateParams.maxSlippage, maxSlippage, "maxSlippage");
     }
 

@@ -7,7 +7,8 @@ import {CleopatraV2DirectToLiquidityTest} from "./CleopatraV2DTLTest.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 
 // Cleopatra
-import {ICleopatraV2Pool} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2Pool.sol";
+import {ICleopatraV2Pool} from
+    "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2Pool.sol";
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 // AuctionHouse

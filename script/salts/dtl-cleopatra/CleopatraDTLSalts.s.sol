@@ -7,8 +7,10 @@ import {WithSalts} from "../WithSalts.s.sol";
 import {WithDeploySequence} from "../../deploy/WithDeploySequence.s.sol";
 
 // Cleopatra
-import {CleopatraV1DirectToLiquidity} from "../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
-import {CleopatraV2DirectToLiquidity} from "../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
+import {CleopatraV1DirectToLiquidity} from
+    "../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {CleopatraV2DirectToLiquidity} from
+    "../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
 contract CleopatraDTLSalts is Script, WithDeploySequence, WithSalts {
     string internal constant _ADDRESS_PREFIX = "E6";

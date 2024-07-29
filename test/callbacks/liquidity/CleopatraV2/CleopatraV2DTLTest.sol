@@ -17,8 +17,10 @@ import {MockBatchAuctionModule} from
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
 // Cleopatra
-import {CleopatraV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
-import {ICleopatraV2Factory} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2Factory.sol";
+import {CleopatraV2DirectToLiquidity} from
+    "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
+import {ICleopatraV2Factory} from
+    "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2Factory.sol";
 import {ICleopatraV2PositionManager} from
     "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV2PositionManager.sol";
 // import {IVotingEscrow} from "../../../../src/callbacks/liquidity/Cleopatra/lib/IVotingEscrow.sol";
@@ -31,7 +33,12 @@ import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
 import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
 import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.sol";
 
-abstract contract CleopatraV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
+abstract contract CleopatraV2DirectToLiquidityTest is
+    Test,
+    Permit2User,
+    WithSalts,
+    TestConstants
+{
     using Callbacks for CleopatraV2DirectToLiquidity;
 
     address internal constant _SELLER = address(0x2);

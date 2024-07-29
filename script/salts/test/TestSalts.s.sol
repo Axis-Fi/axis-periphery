@@ -34,8 +34,10 @@ import {BALwithCappedAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 import {BALwithTokenAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
-import {CleopatraV1DirectToLiquidity} from "../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
-import {CleopatraV2DirectToLiquidity} from "../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
+import {CleopatraV1DirectToLiquidity} from
+    "../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {CleopatraV2DirectToLiquidity} from
+    "../../../src/callbacks/liquidity/Cleopatra/CleopatraV2DTL.sol";
 
 contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConstants {
     string internal constant _CAPPED_MERKLE_ALLOWLIST = "CappedMerkleAllowlist";

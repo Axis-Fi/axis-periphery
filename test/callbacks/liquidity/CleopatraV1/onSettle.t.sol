@@ -8,7 +8,8 @@ import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 
 // Cleopatra
-import {ICleopatraV1Pool} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Pool.sol";
+import {ICleopatraV1Pool} from
+    "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Pool.sol";
 
 // AuctionHouse
 import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
@@ -32,7 +33,8 @@ contract CleopatraV1OnSettleForkTest is CleopatraV1DirectToLiquidityTest {
     // ========== Internal functions ========== //
 
     function _getCleopatraV1Pool(bool stable_) internal view returns (ICleopatraV1Pool) {
-        return ICleopatraV1Pool(_factory.getPair(address(_quoteToken), address(_baseToken), stable_));
+        return
+            ICleopatraV1Pool(_factory.getPair(address(_quoteToken), address(_baseToken), stable_));
     }
 
     function _getCleopatraV1Pool() internal view returns (ICleopatraV1Pool) {

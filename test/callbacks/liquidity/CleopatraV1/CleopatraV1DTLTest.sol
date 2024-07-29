@@ -17,9 +17,12 @@ import {MockBatchAuctionModule} from
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
 // Cleopatra
-import {CleopatraV1DirectToLiquidity} from "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
-import {ICleopatraV1Factory} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Factory.sol";
-import {ICleopatraV1Router} from "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Router.sol";
+import {CleopatraV1DirectToLiquidity} from
+    "../../../../src/callbacks/liquidity/Cleopatra/CleopatraV1DTL.sol";
+import {ICleopatraV1Factory} from
+    "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Factory.sol";
+import {ICleopatraV1Router} from
+    "../../../../src/callbacks/liquidity/Cleopatra/lib/ICleopatraV1Router.sol";
 
 // Axis core
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.0/modules/Keycode.sol";
@@ -28,7 +31,12 @@ import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
 import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
 import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.sol";
 
-abstract contract CleopatraV1DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
+abstract contract CleopatraV1DirectToLiquidityTest is
+    Test,
+    Permit2User,
+    WithSalts,
+    TestConstants
+{
     using Callbacks for CleopatraV1DirectToLiquidity;
 
     address internal constant _SELLER = address(0x2);
@@ -59,7 +67,7 @@ abstract contract CleopatraV1DirectToLiquidityTest is Test, Permit2User, WithSal
 
     // Inputs
     CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams internal _cleopatraCreateParams =
-        CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams({stable: false, maxSlippage: uint24(0)});
+    CleopatraV1DirectToLiquidity.CleopatraV1OnCreateParams({stable: false, maxSlippage: uint24(0)});
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
         proceedsUtilisationPercent: 100e2,
