@@ -46,9 +46,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The address of the quote token (passed in the `onCreate` callback) does not match the address of the reserve that the callback was initialized with
     error Callback_Params_ReserveTokenMismatch(address quoteToken_, address reserve_);
 
-    /// @notice The auction price and the pool active tick do not match
-    error Callback_Params_PoolTickMismatch(int24 auctionTick_, int24 poolTick_);
-
     /// @notice The auction format is not supported
     error Callback_Params_UnsupportedAuctionFormat();
 
