@@ -100,7 +100,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         poolPercent: _POOL_PERCENT,
         floorReservesPercent: _FLOOR_RESERVES_PERCENT,
         anchorTickWidth: _ANCHOR_TICK_WIDTH,
-        discoveryTickWidth: _DISCOVERY_TICK_WIDTH,
         allowlistParams: abi.encode("")
     });
 
@@ -390,11 +389,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
     modifier givenAnchorTickWidth(int24 anchorTickWidth_) {
         _createData.anchorTickWidth = anchorTickWidth_;
-        _;
-    }
-
-    modifier givenDiscoveryTickWidth(int24 discoveryTickWidth_) {
-        _createData.discoveryTickWidth = discoveryTickWidth_;
         _;
     }
 

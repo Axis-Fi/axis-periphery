@@ -99,14 +99,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @param  poolPercent             The percentage of the proceeds to allocate to the pool, in basis points (1% = 100). The remainder will be sent to the `recipient`.
     /// @param  floorReservesPercent    The percentage of the pool proceeds to allocate to the floor range, in basis points (1% = 100). The remainder will be allocated to the anchor range.
     /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
-    /// @param  discoveryTickWidth      The width of the discovery tick range, as a multiple of the pool tick spacing.
     /// @param  allowlistParams         Additional parameters for an allowlist, passed to `__onCreate()` for further processing
     struct CreateData {
         address recipient;
         uint24 poolPercent;
         uint24 floorReservesPercent;
         int24 anchorTickWidth;
-        int24 discoveryTickWidth;
         bytes allowlistParams;
     }
 
@@ -150,6 +148,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     // solhint-disable-next-line private-vars-leading-underscore
     uint48 internal constant ONE_HUNDRED_PERCENT = 100e2;
+
+    /// @notice The tick spacing width of the discovery range
+    int24 internal constant _DISCOVERY_TICK_SPACING_WIDTH = 350;
 
     // ========== CONSTRUCTOR ========== //
 
@@ -259,7 +260,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
     ///                 - `CreateData.poolPercent` is less than 1% or greater than 100%
     ///                 - `CreateData.anchorTickWidth` is <= 0 or > 10
-    ///                 - `CreateData.discoveryTickWidth` is <= 0 or > 350
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
     ///                 - Any of the tick ranges would exceed the tick bounds
@@ -298,11 +298,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Baseline supports only within this range
         if (cbData.anchorTickWidth <= 0 || cbData.anchorTickWidth > 10) {
             revert Callback_Params_InvalidAnchorTickWidth();
-        }
-
-        // Validate that the discovery tick width is at least 1 tick spacing and at most 350
-        if (cbData.discoveryTickWidth <= 0 || cbData.discoveryTickWidth > 350) {
-            revert Callback_Params_InvalidDiscoveryTickWidth();
         }
 
         // Validate that the floor reserves percent is between 0% and 99%
@@ -377,7 +372,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             BPOOL.setTicks(Range.FLOOR, floorRangeLower, anchorRangeLower);
 
             // Set the discovery range
-            int24 discoveryRangeUpper = anchorRangeUpper + tickSpacing * cbData.discoveryTickWidth;
+            int24 discoveryRangeUpper =
+                anchorRangeUpper + tickSpacing * _DISCOVERY_TICK_SPACING_WIDTH;
             BPOOL.setTicks(Range.DISCOVERY, anchorRangeUpper, discoveryRangeUpper);
 
             // If the floor range lower tick (or any other above it) is below the min tick, it will cause problems

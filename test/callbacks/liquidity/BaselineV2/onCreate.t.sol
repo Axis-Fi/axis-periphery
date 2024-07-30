@@ -170,7 +170,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(discoveryTickLower, anchorTickUpper_, "discovery tick lower");
         assertEq(
             discoveryTickUpper,
-            anchorTickUpper_ + _createData.discoveryTickWidth * _tickSpacing,
+            anchorTickUpper_ + _DISCOVERY_TICK_WIDTH * _tickSpacing,
             "discovery tick upper"
         );
     }
@@ -198,10 +198,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     // [X] when the floorReservesPercent is not between 0 and 99%
     //  [X] it reverts
     // [X] when the anchorTickWidth is <= 0
-    //  [X] it reverts
-    // [X] when the discoveryTickWidth is <= 0
-    //  [X] it reverts
-    // [X] when the discoveryTickWidth is > 350
     //  [X] it reverts
     // [X] when the auction format is not FPB
     //  [X] it reverts
@@ -235,8 +231,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the activeTick and anchorTickWidth results in an underflow
     //  [X] it reverts
-    // [X] when the discoveryTickWidth is small
-    //  [X] it correctly sets the discovery ticks to not overlap with the other ranges
     // [X] when the activeTick and discoveryTickWidth results in an overflow
     //  [X] it reverts
     // [X] when the activeTick and discoveryTickWidth results in an underflow
@@ -407,44 +401,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
             BaselineAxisLaunch.Callback_Params_InvalidAnchorTickWidth.selector
-        );
-        vm.expectRevert(err);
-
-        // Perform the call
-        _onCreate();
-    }
-
-    function test_discoveryTickWidthInvalid_reverts(int24 discoveryTickWidth_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
-        int24 discoveryTickWidth = int24(bound(discoveryTickWidth_, type(int24).min, 0));
-        _createData.discoveryTickWidth = discoveryTickWidth;
-
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaselineAxisLaunch.Callback_Params_InvalidDiscoveryTickWidth.selector
-        );
-        vm.expectRevert(err);
-
-        // Perform the call
-        _onCreate();
-    }
-
-    function test_discoveryTickWidthAboveMax_reverts(int24 discoveryTickWidth_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
-        int24 discoveryTickWidth = int24(bound(discoveryTickWidth_, 351, type(int24).max));
-        _createData.discoveryTickWidth = discoveryTickWidth;
-
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaselineAxisLaunch.Callback_Params_InvalidDiscoveryTickWidth.selector
         );
         vm.expectRevert(err);
 
@@ -845,22 +801,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _assertTicks(fixedPriceTick);
     }
 
-    function test_narrowDiscoveryTickWidth()
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-        givenDiscoveryTickWidth(1)
-    {
-        // Perform the call
-        _onCreate();
-
-        // The pool should be initialised with the tick equivalent to the auction's fixed price
-        int24 fixedPriceTick = _getFixedPriceTick();
-
-        _assertTicks(fixedPriceTick);
-    }
-
     function test_baseTokenAddressHigher_reverts()
         public
         givenBaseTokenAddressHigher
@@ -1000,7 +940,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenAnchorTickWidth(1)
-        givenDiscoveryTickWidth(1)
     {
         // Expect a revert
         bytes memory err =

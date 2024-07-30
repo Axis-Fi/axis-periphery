@@ -110,8 +110,6 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] it allocates the proceeds correctly
     // [X] given the anchor range width is fuzzed
     //  [X] it allocates the proceeds correctly
-    // [X] given the discovery range width is fuzzed
-    //  [X] it allocates the proceeds correctly
     // [X] given the active tick is fuzzed
     //  [X] it allocates the proceeds correctly
     // [X] it burns refunded base tokens, updates the circulating supply, marks the auction as completed and deploys the reserves into the Baseline pool
@@ -399,33 +397,6 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Set the anchor tick width
         int24 anchorTickWidth = int24(bound(anchorTickWidth_, 1, 10));
         _createData.anchorTickWidth = anchorTickWidth;
-
-        // Perform the onCreate callback
-        _onCreate();
-
-        // Mint tokens
-        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        _transferBaseTokenRefund(_REFUND_AMOUNT);
-
-        // Perform callback
-        _onSettle();
-
-        _assertQuoteTokenBalances();
-        _assertBaseTokenBalances(0);
-        _assertCirculatingSupply(0);
-        _assertAuctionComplete();
-        _assertPoolReserves();
-    }
-
-    function test_discoveryTickWidth_fuzz(int24 discoveryTickWidth_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
-        // Set the discovery tick width
-        int24 discoveryTickWidth = int24(bound(discoveryTickWidth_, 1, 350));
-        _createData.discoveryTickWidth = discoveryTickWidth;
 
         // Perform the onCreate callback
         _onCreate();
