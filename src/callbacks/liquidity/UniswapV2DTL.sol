@@ -69,7 +69,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the parameters
     ///
     ///             This function reverts if:
-    ///             - The pool for the token combination already exists
+    ///             - None
+    ///
+    ///             Note that this function does not check if the pool already exists. The reason for this is that it could be used as a DoS vector.
     function __onCreate(
         uint96,
         address,
@@ -79,10 +81,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         bool,
         bytes calldata
     ) internal virtual override {
-        // Check that the pool does not exist
-        if (uniV2Factory.getPair(baseToken_, quoteToken_) != address(0)) {
-            revert Callback_Params_PoolExists();
-        }
+        // Nothing to do
     }
 
     /// @inheritdoc BaseDirectToLiquidity

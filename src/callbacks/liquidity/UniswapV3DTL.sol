@@ -86,12 +86,13 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
     ///
     ///             This function reverts if:
     ///             - OnCreateParams.implParams.poolFee is not enabled
-    ///             - The pool for the token and fee combination already exists
+    ///
+    ///             Note that this function does not check if the pool already exists. The reason for this is that it could be used as a DoS vector.
     function __onCreate(
         uint96,
         address,
-        address baseToken_,
-        address quoteToken_,
+        address,
+        address,
         uint256,
         bool,
         bytes calldata callbackData_
@@ -104,11 +105,6 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
         // Fee not enabled
         if (uniV3Factory.feeAmountTickSpacing(poolFee) == 0) {
             revert Callback_Params_PoolFeeNotEnabled();
-        }
-
-        // Check that the pool does not exist
-        if (uniV3Factory.getPool(baseToken_, quoteToken_, poolFee) != address(0)) {
-            revert Callback_Params_PoolExists();
         }
     }
 

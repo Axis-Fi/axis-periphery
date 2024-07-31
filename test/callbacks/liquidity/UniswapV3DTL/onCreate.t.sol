@@ -64,7 +64,7 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
     // [X] given the pool fee is not enabled
     //  [X] it reverts
     // [X] given uniswap v3 pool already exists
-    //  [X] it reverts
+    //  [X] it succeeds
     // [X] when the start and expiry timestamps are the same
     //  [X] it reverts
     // [X] when the start timestamp is after the expiry timestamp
@@ -165,7 +165,7 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _performCallback();
     }
 
-    function test_givenUniswapV3PoolAlreadyExists_reverts()
+    function test_givenUniswapV3PoolAlreadyExists()
         public
         givenCallbackIsCreated
         givenPoolFee(500)
@@ -173,12 +173,12 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         // Create the pool
         _uniV3Factory.createPool(address(_baseToken), address(_quoteToken), 500);
 
-        // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_Params_PoolExists.selector);
-        vm.expectRevert(err);
-
+        // Perform the callback
         _performCallback();
+
+        // Assert that the callback was successful
+        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+        assertEq(configuration.active, true, "active");
     }
 
     function test_whenStartAndExpiryTimestampsAreTheSame_reverts()
