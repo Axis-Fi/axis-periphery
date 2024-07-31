@@ -15,6 +15,12 @@ import {LinearVesting} from "@axis-core-1.0.0/modules/derivatives/LinearVesting.
 import {AuctionHouse} from "@axis-core-1.0.0/bases/AuctionHouse.sol";
 import {Keycode, wrapVeecode} from "@axis-core-1.0.0/modules/Modules.sol";
 
+/// @notice     Base contract for DirectToLiquidity callbacks
+/// @dev        This contract is intended to be inherited by a callback contract that supports a particular liquidity platform, such as Uniswap V2 or V3.
+///
+///             It provides integration points that enable the implementing contract to support different liquidity platforms.
+///
+///             NOTE: The parameters to the functions in this contract refer to linear vesting, which is currently only supported for ERC20 pool tokens. A future version could improve upon this by shifting the (ERC20) linear vesting functionality into a variant that inherits from this contract.
 abstract contract BaseDirectToLiquidity is BaseCallback {
     using SafeTransferLib for ERC20;
 
