@@ -26,11 +26,11 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     // ========== STRUCTS ========== //
 
-    /// @notice     Parameters for the onClaimProceeds callback
+    /// @notice     Parameters for the onCreate callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
-    /// @param      maxSlippage             The maximum slippage allowed when adding liquidity (in terms of `ONE_HUNDRED_PERCENT`)
-    struct OnSettleParams {
+    /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
+    struct UniswapV2OnCreateParams {
         uint24 maxSlippage;
     }
 
@@ -69,19 +69,27 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the parameters
     ///
     ///             This function reverts if:
-    ///             - None
+    ///             - The callback data is of the incorrect length
+    ///             - `UniswapV2OnCreateParams.maxSlippage` is out of bounds
     ///
     ///             Note that this function does not check if the pool already exists. The reason for this is that it could be used as a DoS vector.
     function __onCreate(
-        uint96,
+        uint96 lotId_,
         address,
-        address baseToken_,
-        address quoteToken_,
+        address,
+        address,
         uint256,
         bool,
         bytes calldata
     ) internal virtual override {
-        // Nothing to do
+        UniswapV2OnCreateParams memory params = _decodeOnCreateParameters(lotId_);
+
+        // Check that the slippage amount is within bounds
+        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
+        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
+        if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
+        }
     }
 
     /// @inheritdoc BaseDirectToLiquidity
@@ -89,15 +97,15 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Creates the pool if necessary
     ///             - Deposits the tokens into the pool
     function _mintAndDeposit(
-        uint96,
+        uint96 lotId_,
         address quoteToken_,
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_,
-        bytes memory callbackData_
+        bytes memory
     ) internal virtual override returns (ERC20 poolToken) {
         // Decode the callback data
-        OnSettleParams memory params = abi.decode(callbackData_, (OnSettleParams));
+        UniswapV2OnCreateParams memory params = _decodeOnCreateParameters(lotId_);
 
         // Create and initialize the pool if necessary
         // Token orientation is irrelevant
@@ -132,5 +140,21 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         ERC20(baseToken_).approve(address(uniV2Router), 0);
 
         return ERC20(pairAddress);
+    }
+
+    /// @notice Decodes the configuration parameters from the DTLConfiguration
+    /// @dev   The configuration parameters are stored in `DTLConfiguration.implParams`
+    function _decodeOnCreateParameters(uint96 lotId_)
+        internal
+        view
+        returns (UniswapV2OnCreateParams memory)
+    {
+        DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
+        // Validate that the callback data is of the correct length
+        if (lotConfig.implParams.length != 32) {
+            revert Callback_InvalidParams();
+        }
+
+        return abi.decode(lotConfig.implParams, (UniswapV2OnCreateParams));
     }
 }

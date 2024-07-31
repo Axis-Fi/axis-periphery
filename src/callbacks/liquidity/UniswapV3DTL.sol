@@ -42,11 +42,13 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
 
     // ========== STRUCTS ========== //
 
-    /// @notice     Parameters for the onSettle callback
+    /// @notice     Parameters for the onCreate callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
+    /// @param      poolFee                 The fee of the Uniswap V3 pool
     /// @param      maxSlippage             The maximum slippage allowed when adding liquidity (in terms of `ONE_HUNDRED_PERCENT`)
-    struct OnSettleParams {
+    struct UniswapV3OnCreateParams {
+        uint24 poolFee;
         uint24 maxSlippage;
     }
 
@@ -85,26 +87,33 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the input data
     ///
     ///             This function reverts if:
-    ///             - OnCreateParams.implParams.poolFee is not enabled
+    ///             - `UniswapV3OnCreateParams.poolFee` is not enabled
+    ///             - `UniswapV3OnCreateParams.maxSlippage` is out of bounds
     ///
     ///             Note that this function does not check if the pool already exists. The reason for this is that it could be used as a DoS vector.
     function __onCreate(
-        uint96,
+        uint96 lotId_,
         address,
         address,
         address,
         uint256,
         bool,
-        bytes calldata callbackData_
+        bytes calldata
     ) internal virtual override {
-        OnCreateParams memory params = abi.decode(callbackData_, (OnCreateParams));
-        (uint24 poolFee) = abi.decode(params.implParams, (uint24));
+        UniswapV3OnCreateParams memory params = _decodeOnCreateParameters(lotId_);
 
         // Validate the parameters
         // Pool fee
         // Fee not enabled
-        if (uniV3Factory.feeAmountTickSpacing(poolFee) == 0) {
+        if (uniV3Factory.feeAmountTickSpacing(params.poolFee) == 0) {
             revert Callback_Params_PoolFeeNotEnabled();
+        }
+
+        // Check that the maxSlippage is in bounds
+        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
+        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
+        if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
         }
     }
 
@@ -124,13 +133,10 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_,
-        bytes memory callbackData_
+        bytes memory
     ) internal virtual override returns (ERC20 poolToken) {
         // Decode the callback data
-        OnSettleParams memory params = abi.decode(callbackData_, (OnSettleParams));
-
-        // Extract the pool fee from the implParams
-        (uint24 poolFee) = abi.decode(lotConfiguration[lotId_].implParams, (uint24));
+        UniswapV3OnCreateParams memory params = _decodeOnCreateParameters(lotId_);
 
         // Determine the ordering of tokens
         bool quoteTokenIsToken0 = quoteToken_ < baseToken_;
@@ -147,7 +153,7 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
             _createAndInitializePoolIfNecessary(
                 quoteTokenIsToken0 ? quoteToken_ : baseToken_,
                 quoteTokenIsToken0 ? baseToken_ : quoteToken_,
-                poolFee,
+                params.poolFee,
                 sqrtPriceX96
             );
         }
@@ -156,7 +162,7 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
         address poolTokenAddress;
         {
             // Adjust the full-range ticks according to the tick spacing for the current fee
-            int24 tickSpacing = uniV3Factory.feeAmountTickSpacing(poolFee);
+            int24 tickSpacing = uniV3Factory.feeAmountTickSpacing(params.poolFee);
 
             // Create an unmanaged pool
             // The range of the position will not be changed after deployment
@@ -164,7 +170,7 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
             poolTokenAddress = gUniFactory.createPool(
                 quoteTokenIsToken0 ? quoteToken_ : baseToken_,
                 quoteTokenIsToken0 ? baseToken_ : quoteToken_,
-                poolFee,
+                params.poolFee,
                 TickMath.MIN_TICK / tickSpacing * tickSpacing,
                 TickMath.MAX_TICK / tickSpacing * tickSpacing
             );
@@ -236,5 +242,21 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
                 IUniswapV3Pool(pool).initialize(sqrtPriceX96);
             }
         }
+    }
+
+    /// @notice Decodes the configuration parameters from the DTLConfiguration
+    /// @dev   The configuration parameters are stored in `DTLConfiguration.implParams`
+    function _decodeOnCreateParameters(uint96 lotId_)
+        internal
+        view
+        returns (UniswapV3OnCreateParams memory)
+    {
+        DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
+        // Validate that the callback data is of the correct length
+        if (lotConfig.implParams.length != 64) {
+            revert Callback_InvalidParams();
+        }
+
+        return abi.decode(lotConfig.implParams, (UniswapV3OnCreateParams));
     }
 }

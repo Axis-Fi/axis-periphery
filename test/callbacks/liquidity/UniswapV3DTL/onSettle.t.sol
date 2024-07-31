@@ -252,15 +252,6 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         return _uniV3Factory.getPool(token0, token1, _poolFee);
     }
 
-    function _setMaxSlippage(uint24 maxSlippage_) internal {
-        _maxSlippage = maxSlippage_;
-    }
-
-    modifier givenMaxSlippage(uint24 maxSlippage_) {
-        _setMaxSlippage(maxSlippage_);
-        _;
-    }
-
     // ========== Tests ========== //
 
     // [X] given the onSettle callback has already been called
@@ -321,13 +312,13 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     function test_givenPoolIsCreatedAndInitialized_givenMaxSlippage()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(8100) // 81%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreatedAndInitialized(_SQRT_PRICE_X96_OVERRIDE)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
-        givenMaxSlippage(8100) // 81%
     {
         _performOnSettle();
 
@@ -448,11 +439,11 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     function test_givenPoolHasDepositWithLowerPrice()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(5100) // 51%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositLowerPrice
         givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
-        givenMaxSlippage(5100) // 51%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -470,11 +461,11 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     function test_givenPoolHasDepositWithHigherPrice()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(5100) // 51%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositHigherPrice
         givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
-        givenMaxSlippage(5100) // 51%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -492,9 +483,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     function test_lessThanMaxSlippage()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(1) // 0.01%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
-        givenMaxSlippage(1) // 0.01%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
@@ -512,9 +503,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     function test_greaterThanMaxSlippage_reverts()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(0) // 0%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
-        givenMaxSlippage(0) // 0%
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)

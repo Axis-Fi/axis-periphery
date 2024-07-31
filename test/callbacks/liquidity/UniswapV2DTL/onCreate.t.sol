@@ -5,6 +5,7 @@ import {UniswapV2DirectToLiquidityTest} from "./UniswapV2DTLTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
 
 contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTest {
     // ============ Modifiers ============ //
@@ -42,6 +43,12 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     // [X] when the proceeds utilisation is 0
     //  [X] it reverts
     // [X] when the proceeds utilisation is greater than 100%
+    //  [X] it reverts
+    // [X] when the implParams is not the correct length
+    //  [X] it reverts
+    // [X] when the max slippage is between 0 and 100%
+    //  [X] it succeeds
+    // [X] when the max slippage is greater than 100%
     //  [X] it reverts
     // [X] given uniswap v2 pool already exists
     //  [X] it succeeds
@@ -129,6 +136,49 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         vm.expectRevert(err);
 
         _performOnCreate();
+    }
+
+    function test_paramsIncorrectLength_reverts() public givenCallbackIsCreated {
+        // Set the implParams to an incorrect length
+        _dtlCreateParams.implParams = abi.encode(uint256(10), uint256(10));
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_maxSlippageGreaterThan100Percent_reverts(uint24 maxSlippage_)
+        public
+        givenCallbackIsCreated
+    {
+        uint24 maxSlippage = uint24(bound(maxSlippage_, 100e2 + 1, type(uint24).max));
+        _setMaxSlippage(maxSlippage);
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector, maxSlippage, 0, 100e2
+        );
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_maxSlippage_fuzz(uint24 maxSlippage_) public givenCallbackIsCreated {
+        uint24 maxSlippage = uint24(bound(maxSlippage_, 0, 100e2));
+        _setMaxSlippage(maxSlippage);
+
+        _performOnCreate();
+
+        // Assert values
+        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+        assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
+
+        UniswapV2DirectToLiquidity.UniswapV2OnCreateParams memory uniswapV2CreateParams = abi.decode(
+            _dtlCreateParams.implParams, (UniswapV2DirectToLiquidity.UniswapV2OnCreateParams)
+        );
+        assertEq(uniswapV2CreateParams.maxSlippage, maxSlippage, "maxSlippage");
     }
 
     function test_givenUniswapV2PoolAlreadyExists() public givenCallbackIsCreated {
@@ -297,6 +347,13 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
 
+        UniswapV2DirectToLiquidity.UniswapV2OnCreateParams memory uniswapV2CreateParams = abi.decode(
+            _dtlCreateParams.implParams, (UniswapV2DirectToLiquidity.UniswapV2OnCreateParams)
+        );
+        assertEq(
+            uniswapV2CreateParams.maxSlippage, _uniswapV2CreateParams.maxSlippage, "maxSlippage"
+        );
+
         // Assert balances
         _assertBaseTokenBalances();
     }
@@ -325,6 +382,13 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         assertEq(address(configuration.linearVestingModule), address(0), "linearVestingModule");
         assertEq(configuration.active, true, "active");
         assertEq(configuration.implParams, _dtlCreateParams.implParams, "implParams");
+
+        UniswapV2DirectToLiquidity.UniswapV2OnCreateParams memory uniswapV2CreateParams = abi.decode(
+            _dtlCreateParams.implParams, (UniswapV2DirectToLiquidity.UniswapV2OnCreateParams)
+        );
+        assertEq(
+            uniswapV2CreateParams.maxSlippage, _uniswapV2CreateParams.maxSlippage, "maxSlippage"
+        );
 
         // Assert balances
         _assertBaseTokenBalances();

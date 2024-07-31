@@ -61,13 +61,18 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     // Inputs
     uint24 internal _poolFee = 500;
+    UniswapV3DirectToLiquidity.UniswapV3OnCreateParams internal _uniswapV3CreateParams =
+    UniswapV3DirectToLiquidity.UniswapV3OnCreateParams({
+        poolFee: _poolFee,
+        maxSlippage: 1 // 0.01%, to handle rounding errors
+    });
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
         proceedsUtilisationPercent: 100e2,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
-        implParams: abi.encode(_poolFee)
+        implParams: abi.encode(_uniswapV3CreateParams)
     });
 
     function setUp() public {
@@ -251,7 +256,7 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
             lotId_,
             _proceeds,
             _refund,
-            abi.encode(UniswapV3DirectToLiquidity.OnSettleParams({maxSlippage: _maxSlippage}))
+            abi.encode("")
         );
     }
 
@@ -265,8 +270,22 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
     }
 
     modifier givenPoolFee(uint24 fee_) {
-        _poolFee = fee_;
-        _dtlCreateParams.implParams = abi.encode(_poolFee);
+        _uniswapV3CreateParams.poolFee = fee_;
+
+        // Update the callback data
+        _dtlCreateParams.implParams = abi.encode(_uniswapV3CreateParams);
+        _;
+    }
+
+    function _setMaxSlippage(uint24 maxSlippage_) internal {
+        _uniswapV3CreateParams.maxSlippage = maxSlippage_;
+
+        // Update the callback data
+        _dtlCreateParams.implParams = abi.encode(_uniswapV3CreateParams);
+    }
+
+    modifier givenMaxSlippage(uint24 maxSlippage_) {
+        _setMaxSlippage(maxSlippage_);
         _;
     }
 

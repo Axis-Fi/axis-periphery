@@ -56,16 +56,17 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     uint96 internal _proceeds;
     uint96 internal _refund;
-    uint24 internal _maxSlippage = 1; // 0.01%
 
     // Inputs
+    UniswapV2DirectToLiquidity.UniswapV2OnCreateParams internal _uniswapV2CreateParams =
+        UniswapV2DirectToLiquidity.UniswapV2OnCreateParams({maxSlippage: uint24(0)});
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
         proceedsUtilisationPercent: 100e2,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
-        implParams: abi.encode("")
+        implParams: abi.encode(_uniswapV2CreateParams)
     });
 
     function setUp() public {
@@ -162,6 +163,16 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
+    function _setMaxSlippage(uint24 maxSlippage_) internal {
+        _uniswapV2CreateParams.maxSlippage = maxSlippage_;
+        _dtlCreateParams.implParams = abi.encode(_uniswapV2CreateParams);
+    }
+
+    modifier givenMaxSlippage(uint24 maxSlippage_) {
+        _setMaxSlippage(maxSlippage_);
+        _;
+    }
+
     function _createLot(address seller_) internal returns (uint96 lotId) {
         // Mint and approve the capacity to the owner
         _baseToken.mint(seller_, _LOT_CAPACITY);
@@ -238,12 +249,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     function _performOnSettle(uint96 lotId_) internal {
         vm.prank(address(_auctionHouse));
-        _dtl.onSettle(
-            lotId_,
-            _proceeds,
-            _refund,
-            abi.encode(UniswapV2DirectToLiquidity.OnSettleParams({maxSlippage: _maxSlippage}))
-        );
+        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
     }
 
     function _performOnSettle() internal {

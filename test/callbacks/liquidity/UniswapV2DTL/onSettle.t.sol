@@ -192,11 +192,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _;
     }
 
-    modifier givenMaxSlippage(uint24 maxSlippage_) {
-        _maxSlippage = maxSlippage_;
-        _;
-    }
-
     modifier givenPoolHasDepositLowerPrice() {
         uint256 quoteTokensToDeposit = _quoteTokensToDeposit * 95 / 100;
         uint256 baseTokensToDeposit = _baseTokensToDeposit;
@@ -405,6 +400,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     function test_givenPoolHasDepositWithLowerPrice_whenMaxSlippageIsSet()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(500) // 5%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreated
@@ -412,7 +408,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-        givenMaxSlippage(500) // 5%
     {
         _performOnSettle();
 
@@ -443,6 +438,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     function test_givenPoolHasDepositWithHigherPrice_whenMaxSlippageIsSet()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(500) // 5%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreated
@@ -450,7 +446,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-        givenMaxSlippage(500) // 5%
     {
         _performOnSettle();
 
