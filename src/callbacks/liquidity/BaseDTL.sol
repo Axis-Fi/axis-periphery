@@ -40,6 +40,9 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
     error Callback_LinearVestingModuleNotFound();
 
+    /// @notice The auction lot has already been completed
+    error Callback_AlreadyComplete();
+
     // ========== STRUCTS ========== //
 
     /// @notice     Configuration for the DTL callback
@@ -222,9 +225,15 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot has already been completed
     ///
     /// @param      lotId_          The lot ID
     function _onCancel(uint96 lotId_, uint256, bool, bytes calldata) internal override {
+        // Check that the lot is active
+        if (!lotConfiguration[lotId_].active) {
+            revert Callback_AlreadyComplete();
+        }
+
         // Mark the lot as inactive to prevent further actions
         DTLConfiguration storage config = lotConfiguration[lotId_];
         config.active = false;
@@ -236,6 +245,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot has already been completed
     ///
     /// @param      lotId_          The lot ID
     /// @param      curatorPayout_  The maximum curator payout
@@ -245,6 +255,11 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         bool,
         bytes calldata
     ) internal override {
+        // Check that the lot is active
+        if (!lotConfiguration[lotId_].active) {
+            revert Callback_AlreadyComplete();
+        }
+
         // Update the funding
         DTLConfiguration storage config = lotConfiguration[lotId_];
         config.lotCuratorPayout = curatorPayout_;
@@ -285,6 +300,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///
     ///             This function reverts if:
     ///             - The lot is not registered
+    ///             - The lot is already complete
     ///
     /// @param      lotId_          The lot ID
     /// @param      proceeds_       The proceeds from the auction
@@ -296,7 +312,16 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         uint256 refund_,
         bytes calldata callbackData_
     ) internal virtual override {
-        DTLConfiguration memory config = lotConfiguration[lotId_];
+        DTLConfiguration storage config = lotConfiguration[lotId_];
+
+        // Check that the lot is active
+        if (!config.active) {
+            revert Callback_AlreadyComplete();
+        }
+
+        // Mark the lot as inactive
+        lotConfiguration[lotId_].active = false;
+
         address seller;
         address baseToken;
         address quoteToken;

@@ -54,6 +54,10 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
 
+    uint96 internal _proceeds;
+    uint96 internal _refund;
+    uint24 internal _maxSlippage = 1; // 0.01%
+
     // Inputs
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
@@ -196,6 +200,23 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
+    function _performOnCreate(address seller_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCreate(
+            _lotId,
+            seller_,
+            address(_baseToken),
+            address(_quoteToken),
+            _LOT_CAPACITY,
+            false,
+            abi.encode(_dtlCreateParams)
+        );
+    }
+
+    function _performOnCreate() internal {
+        _performOnCreate(_SELLER);
+    }
+
     function _performOnCurate(uint96 curatorPayout_) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorPayout_, false, abi.encode(""));
@@ -204,6 +225,29 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     modifier givenOnCurate(uint96 curatorPayout_) {
         _performOnCurate(curatorPayout_);
         _;
+    }
+
+    function _performOnCancel(uint96 lotId_, uint256 refundAmount_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCancel(lotId_, refundAmount_, false, abi.encode(""));
+    }
+
+    function _performOnCancel() internal {
+        _performOnCancel(_lotId, 0);
+    }
+
+    function _performOnSettle(uint96 lotId_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onSettle(
+            lotId_,
+            _proceeds,
+            _refund,
+            abi.encode(UniswapV2DirectToLiquidity.OnSettleParams({maxSlippage: _maxSlippage}))
+        );
+    }
+
+    function _performOnSettle() internal {
+        _performOnSettle(_lotId);
     }
 
     modifier givenProceedsUtilisationPercent(uint24 percent_) {

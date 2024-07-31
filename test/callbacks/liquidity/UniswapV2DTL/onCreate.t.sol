@@ -9,23 +9,6 @@ import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL
 contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTest {
     // ============ Modifiers ============ //
 
-    function _performCallback(address seller_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCreate(
-            _lotId,
-            seller_,
-            address(_baseToken),
-            address(_quoteToken),
-            _LOT_CAPACITY,
-            false,
-            abi.encode(_dtlCreateParams)
-        );
-    }
-
-    function _performCallback() internal {
-        _performCallback(_SELLER);
-    }
-
     // ============ Assertions ============ //
 
     function _expectTransferFrom() internal {
@@ -113,11 +96,11 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     }
 
     function test_whenLotHasAlreadyBeenRegistered_reverts() public givenCallbackIsCreated {
-        _performCallback();
+        _performOnCreate();
 
         _expectInvalidParams();
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenProceedsUtilisationIs0_reverts()
@@ -131,7 +114,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenProceedsUtilisationIsGreaterThan100Percent_reverts()
@@ -145,7 +128,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_givenUniswapV2PoolAlreadyExists() public givenCallbackIsCreated {
@@ -153,7 +136,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         _uniV2Factory.createPair(address(_baseToken), address(_quoteToken));
 
         // Perform the callback
-        _performCallback();
+        _performOnCreate();
 
         // Assert that the callback was successful
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -173,7 +156,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenStartTimestampIsAfterExpiryTimestamp_reverts()
@@ -189,7 +172,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenStartTimestampIsBeforeCurrentTimestamp_succeeds()
@@ -199,7 +182,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         givenVestingStart(_START - 1)
         givenVestingExpiry(_START + 1)
     {
-        _performCallback();
+        _performOnCreate();
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -228,7 +211,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenVestingSpecified_givenLinearVestingModuleNotInstalled_reverts()
@@ -243,7 +226,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenVestingSpecified()
@@ -253,7 +236,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         givenVestingStart(_START + 1)
         givenVestingExpiry(_START + 2)
     {
-        _performCallback();
+        _performOnCreate();
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -277,7 +260,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
             abi.encodeWithSelector(BaseDirectToLiquidity.Callback_Params_InvalidAddress.selector);
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnCreate();
     }
 
     function test_whenRecipientIsNotSeller_succeeds()
@@ -285,7 +268,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         givenCallbackIsCreated
         whenRecipientIsNotSeller
     {
-        _performCallback();
+        _performOnCreate();
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -296,7 +279,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     }
 
     function test_succeeds() public givenCallbackIsCreated {
-        _performCallback();
+        _performOnCreate();
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -320,12 +303,12 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
 
     function test_succeeds_multiple() public givenCallbackIsCreated {
         // Lot one
-        _performCallback();
+        _performOnCreate();
 
         // Lot two
         _dtlCreateParams.recipient = _NOT_SELLER;
         _lotId = 2;
-        _performCallback(_NOT_SELLER);
+        _performOnCreate(_NOT_SELLER);
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
