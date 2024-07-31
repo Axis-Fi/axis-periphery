@@ -63,7 +63,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
 
     // ========== Assertions ========== //
 
-    function _assertPoolState(uint160 sqrtPriceX96_) internal {
+    function _assertPoolState(uint160 sqrtPriceX96_) internal view {
         // Get the pool
         address pool = _getPool();
 
@@ -71,7 +71,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         assertEq(sqrtPriceX96, sqrtPriceX96_, "pool sqrt price");
     }
 
-    function _assertLpTokenBalance() internal {
+    function _assertLpTokenBalance() internal view {
         // Get the pools deployed by the DTL callback
         GUniPool pool = _getGUniPool();
 
@@ -136,15 +136,15 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         );
     }
 
-    function _assertQuoteTokenBalance() internal {
+    function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
     }
 
-    function _assertBaseTokenBalance() internal {
+    function _assertBaseTokenBalance() internal view {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "DTL: base token balance");
     }
 
-    function _assertApprovals() internal {
+    function _assertApprovals() internal view {
         // Ensure there are no dangling approvals
         assertEq(
             _quoteToken.allowance(_dtlAddress, address(_getGUniPool())),
