@@ -54,6 +54,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
 
+    uint96 internal _lotCapacity = _LOT_CAPACITY;
     uint96 internal _proceeds;
     uint96 internal _refund;
 
@@ -173,11 +174,19 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
+    modifier givenBaseTokenDecimals(uint8 decimals_) {
+        _baseToken = new MockERC20("Base Token", "BT", decimals_);
+
+        // Scale the capacity
+        _lotCapacity = uint96(_LOT_CAPACITY * 10 ** decimals_ / 10 ** 18);
+        _;
+    }
+
     function _createLot(address seller_) internal returns (uint96 lotId) {
         // Mint and approve the capacity to the owner
-        _baseToken.mint(seller_, _LOT_CAPACITY);
+        _baseToken.mint(seller_, _lotCapacity);
         vm.prank(seller_);
-        _baseToken.approve(address(_auctionHouse), _LOT_CAPACITY);
+        _baseToken.approve(address(_auctionHouse), _lotCapacity);
 
         // Prep the lot arguments
         IAuctionHouse.RoutingParams memory routingParams = IAuctionHouse.RoutingParams({
@@ -197,7 +206,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
             start: uint48(block.timestamp) + 1,
             duration: 1 days,
             capacityInQuote: false,
-            capacity: _LOT_CAPACITY,
+            capacity: _lotCapacity,
             implParams: abi.encode("")
         });
 
@@ -218,7 +227,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
             seller_,
             address(_baseToken),
             address(_quoteToken),
-            _LOT_CAPACITY,
+            _lotCapacity,
             false,
             abi.encode(_dtlCreateParams)
         );

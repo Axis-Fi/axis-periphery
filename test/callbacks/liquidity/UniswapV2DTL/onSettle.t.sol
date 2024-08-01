@@ -15,6 +15,8 @@ import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/IL
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
+import {console2} from "@forge-std-1.9.1/console2.sol";
+
 contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
     uint96 internal constant _REFUND = 0;
@@ -26,6 +28,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     uint96 internal _quoteTokensToDeposit;
     uint96 internal _baseTokensToDeposit;
     uint96 internal _curatorPayout;
+    uint256 internal _auctionPrice;
 
     // ========== Internal functions ========== //
 
@@ -83,17 +86,21 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         );
     }
 
-    function _assertLpUnderlyingBalances() internal view {
+    function _assertLpUnderlyingBalances(uint8 multiplier_) internal view {
         // Get the pools deployed by the DTL callback
         IUniswapV2Pair pool = _getUniswapV2Pool();
         address poolAddress = address(pool);
 
         // Check the underlying balances
         assertEq(
-            _quoteToken.balanceOf(poolAddress), _quoteTokensToDeposit, "pair: quote token balance"
+            _quoteToken.balanceOf(poolAddress),
+            _quoteTokensToDeposit * multiplier_,
+            "pair: quote token balance"
         );
         assertEq(
-            _baseToken.balanceOf(poolAddress), _baseTokensToDeposit, "pair: base token balance"
+            _baseToken.balanceOf(poolAddress),
+            _baseTokensToDeposit * multiplier_,
+            "pair: base token balance"
         );
 
         // Check that the reserves match
@@ -101,12 +108,12 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         bool quoteTokenIsToken0 = pool.token0() == address(_quoteToken);
         assertEq(
             quoteTokenIsToken0 ? reserve0 : reserve1,
-            _quoteTokensToDeposit,
+            _quoteTokensToDeposit * multiplier_,
             "pair: quote token reserve"
         );
         assertEq(
             quoteTokenIsToken0 ? reserve1 : reserve0,
-            _baseTokensToDeposit,
+            _baseTokensToDeposit * multiplier_,
             "pair: base token reserve"
         );
     }
@@ -204,13 +211,16 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         // However, curator payouts are linear to the capacity utilised
         // Calculate the percent utilisation
         uint96 capacityUtilisationPercent = 100e2
-            - uint96(FixedPointMathLib.mulDivDown(_refund, 100e2, _LOT_CAPACITY + _curatorPayout));
-        _capacityUtilised = _LOT_CAPACITY * capacityUtilisationPercent / 100e2;
+            - uint96(FixedPointMathLib.mulDivDown(_refund, 100e2, _lotCapacity + _curatorPayout));
+        _capacityUtilised = _lotCapacity * capacityUtilisationPercent / 100e2;
 
         // The proceeds utilisation percent scales the quote tokens and base tokens linearly
         _quoteTokensToDeposit = _proceeds * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
         _baseTokensToDeposit =
             _capacityUtilised * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
+
+        _auctionPrice = _proceeds * 10 ** _baseToken.decimals() / (_lotCapacity - _refund);
+        console2.log("Derived auction price is: ", _auctionPrice);
         _;
     }
 
@@ -225,7 +235,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     modifier givenUnboundedOnCurate(uint96 curationPayout_) {
         // Bound the value
-        _curatorPayout = uint96(bound(curationPayout_, 1e17, _LOT_CAPACITY));
+        _curatorPayout = uint96(bound(curationPayout_, 1e17, _lotCapacity));
 
         // Call the onCurate callback
         _performOnCurate(_curatorPayout);
@@ -306,20 +316,20 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     // [X] given the pool is created and initialized
     //  [X] it succeeds
     // [ ] given the pool has tokens donated
-    //  [ ] given quote token donated is < 1 quote token
+    //  [X] given quote token donated is < 1 auction price amount
     //   [X] given sync has been called
     //    [X] it adjusts the pool balances, and succeeds
-    //   [ ] given the quote and base tokens have different decimals
-    //    [ ] it adjusts the pool balances, and succeeds
+    //   [X] given the quote and base tokens have different decimals
+    //    [X] it adjusts the pool balances, and succeeds
     //   [X] it adjusts the pool balances, and succeeds
-    //  [ ] given quote token donated is < 2 quote token
-    //   [ ] given sync has been called
-    //    [ ] it adjusts the pool balances, and succeeds
-    //   [ ] it adjusts the pool balances, and succeeds
-    //  [ ] given quote token donated is > 2 quote token
-    //   [ ] given sync has been called
-    //    [ ] it adjusts the pool balances, and succeeds
-    //   [ ] it adjusts the pool balances, and succeeds
+    //  [X] given quote token donated is > 1 and < 2 auction price amount
+    //   [X] given sync has been called
+    //    [X] it adjusts the pool balances, and succeeds
+    //   [X] it adjusts the pool balances, and succeeds
+    //  [X] given quote token donated is > 2 auction price amount
+    //   [X] given sync has been called
+    //    [X] it adjusts the pool balances, and succeeds
+    //   [X] it adjusts the pool balances, and succeeds
     //  [ ] given quote token donated requires more than the base token balance
     //   [ ] it reverts
     //  [ ] given base token donated is < 1 base token
@@ -328,7 +338,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     //   [ ] given the quote and base tokens have different decimals
     //    [ ] it adjusts the pool balances, and succeeds
     //   [ ] it adjusts the pool balances, and succeeds
-    //  [ ] given base token donated is < 2 base token
+    //  [ ] given base token donated is >1 and < 2 base token
     //   [ ] given sync has been called
     //    [ ] it adjusts the pool balances, and succeeds
     //   [ ] it adjusts the pool balances, and succeeds
@@ -384,8 +394,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenCallbackIsCreated
         givenOnCreate
         givenPoolIsCreated
-        givenPoolHasQuoteTokenBalance(1)
         setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(1)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
@@ -393,7 +403,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _performOnSettle();
 
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances();
+        _assertLpUnderlyingBalances(1);
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -405,9 +415,9 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenCallbackIsCreated
         givenOnCreate
         givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasQuoteTokenBalance(1)
         givenPoolSync
-        setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
@@ -415,7 +425,162 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _performOnSettle();
 
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances();
+        _assertLpUnderlyingBalances(1);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationLessThanOne_givenSync_givenDifferentDecimals()
+        public
+        givenCallbackIsCreated
+        givenBaseTokenDecimals(17)
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(1)
+        givenPoolSync
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(1);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationGreaterThanOne()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(_auctionPrice + 1e18)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(2);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationGreaterThanOne_givenSync()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(_auctionPrice + 1e18)
+        givenPoolSync
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(2);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationGreaterThanOne_givenSync_givenDifferentDecimals()
+        public
+        givenCallbackIsCreated
+        givenBaseTokenDecimals(17)
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(_auctionPrice + 1e18)
+        givenPoolSync
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(2);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationGreaterThanTwo()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(_auctionPrice * 2 + 1e18)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(3);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationGreaterThanTwo_givenSync()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(_auctionPrice * 2 + 1e18)
+        givenPoolSync
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(3);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationGreaterThanTwo_givenSync_givenDifferentDecimals()
+        public
+        givenCallbackIsCreated
+        givenBaseTokenDecimals(17)
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenPoolHasQuoteTokenBalance(_auctionPrice * 2 + 1e18)
+        givenPoolSync
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(3);
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
