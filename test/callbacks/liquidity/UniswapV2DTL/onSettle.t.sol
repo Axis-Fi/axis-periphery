@@ -268,9 +268,40 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     // [X] given the pool is created
     //  [X] it initializes the pool
     // [X] given the pool is created and initialized
-    //  [X] given the pool has reserve token donated and sync
-    //   [X] it succeeds
     //  [X] it succeeds
+    // [ ] given the pool has tokens donated
+    //  [ ] given quote token donated is < 1 quote token
+    //   [ ] given sync has been called
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] given the quote and base tokens have different decimals
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] it adjusts the pool balances, and succeeds
+    //  [ ] given quote token donated is < 2 quote token
+    //   [ ] given sync has been called
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] it adjusts the pool balances, and succeeds
+    //  [ ] given quote token donated is > 2 quote token
+    //   [ ] given sync has been called
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] it adjusts the pool balances, and succeeds
+    //  [ ] given quote token donated requires more than the base token balance
+    //   [ ] it reverts
+    //  [ ] given base token donated is < 1 base token
+    //   [ ] given sync has been called
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] given the quote and base tokens have different decimals
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] it adjusts the pool balances, and succeeds
+    //  [ ] given base token donated is < 2 base token
+    //   [ ] given sync has been called
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] it adjusts the pool balances, and succeeds
+    //  [ ] given base token donated is > 2 base token
+    //   [ ] given sync has been called
+    //    [ ] it adjusts the pool balances, and succeeds
+    //   [ ] it adjusts the pool balances, and succeeds
+    //  [ ] given base token donated requires more than the quote token balance
+    //   [ ] it reverts
     // [X] given the proceeds utilisation percent is set
     //  [X] it calculates the deposit amount correctly
     // [X] given curation is enabled
@@ -331,11 +362,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertBaseTokenBalance();
         _assertApprovals();
     }
-
-    // TODO when the donated amount is < 1 quote token, > 1 quote token, > 2 quote tokens. Repeat for base token.
-    // TODO donate without sync
-    // TODO different decimals
-    // TODO does it work with refunds
 
     function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
         public
