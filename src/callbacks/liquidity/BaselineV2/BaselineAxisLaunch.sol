@@ -220,12 +220,13 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     {
         BaselineKeycode bpool = toBaselineKeycode("BPOOL");
 
-        requests = new BaselinePermissions[](5);
+        requests = new BaselinePermissions[](6);
         requests[0] = BaselinePermissions(bpool, BPOOL.addReservesTo.selector);
         requests[1] = BaselinePermissions(bpool, BPOOL.addLiquidityTo.selector);
         requests[2] = BaselinePermissions(bpool, BPOOL.burnAllBAssetsInContract.selector);
         requests[3] = BaselinePermissions(bpool, BPOOL.mint.selector);
         requests[4] = BaselinePermissions(bpool, BPOOL.setTicks.selector);
+        requests[5] = BaselinePermissions(bpool, BPOOL.setTransferLock.selector);
     }
 
     // ========== CALLBACK FUNCTIONS ========== //
@@ -466,6 +467,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             }
         }
 
+        // Allow BPOOL transfers if not already allowed
+        // Transfers must be allowed so that the auction can be cancelled
+        // and so that any refunded amount can be sent to this callback
+        // when the auction is settled.
+        // Because of this, it's important that no other spot tokens
+        // are distributed prior to the auction being settled.
+        if (BPOOL.locked()) BPOOL.setTransferLock(false);
+
         // Mint the capacity of baseline tokens to the auction house to prefund the auction
         BPOOL.mint(msg.sender, capacity_);
     }
@@ -508,6 +517,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Set the auction lot to be cancelled
         auctionComplete = true;
 
+        // Allow BPOOL transfers, if currently disabled
+        if (BPOOL.locked()) BPOOL.setTransferLock(false);
+
         // Send tokens to BPOOL and then burn
         Transfer.transfer(bAsset, address(BPOOL), refund_, false);
         BPOOL.burnAllBAssetsInContract();
@@ -534,6 +546,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Mint tokens for curator fee if it's not zero
         if (curatorFee_ > 0) {
+            // Allow transfers if currently disabled
+            // See comment in _onCreate for more information
+            if (BPOOL.locked()) BPOOL.setTransferLock(false);
+
             BPOOL.mint(msg.sender, curatorFee_);
         }
     }
@@ -609,6 +625,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         auctionComplete = true;
 
         //// Step 1: Burn any refunded bAsset tokens ////
+        // If there is a refund, then transfers would already need to be enabled
+        // We check here anyway and enable transfers for the case where there is
+        // no refund and it wouldn't have failed on that check.
+        if (BPOOL.locked()) BPOOL.setTransferLock(false);
 
         // Burn any refunded bAsset tokens that were sent from the auction house
         Transfer.transfer(bAsset, address(BPOOL), refund_, false);
