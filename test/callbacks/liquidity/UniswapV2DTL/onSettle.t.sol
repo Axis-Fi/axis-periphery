@@ -334,6 +334,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     // TODO when the donated amount is < 1 quote token, > 1 quote token, > 2 quote tokens. Repeat for base token.
     // TODO donate without sync
+    // TODO different decimals
+    // TODO does it work with refunds
 
     function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
         public
