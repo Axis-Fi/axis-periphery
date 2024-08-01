@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {FullMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FullMath.sol";
+import {Math} from "@openzeppelin-contracts-4.9.2/utils/math/Math.sol";
 
 // Uniswap
 import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
@@ -119,38 +120,50 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         // Handle a potential DoS attack
-        uint256 quoteTokenRemaining = quoteTokenAmount_;
-        uint256 baseTokenRemaining = baseTokenAmount_;
+        uint256 quoteTokensToAdd = quoteTokenAmount_;
+        uint256 baseTokensToAdd = baseTokenAmount_;
         {
-            // May be zero
-            (uint256 mintQuoteTokens, uint256 mintBaseTokens) = _mintInitialLiquidity(
-                IUniswapV2Pair(pairAddress),
-                quoteToken_,
-                quoteTokenAmount_,
-                baseToken_,
-                baseTokenAmount_
+            uint256 auctionPrice = FullMath.mulDiv(
+                quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_
             );
 
-            // Update the remaining amounts
-            quoteTokenRemaining -= mintQuoteTokens;
-            baseTokenRemaining -= mintBaseTokens;
+            // May be zero
+            (uint256 quoteTokensUsed, uint256 baseTokensUsed) = _mintInitialLiquidity(
+                IUniswapV2Pair(pairAddress), quoteToken_, baseToken_, auctionPrice
+            );
+            console2.log("quoteTokensUsed", quoteTokensUsed);
+            console2.log("baseTokensUsed", baseTokensUsed);
+
+            // Calculate the amount of quote and base tokens to deposit as liquidity, while staying in proportion
+            // This is because the adjustment of the balance in `_mintInitialLiquidity()` may not have required a proportional deposit
+            if (quoteTokensUsed > 0 && baseTokensUsed > 0) {
+                // We want to maximise the number of quote tokens added to the pool
+                quoteTokensToAdd = quoteTokenAmount_ - quoteTokensUsed;
+                console2.log("quoteTokensToAdd", quoteTokensToAdd);
+
+                // Calculate the base tokens accordingly
+                baseTokensToAdd = FullMath.mulDiv(
+                    quoteTokensToAdd, 10 ** ERC20(baseToken_).decimals(), auctionPrice
+                );
+                console2.log("baseTokensToAdd", baseTokensToAdd);
+            }
+            // Otherwise the full amounts will be used
         }
 
         // Calculate the minimum amount out for each token
-        uint256 quoteTokenAmountMin =
-            _getAmountWithSlippage(quoteTokenRemaining, params.maxSlippage);
-        uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokenRemaining, params.maxSlippage);
+        uint256 quoteTokenAmountMin = _getAmountWithSlippage(quoteTokensToAdd, params.maxSlippage);
+        uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokensToAdd, params.maxSlippage);
 
         // Approve the router to spend the tokens
-        ERC20(quoteToken_).approve(address(uniV2Router), quoteTokenRemaining);
-        ERC20(baseToken_).approve(address(uniV2Router), baseTokenRemaining);
+        ERC20(quoteToken_).approve(address(uniV2Router), quoteTokensToAdd);
+        ERC20(baseToken_).approve(address(uniV2Router), baseTokensToAdd);
 
         // Deposit into the pool
         uniV2Router.addLiquidity(
             quoteToken_,
             baseToken_,
-            quoteTokenRemaining,
-            baseTokenRemaining,
+            quoteTokensToAdd,
+            baseTokensToAdd,
             quoteTokenAmountMin,
             baseTokenAmountMin,
             address(this),
@@ -187,21 +200,21 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ///
     /// @param  pair_               The Uniswap V2 pair
     /// @param  quoteToken_         The quote token
-    /// @param  quoteTokenAmount_   The amount of quote token
     /// @param  baseToken_          The base token
-    /// @param  baseTokenAmount_    The amount of base token
+    /// @param  auctionPrice_       The auction price (quote tokens per base token)
     /// @return mintQuoteTokens     The amount of quote token minted
     /// @return mintBaseTokens      The amount of base token minted
     function _mintInitialLiquidity(
         IUniswapV2Pair pair_,
         address quoteToken_,
-        uint256 quoteTokenAmount_,
         address baseToken_,
-        uint256 baseTokenAmount_
+        uint256 auctionPrice_
     ) internal returns (uint256, uint256) {
         // Calculate the minimum required
         (uint256 mintQuoteTokens, uint256 mintBaseTokens) =
-            _getMintAmounts(pair_, quoteToken_, quoteTokenAmount_, baseToken_, baseTokenAmount_);
+            _getMintAmounts(address(pair_), quoteToken_, baseToken_, auctionPrice_);
+        console2.log("mintQuoteTokens", mintQuoteTokens);
+        console2.log("mintBaseTokens", mintBaseTokens);
 
         // Only proceed if required
         if (mintQuoteTokens == 0 && mintBaseTokens == 0) {
@@ -216,145 +229,102 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         if (mintBaseTokens > 0) {
             ERC20(baseToken_).transfer(address(pair_), mintBaseTokens);
         }
+        console2.log("transferred");
+        {
+            (uint112 reserve0, uint112 reserve1,) = pair_.getReserves();
+            console2.log("reserve0", reserve0);
+            console2.log("reserve1", reserve1);
+        }
 
         // Mint
         // The resulting LP will be transferred to this contract
         // The transfer or vesting of the LP will be subsequently handled
+        console2.log("minting");
         pair_.mint(address(this));
 
         return (mintQuoteTokens, mintBaseTokens);
-    }
-
-    /// @notice Returns the number of tokens required to adjust the balance in `pair_` to `target_`.
-    ///
-    /// @param  token_          The token
-    /// @param  pair_           The Uniswap V2 pair
-    /// @param  target_         The target amount
-    /// @return tokensRequired  The number of tokens required
-    function _getTokensRequired(
-        address token_,
-        address pair_,
-        uint256 target_
-    ) internal view returns (uint256) {
-        // Calculate the amount of token required to meet `target_`
-        // We do not exclude the reserve value here, as the total balance needs to meet the target
-        return target_ - ERC20(token_).balanceOf(pair_);
-    }
-
-    /// @notice Returns a multiplier for the balance of a token
-    /// @dev    Scenario 1:
-    ///         The comparison value is 3e18.
-    ///         The token has a balance of 2e18 and a reserve of 1e18.
-    ///         This function would return 0, as (2e18 - 1e18) / 3e18 is rounded down to 0.
-    ///
-    ///         Scenario 2:
-    ///         The comparison value is 3e18.
-    ///         The token has a balance of 4e18 and a reserve of 1e18.
-    ///         This function would return 1, as (4e18 - 1e18) / 3e18 is rounded down to 1.
-    ///
-    /// @param  comparison_ The comparison value
-    /// @param  location_   The location of the token
-    /// @param  token_      The token
-    /// @param  reserve_    The reserve of the token
-    /// @return multiplier  The balance multiplier without decimal scale
-    function _getBalanceMultiplier(
-        uint256 comparison_,
-        address location_,
-        address token_,
-        uint256 reserve_
-    ) internal view returns (uint256) {
-        uint256 balance = ERC20(token_).balanceOf(location_);
-        // This should not be possible, but we check just in case
-        if (balance <= reserve_) {
-            return 0;
-        }
-        return (balance - reserve_) / comparison_;
     }
 
     /// @notice Calculates the minimum amount of quote token and base token for an initial deposit
     /// @dev    Minting the minimum amount of liquidity prevents the revert in `UniswapV2Library.quote()`.
     ///         Much of the function replicates logic from `UniswapV2Pair.mint()`.
     ///
-    /// @param  pair_               The Uniswap V2 pair
+    /// @param  location_           The location to check the balance of
     /// @param  quoteToken_         The quote token
     /// @param  baseToken_          The base token
     /// @return quoteTokenAmount    The amount of quote token
     /// @return baseTokenAmount     The amount of base token
     function _getMintAmounts(
-        IUniswapV2Pair pair_,
+        address location_,
         address quoteToken_,
-        uint256 quoteTokenAmount_,
         address baseToken_,
-        uint256 baseTokenAmount_
+        uint256 auctionPrice_
     ) internal view returns (uint256, uint256) {
-        // Determine current reserves
-        uint256 quoteTokenReserve;
-        uint256 baseTokenReserve;
+        // Determine if the reserves are in a state where this is needed
         {
-            (uint112 reserve0, uint112 reserve1,) = pair_.getReserves();
-
-            // If there are valid reserves, we do not need to do a manual mint
-            if (reserve0 > 0 && reserve1 > 0) {
-                return (0, 0);
-            }
+            (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(location_).getReserves();
 
             // If there are no reserves, we do not need to do a manual mint
             if (reserve0 == 0 && reserve1 == 0) {
                 return (0, 0);
             }
-
-            bool quoteTokenIsToken0 = pair_.token0() == quoteToken_;
-            quoteTokenReserve = quoteTokenIsToken0 ? reserve0 : reserve1;
-            baseTokenReserve = quoteTokenIsToken0 ? reserve1 : reserve0;
-
-            console2.log("quoteTokenReserve", quoteTokenReserve);
-            console2.log("baseTokenReserve", baseTokenReserve);
         }
 
-        // Determine the auction price (in terms of quote tokens)
-        console2.log("quoteTokenAmount_", quoteTokenAmount_);
-        console2.log("baseTokenAmount_", baseTokenAmount_);
-        uint256 auctionPrice =
-            FullMath.mulDiv(quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_);
-        console2.log("auctionPrice", auctionPrice);
+        // Find the combination of token amounts that would result in the correct price, while meeting the minimum liquidity (1e3) required by UniswapV2Pair.mint()
 
-        // We need to provide enough tokens to match the minimum liquidity
-        // The tokens also need to be in the correct proportion to set the price
-        // The `UniswapV2Pair.mint()` function ignores existing reserves, so we need to take that into account
-        // Additionally, there could be reserves that are donated, but not synced
+        // We know that:
+        // sqrt(quoteTokenAmount * baseTokenAmount) >= 1e3
+        // quoteTokenAmount * baseTokenAmount >= 1e6
+        //
+        // To determine the quoteTokenAmount:
+        // baseTokenAmount = quoteTokenAmount / auctionPrice
+        // quoteTokenAmount^2 / auctionPrice >= 1e6
+        // quoteTokenAmount >= sqrt(1e6 * auctionPrice)
 
-        // Determine which token has a higher balance multiplier
-        // This will be used to calculate the amount of tokens required
-        uint256 multiplier;
+        // First, get the quantity of quote tokens required to meet the minimum liquidity value, adjusting for decimals
+        // We round up for the mulDiv and sqrt, to ensure the amounts are more than the minimum liquidity value
+        // We also multiply by 2 wei to ensure that the amount is above the minimum liquidity value
+        uint256 quoteTokenAmountMinimum = Math.sqrt(
+            FullMath.mulDivRoundingUp(1e6, auctionPrice_, 10 ** ERC20(baseToken_).decimals()),
+            Math.Rounding.Up
+        ) * 2;
+        console2.log("quoteTokenAmountMinimum", quoteTokenAmountMinimum);
+        uint256 baseTokenAmountMinimum = FullMath.mulDivRoundingUp(
+            quoteTokenAmountMinimum, 10 ** ERC20(baseToken_).decimals(), auctionPrice_
+        );
+        console2.log("baseTokenAmountMinimum", baseTokenAmountMinimum);
+
+        // TODO multiply by 2 (raw) to go over minimum liquidity
+
+        uint256 quoteTokenBalance;
         {
-            uint256 quoteTokenMultiplier =
-                _getBalanceMultiplier(auctionPrice, address(pair_), quoteToken_, quoteTokenReserve);
-            console2.log("quoteTokenMultiplier", quoteTokenMultiplier);
-            uint256 baseTokenMultiplier =
-                _getBalanceMultiplier(auctionPrice, address(pair_), baseToken_, baseTokenReserve);
-            console2.log("baseTokenMultiplier", baseTokenMultiplier);
+            quoteTokenBalance = ERC20(quoteToken_).balanceOf(location_);
+            console2.log("quoteTokenBalance", quoteTokenBalance);
 
-            multiplier = (
-                quoteTokenMultiplier > baseTokenMultiplier
-                    ? quoteTokenMultiplier
-                    : baseTokenMultiplier
-            ) + 1;
-            console2.log("multiplier", multiplier);
+            // Deduct reserves, which are not considered
+            (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(location_).getReserves();
+            if (quoteToken_ == IUniswapV2Pair(location_).token0()) {
+                console2.log("reserve0", reserve0);
+                quoteTokenBalance -= reserve0;
+            } else {
+                console2.log("reserve1", reserve1);
+                quoteTokenBalance -= reserve1;
+            }
+            console2.log("quoteTokenBalance less reserves", quoteTokenBalance);
+        }
+        // If the balance of the quote token is less than required, then we just need to transfer the difference and mint
+        // We have a hard assumption that the base token is not circulating (yet), so we don't need to check the balance
+        if (quoteTokenBalance < quoteTokenAmountMinimum) {
+            console2.log("quoteTokenBalance less than minimum");
+            return (quoteTokenAmountMinimum - quoteTokenBalance, baseTokenAmountMinimum);
         }
 
-        // Calculate the amount of tokens required
-        // This takes into account the existing balances and reserves
-        uint256 quoteTokensRequired =
-            _getTokensRequired(quoteToken_, address(pair_), auctionPrice * multiplier);
-        console2.log("quoteTokensRequired", quoteTokensRequired);
-        uint256 baseTokensRequired = _getTokensRequired(
-            baseToken_, address(pair_), (10 ** ERC20(baseToken_).decimals()) * multiplier
+        // Otherwise, we determine how many base tokens are needed to be proportional to the quote token balance
+        uint256 baseTokensRequired = FullMath.mulDivRoundingUp(
+            quoteTokenBalance, 10 ** ERC20(baseToken_).decimals(), auctionPrice_
         );
         console2.log("baseTokensRequired", baseTokensRequired);
 
-        // In isolation, the aim would be to reduce the amount of tokens required to meet the minimum liquidity
-        // However, the pair could have an existing non-reserve balance in excess of that required for minimum liquidity. The mint function would automatically deposit the excess balance into reserves, which would result in an incorrect price.
-        // To prevent this, we calculate the minimum liquidity required to set the price correctly
-        return (quoteTokensRequired, baseTokensRequired);
+        return (0, baseTokensRequired);
     }
 }

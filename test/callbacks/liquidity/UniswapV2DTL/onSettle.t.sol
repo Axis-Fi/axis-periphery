@@ -332,22 +332,9 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     //   [X] it adjusts the pool balances, and succeeds
     //  [ ] given quote token donated requires more than the base token balance
     //   [ ] it reverts
-    //  [ ] given base token donated is < 1 base token
-    //   [ ] given sync has been called
-    //    [ ] it adjusts the pool balances, and succeeds
-    //   [ ] given the quote and base tokens have different decimals
-    //    [ ] it adjusts the pool balances, and succeeds
-    //   [ ] it adjusts the pool balances, and succeeds
-    //  [ ] given base token donated is >1 and < 2 base token
-    //   [ ] given sync has been called
-    //    [ ] it adjusts the pool balances, and succeeds
-    //   [ ] it adjusts the pool balances, and succeeds
-    //  [ ] given base token donated is > 2 base token
-    //   [ ] given sync has been called
-    //    [ ] it adjusts the pool balances, and succeeds
-    //   [ ] it adjusts the pool balances, and succeeds
-    //  [ ] given base token donated requires more than the quote token balance
-    //   [ ] it reverts
+
+    // TODO fuzz the amount
+
     // [X] given the proceeds utilisation percent is set
     //  [X] it calculates the deposit amount correctly
     // [X] given curation is enabled
