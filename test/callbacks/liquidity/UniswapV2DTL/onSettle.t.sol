@@ -83,6 +83,34 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         );
     }
 
+    function _assertLpUnderlyingBalances() internal view {
+        // Get the pools deployed by the DTL callback
+        IUniswapV2Pair pool = _getUniswapV2Pool();
+        address poolAddress = address(pool);
+
+        // Check the underlying balances
+        assertEq(
+            _quoteToken.balanceOf(poolAddress), _quoteTokensToDeposit, "pair: quote token balance"
+        );
+        assertEq(
+            _baseToken.balanceOf(poolAddress), _baseTokensToDeposit, "pair: base token balance"
+        );
+
+        // Check that the reserves match
+        (uint256 reserve0, uint256 reserve1,) = pool.getReserves();
+        bool quoteTokenIsToken0 = pool.token0() == address(_quoteToken);
+        assertEq(
+            quoteTokenIsToken0 ? reserve0 : reserve1,
+            _quoteTokensToDeposit,
+            "pair: quote token reserve"
+        );
+        assertEq(
+            quoteTokenIsToken0 ? reserve1 : reserve0,
+            _baseTokensToDeposit,
+            "pair: base token reserve"
+        );
+    }
+
     function _assertVestingTokenBalance() internal {
         // Exit if not vesting
         if (_dtlCreateParams.vestingStart == 0) {
@@ -149,11 +177,19 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _;
     }
 
-    modifier givenDonateAndSync() {
-        // Transfer 1 wei of the quote token to the pool
-        _quoteToken.mint(address(this), 1);
-        _quoteToken.transfer(address(_getUniswapV2Pool()), 1);
+    modifier givenPoolHasQuoteTokenBalance(uint256 amount_) {
+        // Mint the quote token to the pool
+        _quoteToken.mint(address(_getUniswapV2Pool()), amount_);
+        _;
+    }
 
+    modifier givenPoolHasBaseTokenBalance(uint256 amount_) {
+        // Mint the base token to the pool
+        _baseToken.mint(address(_getUniswapV2Pool()), amount_);
+        _;
+    }
+
+    modifier givenPoolSync() {
         // Sync
         _getUniswapV2Pool().sync();
         _;
@@ -271,11 +307,11 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     //  [X] it succeeds
     // [ ] given the pool has tokens donated
     //  [ ] given quote token donated is < 1 quote token
-    //   [ ] given sync has been called
-    //    [ ] it adjusts the pool balances, and succeeds
+    //   [X] given sync has been called
+    //    [X] it adjusts the pool balances, and succeeds
     //   [ ] given the quote and base tokens have different decimals
     //    [ ] it adjusts the pool balances, and succeeds
-    //   [ ] it adjusts the pool balances, and succeeds
+    //   [X] it adjusts the pool balances, and succeeds
     //  [ ] given quote token donated is < 2 quote token
     //   [ ] given sync has been called
     //    [ ] it adjusts the pool balances, and succeeds
@@ -343,12 +379,12 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenPoolIsCreated_givenDonateAndSync()
+    function test_givenDonationLessThanOne()
         public
         givenCallbackIsCreated
         givenOnCreate
         givenPoolIsCreated
-        givenDonateAndSync
+        givenPoolHasQuoteTokenBalance(1)
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
@@ -357,6 +393,29 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _performOnSettle();
 
         _assertLpTokenBalance();
+        _assertLpUnderlyingBalances();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonationLessThanOne_givenSync()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        givenPoolHasQuoteTokenBalance(1)
+        givenPoolSync
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
