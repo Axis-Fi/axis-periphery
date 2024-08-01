@@ -149,6 +149,16 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _;
     }
 
+    modifier givenDonateAndSync() {
+        // Transfer 1 wei of the quote token to the pool
+        _quoteToken.mint(address(this), 1);
+        _quoteToken.transfer(address(_getUniswapV2Pool()), 1);
+
+        // Sync
+        _getUniswapV2Pool().sync();
+        _;
+    }
+
     modifier setCallbackParameters(uint96 proceeds_, uint96 refund_) {
         _proceeds = proceeds_;
         _refund = refund_;
@@ -258,6 +268,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     // [X] given the pool is created
     //  [X] it initializes the pool
     // [X] given the pool is created and initialized
+    //  [X] given the pool has reserve token donated and sync
+    //   [X] it succeeds
     //  [X] it succeeds
     // [X] given the proceeds utilisation percent is set
     //  [X] it calculates the deposit amount correctly
@@ -299,6 +311,29 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertBaseTokenBalance();
         _assertApprovals();
     }
+
+    function test_givenPoolIsCreated_givenDonateAndSync()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        givenDonateAndSync
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        _assertLpTokenBalance();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    // TODO when the donated amount is < 1 quote token, > 1 quote token, > 2 quote tokens. Repeat for base token.
+    // TODO donate without sync
 
     function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
         public
