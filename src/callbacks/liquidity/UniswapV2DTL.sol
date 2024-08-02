@@ -119,36 +119,32 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             pairAddress = uniV2Factory.createPair(baseToken_, quoteToken_);
         }
 
-        // Handle a potential DoS attack
+        // Handle a potential DoS attack caused by donate and sync
         uint256 quoteTokensToAdd = quoteTokenAmount_;
         uint256 baseTokensToAdd = baseTokenAmount_;
         {
-            uint256 auctionPrice = FullMath.mulDiv(quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_);
-
-            (uint256 quoteTokensUsed, uint256 baseTokensUsed) = _mitigateDonation(
-                pairAddress,
-                auctionPrice,
-                quoteToken_,
-                baseToken_
+            uint256 auctionPrice = FullMath.mulDiv(
+                quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_
             );
 
-            baseTokensToAdd -= baseTokensUsed;
+            uint256 baseTokensUsed =
+                _mitigateDonation(pairAddress, auctionPrice, quoteToken_, baseToken_);
 
-            // Re-calculate quoteTokensToAdd to be aligned with baseTokensToAdd
-            quoteTokensToAdd = FullMath.mulDiv(
-                baseTokensToAdd,
-                auctionPrice,
-                10 ** ERC20(baseToken_).decimals()
-            );
-            console2.log("quoteTokensToAdd", quoteTokensToAdd);
-            console2.log("baseTokensToAdd", baseTokensToAdd);
+            if (baseTokensUsed > 0) {
+                baseTokensToAdd -= baseTokensUsed;
+
+                // Re-calculate quoteTokensToAdd to be aligned with baseTokensToAdd
+                quoteTokensToAdd = FullMath.mulDiv(
+                    baseTokensToAdd, auctionPrice, 10 ** ERC20(baseToken_).decimals()
+                );
+                console2.log("quoteTokensToAdd", quoteTokensToAdd);
+                console2.log("baseTokensToAdd", baseTokensToAdd);
+            }
         }
 
         // Calculate the minimum amount out for each token
         uint256 quoteTokenAmountMin = _getAmountWithSlippage(quoteTokensToAdd, params.maxSlippage);
         uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokensToAdd, params.maxSlippage);
-        console2.log("quoteTokenAmountMin", quoteTokenAmountMin);
-        console2.log("baseTokenAmountMin", baseTokenAmountMin);
 
         // Approve the router to spend the tokens
         ERC20(quoteToken_).approve(address(uniV2Router), quoteTokensToAdd);
@@ -157,14 +153,18 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         {
             (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pairAddress).getReserves();
 
-            uint256 quoteTokenReserves = IUniswapV2Pair(pairAddress).token0() == quoteToken_ ? reserve0 : reserve1;
-            uint256 baseTokenReserves = IUniswapV2Pair(pairAddress).token0() == baseToken_ ? reserve0 : reserve1;
+            uint256 quoteTokenReserves =
+                IUniswapV2Pair(pairAddress).token0() == quoteToken_ ? reserve0 : reserve1;
+            uint256 baseTokenReserves =
+                IUniswapV2Pair(pairAddress).token0() == baseToken_ ? reserve0 : reserve1;
 
             console2.log("quoteTokenReserves", quoteTokenReserves);
             console2.log("baseTokenReserves", baseTokenReserves);
 
-            uint256 quoteTokenOptimal = uniV2Router.quote(baseTokensToAdd, baseTokenReserves, quoteTokenReserves);
-            uint256 baseTokenOptimal = uniV2Router.quote(quoteTokensToAdd, quoteTokenReserves, baseTokenReserves);
+            uint256 quoteTokenOptimal =
+                uniV2Router.quote(baseTokensToAdd, baseTokenReserves, quoteTokenReserves);
+            uint256 baseTokenOptimal =
+                uniV2Router.quote(quoteTokensToAdd, quoteTokenReserves, baseTokenReserves);
             console2.log("quoteTokenOptimal", quoteTokenOptimal);
             console2.log("baseTokenOptimal", baseTokenOptimal);
         }
@@ -205,6 +205,21 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         return abi.decode(lotConfig.implParams, (UniswapV2OnCreateParams));
     }
 
+    /// @notice Calculates what the desired post-swap state of a UniswapV2 pool should be, in order for the reserves to be in line with the auction price
+    /// @dev    This function has the following assumptions:
+    ///         - The pool has had quote tokens donated to it
+    ///
+    ///         The function performs the following steps:
+    ///         - Calculates the existing liquidity in the pool as establishes it as the hurdle
+    ///         - Calculates the desired base token reserves based on the auction price
+    ///         - Calculates the desired quote token reserves based on the desired base token reserves
+    ///
+    /// @param  pairAddress_                The address of the Uniswap V2 pair
+    /// @param  auctionPrice_               The price of the auction
+    /// @param  quoteToken_                 The quote token of the pair
+    /// @param  baseToken_                  The base token of the pair
+    /// @return desiredQuoteTokenReserves   The desired quote token reserves
+    /// @return desiredBaseTokenReserves    The desired base token reserves
     function _calculateDesiredPoolPostSwapReserves(
         address pairAddress_,
         uint256 auctionPrice_,
@@ -248,20 +263,25 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         console2.log("desiredQuoteTokenReserves", desiredQuoteTokenReserves);
         console2.log("desiredBaseTokenReserves", desiredBaseTokenReserves);
 
-        // We then adjust the base token reserves to account for the fee
-        // The fee is 0.3% of the base token reserves
-
         return (desiredQuoteTokenReserves, desiredBaseTokenReserves);
     }
 
+    /// @notice This function mitigates the risk of a third-party bricking the auction settlement by donating quote tokens to the pool
+    /// @dev    It performs the following:
+    ///         - Checks if the pool has had quote tokens donated, or exits
+    ///         - Swaps the quote tokens for base tokens to adjust the reserves to the correct price
+    ///
+    /// @param  pairAddress_    The address of the Uniswap V2 pair
+    /// @param  auctionPrice_   The price of the auction
+    /// @param  quoteToken_     The quote token of the pair
+    /// @param  baseToken_      The base token of the pair
+    /// @return baseTokensUsed  The amount of base tokens used in the swap
     function _mitigateDonation(
         address pairAddress_,
         uint256 auctionPrice_,
         address quoteToken_,
         address baseToken_
-    ) internal returns (uint256 quoteTokensUsed, uint256 baseTokensUsed) {
-        // TODO quoteTokensUsed is probably redundant
-
+    ) internal returns (uint256 baseTokensUsed) {
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
         {
             // Check if the pool has had quote tokens donated
@@ -270,7 +290,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             uint112 quoteTokenReserve = pair.token0() == quoteToken_ ? reserve0 : reserve1;
 
             if (quoteTokenReserve == 0) {
-                return (0, 0);
+                return 0;
             }
         }
 
@@ -343,5 +363,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Do not adjust the quote tokens used in the subsequent liquidity deposit, as they could shift the price
         // These tokens will be transferred to the seller during cleanup
+
+        return baseTokensUsed;
     }
 }
