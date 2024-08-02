@@ -197,8 +197,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         // Calculate the liquidity hurdle
-        // TODO handle fees
-        uint256 liquidityHurdle = quoteTokenReserves * baseTokenReserves;
+        // Multiplies by 1003 / 1000 to account for the 0.3% fee
+        uint256 liquidityHurdle =
+            Math.mulDiv(quoteTokenReserves, baseTokenReserves * 1003, 1000, Math.Rounding.Up);
         console2.log("liquidityHurdle", liquidityHurdle);
 
         uint256 quoteTokenScale = 10 ** ERC20(quoteToken_).decimals();
@@ -210,10 +211,13 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         // auctionPrice * baseTokenAmount * baseTokenAmount >= liquidity hurdle
         // baseTokenAmount^2 >= liquidity hurdle / auctionPrice
         // baseTokenAmount >= sqrt(liquidity hurdle / auctionPrice)
-        desiredBaseTokenReserves = Math.sqrt(liquidityHurdle * quoteTokenScale / auctionPrice_);
+        desiredBaseTokenReserves = Math.sqrt(
+            Math.mulDiv(liquidityHurdle, quoteTokenScale, auctionPrice_, Math.Rounding.Up)
+        );
 
         // From that, we can calculate the required quote token balance
-        desiredQuoteTokenReserves = auctionPrice_ * desiredBaseTokenReserves / baseTokenScale;
+        desiredQuoteTokenReserves =
+            Math.mulDiv(auctionPrice_, desiredBaseTokenReserves, baseTokenScale, Math.Rounding.Up);
 
         // Example:
         // quoteTokenReserves = 3e18 (18 dp)
@@ -225,75 +229,10 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         console2.log("desiredQuoteTokenReserves", desiredQuoteTokenReserves);
         console2.log("desiredBaseTokenReserves", desiredBaseTokenReserves);
 
+        // We then adjust the base token reserves to account for the fee
+        // The fee is 0.3% of the base token reserves
+
         return (desiredQuoteTokenReserves, desiredBaseTokenReserves);
-    }
-
-    function _calculatePoolTransfers(
-        address pairAddress_,
-        uint256 auctionPrice_,
-        address quoteToken_,
-        address baseToken_
-    )
-        internal
-        view
-        returns (
-            uint256 quoteTokensToTransferIn,
-            uint256 baseTokensToTransferIn,
-            uint256 quoteTokenBalanceDesired
-        )
-    {
-        // The product of the post-swap balances (minus the fee) needs to be >= the product of the pre-swap reserves
-
-        uint256 liquidityHurdle;
-        {
-            (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pairAddress_).getReserves();
-            liquidityHurdle = reserve0 * reserve1 * 1000**2;
-        }
-
-        console2.log("auctionPrice", auctionPrice_);
-        // Convert the auction price to wei
-        // TODO: loss of precision if the price is a decimal number. Consider how to handle this.
-        uint256 auctionPriceWei =
-            Math.mulDiv(auctionPrice_, 1, 10 ** ERC20(quoteToken_).decimals(), Math.Rounding.Up);
-        console2.log("auctionPriceWei", auctionPriceWei);
-
-        // If the auction price is greater than 1, we need to ensure that the pool has at least that price in wei
-        // e.g. price of 3 means that 3 wei of quote tokens are required for 1 wei of base token
-        if (auctionPrice_ > 10 ** ERC20(quoteToken_).decimals()) {
-            console2.log("price > 1");
-            // Calculate the amount of quote tokens required
-            uint256 quoteTokenPoolBalance = ERC20(quoteToken_).balanceOf(pairAddress_);
-            console2.log("quoteTokenPoolBalance", quoteTokenPoolBalance);
-            if (quoteTokenPoolBalance < auctionPriceWei) {
-                quoteTokensToTransferIn = auctionPriceWei - quoteTokenPoolBalance;
-            }
-
-            baseTokensToTransferIn = 1;
-            quoteTokenBalanceDesired = auctionPriceWei;
-        }
-        // If the auction price is less than 1, then there will be enough quote tokens in the pool
-        // e.g. price of 0.5 means that 1 quote token is required for 2 base tokens
-        else if (auctionPrice_ < 10 ** ERC20(quoteToken_).decimals()) {
-            console2.log("price < 1");
-            // The number of base tokens required will be 1 / auction price in base token decimals
-            // e.g. 0.5 means that 2 base tokens are required for 1 quote token
-            // TODO handle decimals
-            baseTokensToTransferIn =
-                Math.mulDiv(1, 10 ** ERC20(baseToken_).decimals(), auctionPrice_, Math.Rounding.Up);
-
-            quoteTokenBalanceDesired = 1;
-        }
-        // If the auction price is equal to 1, then there will be enough quote tokens in the pool
-        else {
-            console2.log("price = 1");
-            // Base tokens will need to be transferred in
-            baseTokensToTransferIn = 1;
-            quoteTokenBalanceDesired = 1;
-        }
-
-        console2.log("quoteTokensToTransferIn", quoteTokensToTransferIn);
-        console2.log("baseTokensToTransferIn", baseTokensToTransferIn);
-        console2.log("quoteTokenBalanceDesired", quoteTokenBalanceDesired);
     }
 
     function _mitigateDonation(
@@ -326,10 +265,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         // We first calculate the desired end state of the pool after the swap
-        (
-            uint256 desiredQuoteTokenReserves,
-            uint256 desiredBaseTokenReserves
-        ) = _calculateDesiredPoolPostSwapReserves(pairAddress_, auctionPrice_, quoteToken_, baseToken_);
+        (uint256 desiredQuoteTokenReserves, uint256 desiredBaseTokenReserves) =
+        _calculateDesiredPoolPostSwapReserves(pairAddress_, auctionPrice_, quoteToken_, baseToken_);
 
         // Handle quote token transfers
         uint256 quoteTokensOut;
@@ -343,7 +280,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Handle base token transfers
         {
-            uint256 baseTokensToTransfer = desiredBaseTokenReserves - ERC20(baseToken_).balanceOf(pairAddress_);
+            uint256 baseTokensToTransfer =
+                desiredBaseTokenReserves - ERC20(baseToken_).balanceOf(pairAddress_);
             if (baseTokensToTransfer > 0) {
                 ERC20(baseToken_).transfer(pairAddress_, baseTokensToTransfer);
                 baseTokensUsed += baseTokensToTransfer;
@@ -365,8 +303,10 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         console2.log("balance0", balance0);
         console2.log("balance1", balance1);
 
-        uint256 amount0In = balance0 > reserve0 - amount0Out ? balance0 - (reserve0 - amount0Out) : 0;
-        uint256 amount1In = balance1 > reserve1 - amount1Out ? balance1 - (reserve1 - amount1Out) : 0;
+        uint256 amount0In =
+            balance0 > reserve0 - amount0Out ? balance0 - (reserve0 - amount0Out) : 0;
+        uint256 amount1In =
+            balance1 > reserve1 - amount1Out ? balance1 - (reserve1 - amount1Out) : 0;
         console2.log("amount0In", amount0In);
         console2.log("amount1In", amount1In);
 
@@ -376,14 +316,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         console2.log("balance1Adjusted", balance1Adjusted);
 
         console2.log("new liquidity", balance0Adjusted * balance1Adjusted);
-        console2.log("current liquidity", reserve0 * reserve1 * 1000**2);
+        console2.log("current liquidity", reserve0 * reserve1 * 1000 ** 2);
 
-        pair.swap(
-            amount0Out,
-            amount1Out,
-            address(this),
-            ""
-        );
+        pair.swap(amount0Out, amount1Out, address(this), "");
 
         // Do not adjust the quote tokens used in the subsequent liquidity deposit, as they could shift the price
         // These tokens will be transferred to the seller during cleanup
