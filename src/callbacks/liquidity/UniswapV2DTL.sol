@@ -326,12 +326,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
                 // Update the balance
                 quoteTokenBalance = desiredQuoteTokenReserves;
-
-                // Sync
-                // pair.sync();
             }
 
-            // TODO consider if this can underflow
             quoteTokensOut = quoteTokenBalance - desiredQuoteTokenReserves;
             console2.log("quoteTokensOut", quoteTokensOut);
         }
@@ -379,7 +375,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         if (amount0Out > 0 || amount1Out > 0) {
             pair.swap(amount0Out, amount1Out, address(this), "");
         } else {
-            // TODO may want to check if this is needed
+            // If no swap is needed, sync the pair to update the reserves
             pair.sync();
         }
 
