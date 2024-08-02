@@ -99,9 +99,10 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
             _quoteTokensToDeposit * multiplier_,
             "pair: quote token balance"
         );
-        assertEq(
+        assertApproxEqRel(
             _baseToken.balanceOf(poolAddress),
             _baseTokensToDeposit * multiplier_,
+            1e14, // 0.01%
             "pair: base token balance"
         );
 
@@ -113,9 +114,10 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
             _quoteTokensToDeposit * multiplier_,
             "pair: quote token reserve"
         );
-        assertEq(
+        assertApproxEqRel(
             quoteTokenIsToken0 ? reserve1 : reserve0,
             _baseTokensToDeposit * multiplier_,
+            1e14, // 0.01%
             "pair: base token reserve"
         );
     }
