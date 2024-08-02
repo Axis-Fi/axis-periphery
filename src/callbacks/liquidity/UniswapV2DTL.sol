@@ -127,7 +127,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
                 quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_
             );
 
-            uint256 baseTokensUsed =
+            (, uint256 baseTokensUsed) =
                 _mitigateDonation(pairAddress, auctionPrice, quoteToken_, baseToken_);
 
             if (baseTokensUsed > 0) {
@@ -253,7 +253,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         // baseTokenAmount^2 >= liquidity hurdle / auctionPrice
         // baseTokenAmount >= sqrt(liquidity hurdle / auctionPrice)
         desiredBaseTokenReserves = Math.sqrt(
-            Math.mulDiv(liquidityHurdle, quoteTokenScale, auctionPrice_, Math.Rounding.Up)
+            Math.mulDiv(liquidityHurdle, quoteTokenScale, auctionPrice_, Math.Rounding.Up),
+            Math.Rounding.Up
         );
 
         // From that, we can calculate the required quote token balance
@@ -275,13 +276,14 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     /// @param  auctionPrice_   The price of the auction
     /// @param  quoteToken_     The quote token of the pair
     /// @param  baseToken_      The base token of the pair
+    /// @return quoteTokensUsed The amount of quote tokens used in the swap
     /// @return baseTokensUsed  The amount of base tokens used in the swap
     function _mitigateDonation(
         address pairAddress_,
         uint256 auctionPrice_,
         address quoteToken_,
         address baseToken_
-    ) internal returns (uint256 baseTokensUsed) {
+    ) internal returns (uint256 quoteTokensUsed, uint256 baseTokensUsed) {
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
         {
             // Check if the pool has had quote tokens donated
@@ -290,7 +292,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             uint112 quoteTokenReserve = pair.token0() == quoteToken_ ? reserve0 : reserve1;
 
             if (quoteTokenReserve == 0) {
-                return 0;
+                return (0, 0);
             }
         }
 
@@ -313,6 +315,22 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokensOut;
         {
             uint256 quoteTokenBalance = ERC20(quoteToken_).balanceOf(pairAddress_);
+            console2.log("quoteTokenBalance", quoteTokenBalance);
+
+            // If the balance is less than required, transfer in
+            if (quoteTokenBalance < desiredQuoteTokenReserves) {
+                uint256 quoteTokensToTransfer = desiredQuoteTokenReserves - quoteTokenBalance;
+                ERC20(quoteToken_).transfer(pairAddress_, quoteTokensToTransfer);
+                // TODO consider if this could be abused
+
+                quoteTokensUsed += quoteTokensToTransfer;
+
+                // Update the balance
+                quoteTokenBalance = desiredQuoteTokenReserves;
+
+                // Sync
+                // pair.sync();
+            }
 
             // TODO consider if this can underflow
             quoteTokensOut = quoteTokenBalance - desiredQuoteTokenReserves;
@@ -359,11 +377,17 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         console2.log("new liquidity", balance0Adjusted * balance1Adjusted);
         console2.log("current liquidity", reserve0 * reserve1 * 1000 ** 2);
 
-        pair.swap(amount0Out, amount1Out, address(this), "");
+        if (amount0Out > 0 || amount1Out > 0) {
+            pair.swap(amount0Out, amount1Out, address(this), "");
+        }
+        else {
+            // TODO may want to check if this is needed
+            pair.sync();
+        }
 
         // Do not adjust the quote tokens used in the subsequent liquidity deposit, as they could shift the price
         // These tokens will be transferred to the seller during cleanup
 
-        return baseTokensUsed;
+        return (quoteTokensUsed, baseTokensUsed);
     }
 }
