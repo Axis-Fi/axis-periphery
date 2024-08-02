@@ -123,88 +123,17 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokensToAdd = quoteTokenAmount_;
         uint256 baseTokensToAdd = baseTokenAmount_;
         {
-            // Check if the pool has had quote tokens donated
-            // Base tokens are not liquid, so we don't need to check for them
-            IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
-            (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
-            uint112 quoteTokenReserve = pair.token0() == quoteToken_ ? reserve0 : reserve1;
-            console2.log("quoteTokenReserve", quoteTokenReserve);
-            if (quoteTokenReserve > 0) {
-                // Calculate the auction price (quote tokens per base token)
-                uint256 auctionPrice = FullMath.mulDiv(
+            (uint256 quoteTokensUsed, uint256 baseTokensUsed) = _mitigateDonation(
+                pairAddress,
+                FullMath.mulDiv(
                     quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_
-                );
-                console2.log("auctionPrice", auctionPrice);
-                // Convert the auction price to wei
-                // TODO: loss of precision if the price is a decimal number. Consider how to handle this.
-                uint256 auctionPriceWei = Math.mulDiv(
-                    auctionPrice, 1, 10 ** ERC20(quoteToken_).decimals(), Math.Rounding.Up
-                );
-                console2.log("auctionPriceWei", auctionPriceWei);
+                ),
+                quoteToken_,
+                baseToken_
+            );
 
-                // Determine the amount of tokens to transfer to the pool
-                uint256 quoteTokensToTransferIn;
-                uint256 baseTokensToTransferIn;
-                uint256 quoteTokenBalanceDesired;
-
-                // If the auction price is greater than 1, we need to ensure that the pool has at least that price in wei
-                // e.g. price of 3 means that 3 wei of quote tokens are required for 1 wei of base token
-                if (auctionPrice > 10 ** ERC20(quoteToken_).decimals()) {
-                    console2.log("price > 1");
-                    // Calculate the amount of quote tokens required
-                    uint256 quoteTokenPoolBalance = ERC20(quoteToken_).balanceOf(pairAddress);
-                    if (quoteTokenPoolBalance < auctionPriceWei) {
-                        quoteTokensToTransferIn = auctionPriceWei - quoteTokenPoolBalance;
-                    }
-
-                    baseTokensToTransferIn = 1;
-                    quoteTokenBalanceDesired = auctionPriceWei;
-                }
-                // If the auction price is less than 1, then there will be enough quote tokens in the pool
-                // e.g. price of 0.5 means that 1 quote token is required for 2 base tokens
-                else if (auctionPrice < 10 ** ERC20(quoteToken_).decimals()) {
-                    console2.log("price < 1");
-                    // The number of base tokens required will be 1 / auction price in base token decimals
-                    // e.g. 0.5 means that 2 base tokens are required for 1 quote token
-                    // TODO handle decimals
-                    baseTokensToTransferIn = Math.mulDiv(
-                        1, 10 ** ERC20(baseToken_).decimals(), auctionPrice, Math.Rounding.Up
-                    );
-
-                    quoteTokenBalanceDesired = 1;
-                }
-                // If the auction price is equal to 1, then there will be enough quote tokens in the pool
-                else {
-                    console2.log("price = 1");
-                    // Base tokens will need to be transferred in
-                    baseTokensToTransferIn = 1;
-                    quoteTokenBalanceDesired = 1;
-                }
-
-                console2.log("quoteTokensToTransferIn", quoteTokensToTransferIn);
-                console2.log("baseTokensToTransferIn", baseTokensToTransferIn);
-                console2.log("quoteTokenBalanceDesired", quoteTokenBalanceDesired);
-
-                // Transfer in the required amounts
-                if (quoteTokensToTransferIn > 0) {
-                    ERC20(quoteToken_).transfer(pairAddress, quoteTokensToTransferIn);
-                    quoteTokensToAdd -= quoteTokensToTransferIn;
-                }
-                if (baseTokensToTransferIn > 0) {
-                    ERC20(baseToken_).transfer(pairAddress, baseTokensToTransferIn);
-                    baseTokensToAdd -= baseTokensToTransferIn;
-                }
-
-                // Perform the swap
-                uint256 quoteTokenOut =
-                    ERC20(quoteToken_).balanceOf(pairAddress) - quoteTokenBalanceDesired;
-                pair.swap(
-                    quoteToken_ == pair.token0() ? 0 : quoteTokenOut,
-                    quoteToken_ == pair.token1() ? 0 : quoteTokenOut,
-                    address(this),
-                    ""
-                );
-            }
+            quoteTokensToAdd -= quoteTokensUsed;
+            baseTokensToAdd -= baseTokensUsed;
         }
 
         // Calculate the minimum amount out for each token
@@ -249,5 +178,142 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         return abi.decode(lotConfig.implParams, (UniswapV2OnCreateParams));
+    }
+
+    function _calculatePoolTransfers(
+        address pairAddress_,
+        uint256 auctionPrice_,
+        address quoteToken_,
+        address baseToken_
+    )
+        internal
+        view
+        returns (
+            uint256 quoteTokensToTransferIn,
+            uint256 baseTokensToTransferIn,
+            uint256 quoteTokenBalanceDesired
+        )
+    {
+        console2.log("auctionPrice", auctionPrice_);
+        // Convert the auction price to wei
+        // TODO: loss of precision if the price is a decimal number. Consider how to handle this.
+        uint256 auctionPriceWei =
+            Math.mulDiv(auctionPrice_, 1, 10 ** ERC20(quoteToken_).decimals(), Math.Rounding.Up);
+        console2.log("auctionPriceWei", auctionPriceWei);
+
+        // If the auction price is greater than 1, we need to ensure that the pool has at least that price in wei
+        // e.g. price of 3 means that 3 wei of quote tokens are required for 1 wei of base token
+        if (auctionPrice_ > 10 ** ERC20(quoteToken_).decimals()) {
+            console2.log("price > 1");
+            // Calculate the amount of quote tokens required
+            uint256 quoteTokenPoolBalance = ERC20(quoteToken_).balanceOf(pairAddress_);
+            console2.log("quoteTokenPoolBalance", quoteTokenPoolBalance);
+            if (quoteTokenPoolBalance < auctionPriceWei) {
+                quoteTokensToTransferIn = auctionPriceWei - quoteTokenPoolBalance;
+            }
+
+            baseTokensToTransferIn = 1;
+            quoteTokenBalanceDesired = auctionPriceWei;
+        }
+        // If the auction price is less than 1, then there will be enough quote tokens in the pool
+        // e.g. price of 0.5 means that 1 quote token is required for 2 base tokens
+        else if (auctionPrice_ < 10 ** ERC20(quoteToken_).decimals()) {
+            console2.log("price < 1");
+            // The number of base tokens required will be 1 / auction price in base token decimals
+            // e.g. 0.5 means that 2 base tokens are required for 1 quote token
+            // TODO handle decimals
+            baseTokensToTransferIn =
+                Math.mulDiv(1, 10 ** ERC20(baseToken_).decimals(), auctionPrice_, Math.Rounding.Up);
+
+            quoteTokenBalanceDesired = 1;
+        }
+        // If the auction price is equal to 1, then there will be enough quote tokens in the pool
+        else {
+            console2.log("price = 1");
+            // Base tokens will need to be transferred in
+            baseTokensToTransferIn = 1;
+            quoteTokenBalanceDesired = 1;
+        }
+
+        console2.log("quoteTokensToTransferIn", quoteTokensToTransferIn);
+        console2.log("baseTokensToTransferIn", baseTokensToTransferIn);
+        console2.log("quoteTokenBalanceDesired", quoteTokenBalanceDesired);
+    }
+
+    function _mitigateDonation(
+        address pairAddress_,
+        uint256 auctionPrice_,
+        address quoteToken_,
+        address baseToken_
+    ) internal returns (uint256 quoteTokensUsed, uint256 baseTokensUsed) {
+        IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
+        {
+            // Check if the pool has had quote tokens donated
+            // Base tokens are not liquid, so we don't need to check for them
+            (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+            uint112 quoteTokenReserve = pair.token0() == quoteToken_ ? reserve0 : reserve1;
+
+            if (quoteTokenReserve == 0) {
+                return (0, 0);
+            }
+        }
+
+        // Calculate transfer amounts
+        (
+            uint256 quoteTokensToTransferIn,
+            uint256 baseTokensToTransferIn,
+            uint256 quoteTokenBalanceDesired
+        ) = _calculatePoolTransfers(pairAddress_, auctionPrice_, quoteToken_, baseToken_);
+
+        // To perform the swap, both reserves need to be non-zero, so we need to transfer in some tokens and update the reserves
+        if (baseTokensToTransferIn > 0) {
+            ERC20(baseToken_).transfer(pairAddress_, baseTokensToTransferIn);
+            baseTokensUsed += baseTokensToTransferIn;
+            pair.sync();
+        }
+
+        // Transfer in the required quote token for the swap
+        if (quoteTokensToTransferIn > 0) {
+            ERC20(quoteToken_).transfer(pairAddress_, quoteTokensToTransferIn);
+            quoteTokensUsed += quoteTokensToTransferIn;
+        }
+
+        // Perform the swap
+        uint256 quoteTokenOut =
+            ERC20(quoteToken_).balanceOf(pairAddress_) - quoteTokenBalanceDesired;
+        console2.log("quoteTokenOut", quoteTokenOut);
+
+        // // Transfer 1 wei of base token
+        // // This will allow the pool to perform the swap
+        // ERC20(baseToken_).transfer(pairAddress_, 1);
+        // baseTokensUsed += 1;
+
+        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+        console2.log("reserve0", reserve0);
+        console2.log("reserve1", reserve1);
+
+        uint256 amount0Out = pair.token0() == quoteToken_ ? quoteTokenOut : 0;
+        uint256 amount1Out = pair.token0() == quoteToken_ ? 0 : quoteTokenOut;
+        console2.log("amount0Out", amount0Out);
+        console2.log("amount1Out", amount1Out);
+        uint256 balance0 = ERC20(pair.token0()).balanceOf(address(pair)) - amount0Out;
+        uint256 balance1 = ERC20(pair.token1()).balanceOf(address(pair)) - amount1Out;
+        console2.log("balance0", balance0);
+        console2.log("balance1", balance1);
+
+        uint256 amount0In = balance0 > reserve0 - amount0Out ? balance0 - (reserve0 - amount0Out) : 0;
+        uint256 amount1In = balance1 > reserve1 - amount1Out ? balance1 - (reserve1 - amount1Out) : 0;
+        console2.log("amount0In", amount0In);
+        console2.log("amount1In", amount1In);
+
+        pair.swap(
+            amount0Out,
+            amount1Out,
+            address(this),
+            ""
+        );
+
+        // Do not adjust the quote tokens used in the subsequent liquidity deposit, as they could shift the price
+        // These tokens will be transferred to the seller during cleanup
     }
 }
