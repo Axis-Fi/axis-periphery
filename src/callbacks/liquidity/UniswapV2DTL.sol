@@ -123,26 +123,51 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokensToAdd = quoteTokenAmount_;
         uint256 baseTokensToAdd = baseTokenAmount_;
         {
+            uint256 auctionPrice = FullMath.mulDiv(quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_);
+
             (uint256 quoteTokensUsed, uint256 baseTokensUsed) = _mitigateDonation(
                 pairAddress,
-                FullMath.mulDiv(
-                    quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_
-                ),
+                auctionPrice,
                 quoteToken_,
                 baseToken_
             );
 
-            quoteTokensToAdd -= quoteTokensUsed;
             baseTokensToAdd -= baseTokensUsed;
+
+            // Re-calculate quoteTokensToAdd to be aligned with baseTokensToAdd
+            quoteTokensToAdd = FullMath.mulDiv(
+                baseTokensToAdd,
+                auctionPrice,
+                10 ** ERC20(baseToken_).decimals()
+            );
+            console2.log("quoteTokensToAdd", quoteTokensToAdd);
+            console2.log("baseTokensToAdd", baseTokensToAdd);
         }
 
         // Calculate the minimum amount out for each token
         uint256 quoteTokenAmountMin = _getAmountWithSlippage(quoteTokensToAdd, params.maxSlippage);
         uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokensToAdd, params.maxSlippage);
+        console2.log("quoteTokenAmountMin", quoteTokenAmountMin);
+        console2.log("baseTokenAmountMin", baseTokenAmountMin);
 
         // Approve the router to spend the tokens
         ERC20(quoteToken_).approve(address(uniV2Router), quoteTokensToAdd);
         ERC20(baseToken_).approve(address(uniV2Router), baseTokensToAdd);
+
+        {
+            (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pairAddress).getReserves();
+
+            uint256 quoteTokenReserves = IUniswapV2Pair(pairAddress).token0() == quoteToken_ ? reserve0 : reserve1;
+            uint256 baseTokenReserves = IUniswapV2Pair(pairAddress).token0() == baseToken_ ? reserve0 : reserve1;
+
+            console2.log("quoteTokenReserves", quoteTokenReserves);
+            console2.log("baseTokenReserves", baseTokenReserves);
+
+            uint256 quoteTokenOptimal = uniV2Router.quote(baseTokensToAdd, baseTokenReserves, quoteTokenReserves);
+            uint256 baseTokenOptimal = uniV2Router.quote(quoteTokensToAdd, quoteTokenReserves, baseTokenReserves);
+            console2.log("quoteTokenOptimal", quoteTokenOptimal);
+            console2.log("baseTokenOptimal", baseTokenOptimal);
+        }
 
         // Deposit into the pool
         uniV2Router.addLiquidity(
@@ -198,8 +223,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Calculate the liquidity hurdle
         // Multiplies by 1003 / 1000 to account for the 0.3% fee
+        // TODO inflating by 0.4% seemed to work, but not 0.3%
         uint256 liquidityHurdle =
-            Math.mulDiv(quoteTokenReserves, baseTokenReserves * 1003, 1000, Math.Rounding.Up);
+            Math.mulDiv(quoteTokenReserves, baseTokenReserves * 1004, 1000, Math.Rounding.Up);
         console2.log("liquidityHurdle", liquidityHurdle);
 
         uint256 quoteTokenScale = 10 ** ERC20(quoteToken_).decimals();
@@ -219,13 +245,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         desiredQuoteTokenReserves =
             Math.mulDiv(auctionPrice_, desiredBaseTokenReserves, baseTokenScale, Math.Rounding.Up);
 
-        // Example:
-        // quoteTokenReserves = 3e18 (18 dp)
-        // baseTokenReserves = 1 (17 dp)
-        // liquidityHurdle = 3e18 * 1 = 3e18
-        // auctionPrice = 2e18 (18 dp)
-        // desiredBaseTokenReserves = sqrt(3e18 * 1e18 / 2e18) = sqrt(1.5e18) = 1.22e18
-
         console2.log("desiredQuoteTokenReserves", desiredQuoteTokenReserves);
         console2.log("desiredBaseTokenReserves", desiredBaseTokenReserves);
 
@@ -241,6 +260,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         address quoteToken_,
         address baseToken_
     ) internal returns (uint256 quoteTokensUsed, uint256 baseTokensUsed) {
+        // TODO quoteTokensUsed is probably redundant
+
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
         {
             // Check if the pool has had quote tokens donated

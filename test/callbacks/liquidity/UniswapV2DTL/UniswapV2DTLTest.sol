@@ -38,6 +38,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     address internal constant _NOT_SELLER = address(0x20);
 
     uint96 internal constant _LOT_CAPACITY = 10e18;
+    uint24 internal constant _MAX_SLIPPAGE = 1; // 0.01%
 
     uint48 internal constant _START = 1_000_000;
 
@@ -58,9 +59,11 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     uint96 internal _proceeds;
     uint96 internal _refund;
 
+    // TODO consider setting floor of max slippage to 0.01%
+
     // Inputs
     UniswapV2DirectToLiquidity.UniswapV2OnCreateParams internal _uniswapV2CreateParams =
-        UniswapV2DirectToLiquidity.UniswapV2OnCreateParams({maxSlippage: uint24(0)});
+        UniswapV2DirectToLiquidity.UniswapV2OnCreateParams({maxSlippage: uint24(_MAX_SLIPPAGE)});
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
         proceedsUtilisationPercent: 100e2,
