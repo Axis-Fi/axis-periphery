@@ -243,7 +243,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             Math.mulDiv(quoteTokenReserves, baseTokenReserves * 1004, 1000, Math.Rounding.Up);
         console2.log("liquidityHurdle", liquidityHurdle);
 
-        uint256 quoteTokenScale = 10 ** ERC20(quoteToken_).decimals();
         uint256 baseTokenScale = 10 ** ERC20(baseToken_).decimals();
 
         // Use the auction price to determine a quantity of quote tokens that would be required to reach the desired liquidity hurdle
@@ -253,7 +252,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         // baseTokenAmount^2 >= liquidity hurdle / auctionPrice
         // baseTokenAmount >= sqrt(liquidity hurdle / auctionPrice)
         desiredBaseTokenReserves = Math.sqrt(
-            Math.mulDiv(liquidityHurdle, quoteTokenScale, auctionPrice_, Math.Rounding.Up),
+            Math.mulDiv(liquidityHurdle, baseTokenScale, auctionPrice_, Math.Rounding.Up),
             Math.Rounding.Up
         );
 
@@ -379,8 +378,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         if (amount0Out > 0 || amount1Out > 0) {
             pair.swap(amount0Out, amount1Out, address(this), "");
-        }
-        else {
+        } else {
             // TODO may want to check if this is needed
             pair.sync();
         }

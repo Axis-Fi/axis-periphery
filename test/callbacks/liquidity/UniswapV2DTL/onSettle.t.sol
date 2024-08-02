@@ -464,7 +464,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
