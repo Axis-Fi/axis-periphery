@@ -160,13 +160,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
             console2.log("quoteTokenReserves", quoteTokenReserves);
             console2.log("baseTokenReserves", baseTokenReserves);
-
-            uint256 quoteTokenOptimal =
-                uniV2Router.quote(baseTokensToAdd, baseTokenReserves, quoteTokenReserves);
-            uint256 baseTokenOptimal =
-                uniV2Router.quote(quoteTokensToAdd, quoteTokenReserves, baseTokenReserves);
-            console2.log("quoteTokenOptimal", quoteTokenOptimal);
-            console2.log("baseTokenOptimal", baseTokenOptimal);
         }
 
         // Deposit into the pool
@@ -344,33 +337,10 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         // Perform the swap
-        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
-        console2.log("reserve0", reserve0);
-        console2.log("reserve1", reserve1);
-
         uint256 amount0Out = pair.token0() == quoteToken_ ? quoteTokensOut : 0;
         uint256 amount1Out = pair.token0() == quoteToken_ ? 0 : quoteTokensOut;
         console2.log("amount0Out", amount0Out);
         console2.log("amount1Out", amount1Out);
-        uint256 balance0 = ERC20(pair.token0()).balanceOf(address(pair)) - amount0Out;
-        uint256 balance1 = ERC20(pair.token1()).balanceOf(address(pair)) - amount1Out;
-        console2.log("balance0", balance0);
-        console2.log("balance1", balance1);
-
-        uint256 amount0In =
-            balance0 > reserve0 - amount0Out ? balance0 - (reserve0 - amount0Out) : 0;
-        uint256 amount1In =
-            balance1 > reserve1 - amount1Out ? balance1 - (reserve1 - amount1Out) : 0;
-        console2.log("amount0In", amount0In);
-        console2.log("amount1In", amount1In);
-
-        uint256 balance0Adjusted = balance0 * 1000 - amount0In * 3;
-        uint256 balance1Adjusted = balance1 * 1000 - amount1In * 3;
-        console2.log("balance0Adjusted", balance0Adjusted);
-        console2.log("balance1Adjusted", balance1Adjusted);
-
-        console2.log("new liquidity", balance0Adjusted * balance1Adjusted);
-        console2.log("current liquidity", reserve0 * reserve1 * 1000 ** 2);
 
         if (amount0Out > 0 || amount1Out > 0) {
             pair.swap(amount0Out, amount1Out, address(this), "");

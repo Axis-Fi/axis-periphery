@@ -159,10 +159,14 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
+
+        // TODO check the quote token balance for the seller
     }
 
     function _assertBaseTokenBalance() internal view {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "DTL: base token balance");
+
+        // TODO check the base token balance for the seller
     }
 
     function _assertApprovals() internal view {
@@ -244,58 +248,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _;
     }
 
-    modifier givenPoolHasDepositLowerPrice() {
-        uint256 quoteTokensToDeposit = _quoteTokensToDeposit * 95 / 100;
-        uint256 baseTokensToDeposit = _baseTokensToDeposit;
-
-        // Mint additional tokens
-        _quoteToken.mint(address(this), quoteTokensToDeposit);
-        _baseToken.mint(address(this), baseTokensToDeposit);
-
-        // Approve spending
-        _quoteToken.approve(address(_uniV2Router), quoteTokensToDeposit);
-        _baseToken.approve(address(_uniV2Router), baseTokensToDeposit);
-
-        // Deposit tokens into the pool
-        _uniV2Router.addLiquidity(
-            address(_quoteToken),
-            address(_baseToken),
-            quoteTokensToDeposit,
-            baseTokensToDeposit,
-            quoteTokensToDeposit,
-            baseTokensToDeposit,
-            address(this),
-            block.timestamp
-        );
-        _;
-    }
-
-    modifier givenPoolHasDepositHigherPrice() {
-        uint256 quoteTokensToDeposit = _quoteTokensToDeposit;
-        uint256 baseTokensToDeposit = _baseTokensToDeposit * 95 / 100;
-
-        // Mint additional tokens
-        _quoteToken.mint(address(this), quoteTokensToDeposit);
-        _baseToken.mint(address(this), baseTokensToDeposit);
-
-        // Approve spending
-        _quoteToken.approve(address(_uniV2Router), quoteTokensToDeposit);
-        _baseToken.approve(address(_uniV2Router), baseTokensToDeposit);
-
-        // Deposit tokens into the pool
-        _uniV2Router.addLiquidity(
-            address(_quoteToken),
-            address(_baseToken),
-            quoteTokensToDeposit,
-            baseTokensToDeposit,
-            quoteTokensToDeposit,
-            baseTokensToDeposit,
-            address(this),
-            block.timestamp
-        );
-        _;
-    }
-
     // ========== Tests ========== //
 
     // [X] given the onSettle callback has already been called
@@ -339,8 +291,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     // [X] when multiple lots are created
     //  [X] it performs actions on the correct pool
     // [X] it creates and initializes the pool, creates a pool token, deposits into the pool token, transfers the LP token to the seller and transfers any excess back to the seller
-
-    // TODO decimal price
 
     function test_givenPoolIsCreated()
         public
@@ -462,6 +412,104 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenOnCreate
         givenPoolIsCreated
         setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+
+        // Donate to the pool
+        _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
+
+        // Sync
+        _syncPool();
+
+        // Callback
+        _performOnSettle();
+
+        // Assertions
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(1);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonation_givenSync_givenAuctionPriceGreaterThanOne_givenDecimalPrice_fuzz(
+        uint256 donatedQuoteTokens_
+    )
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(15e18, _REFUND) // 1.5e18
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+
+        // Donate to the pool
+        _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
+
+        // Sync
+        _syncPool();
+
+        // Callback
+        _performOnSettle();
+
+        // Assertions
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(1);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonation_givenSync_givenAuctionPriceGreaterThanOne_givenDecimalPrice_givenDifferentQuoteTokenDecimals_fuzz(
+        uint256 donatedQuoteTokens_
+    )
+        public
+        givenCallbackIsCreated
+        givenQuoteTokenDecimals(17)
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(15e18, _REFUND) // 1.5e17
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+
+        // Donate to the pool
+        _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
+
+        // Sync
+        _syncPool();
+
+        // Callback
+        _performOnSettle();
+
+        // Assertions
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances(1);
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonation_givenSync_givenAuctionPriceGreaterThanOne_givenDecimalPrice_givenDifferentBaseTokenDecimals_fuzz(
+        uint256 donatedQuoteTokens_
+    )
+        public
+        givenCallbackIsCreated
+        givenBaseTokenDecimals(17)
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(15e18, _REFUND) // 1.5e18
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
@@ -747,82 +795,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenOnCreate
         whenRefundIsBounded(refund_)
         setCallbackParameters(_PROCEEDS, _refund)
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
-        givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
-        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-    {
-        _performOnSettle();
-
-        _assertLpTokenBalance();
-        _assertVestingTokenBalance();
-        _assertQuoteTokenBalance();
-        _assertBaseTokenBalance();
-        _assertApprovals();
-    }
-
-    function test_givenPoolHasDepositWithLowerPrice_reverts()
-        public
-        givenCallbackIsCreated
-        givenOnCreate
-        setCallbackParameters(_PROCEEDS, _REFUND)
-        givenPoolIsCreated
-        givenPoolHasDepositLowerPrice
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
-        givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
-        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-    {
-        // Expect revert
-        vm.expectRevert("UniswapV2Router: INSUFFICIENT_A_AMOUNT");
-
-        _performOnSettle();
-    }
-
-    function test_givenPoolHasDepositWithLowerPrice_whenMaxSlippageIsSet()
-        public
-        givenCallbackIsCreated
-        givenMaxSlippage(500) // 5%
-        givenOnCreate
-        setCallbackParameters(_PROCEEDS, _REFUND)
-        givenPoolIsCreated
-        givenPoolHasDepositLowerPrice
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
-        givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
-        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-    {
-        _performOnSettle();
-
-        _assertLpTokenBalance();
-        _assertVestingTokenBalance();
-        _assertQuoteTokenBalance();
-        _assertBaseTokenBalance();
-        _assertApprovals();
-    }
-
-    function test_givenPoolHasDepositWithHigherPrice_reverts()
-        public
-        givenCallbackIsCreated
-        givenOnCreate
-        setCallbackParameters(_PROCEEDS, _REFUND)
-        givenPoolIsCreated
-        givenPoolHasDepositHigherPrice
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
-        givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
-        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-    {
-        // Expect revert
-        vm.expectRevert("UniswapV2Router: INSUFFICIENT_B_AMOUNT");
-
-        _performOnSettle();
-    }
-
-    function test_givenPoolHasDepositWithHigherPrice_whenMaxSlippageIsSet()
-        public
-        givenCallbackIsCreated
-        givenMaxSlippage(500) // 5%
-        givenOnCreate
-        setCallbackParameters(_PROCEEDS, _REFUND)
-        givenPoolIsCreated
-        givenPoolHasDepositHigherPrice
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
