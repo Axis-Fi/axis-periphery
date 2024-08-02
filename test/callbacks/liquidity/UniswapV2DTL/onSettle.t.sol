@@ -338,6 +338,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     //  [X] it performs actions on the correct pool
     // [X] it creates and initializes the pool, creates a pool token, deposits into the pool token, transfers the LP token to the seller and transfers any excess back to the seller
 
+    // TODO decimal price
+
     function test_givenPoolIsCreated()
         public
         givenCallbackIsCreated
