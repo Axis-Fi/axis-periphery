@@ -174,6 +174,11 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
+    modifier givenQuoteTokenDecimals(uint8 decimals_) {
+        _quoteToken = new MockERC20("Quote Token", "QT", decimals_);
+        _;
+    }
+
     modifier givenBaseTokenDecimals(uint8 decimals_) {
         _baseToken = new MockERC20("Base Token", "BT", decimals_);
 
