@@ -88,20 +88,18 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         );
     }
 
-    function _assertLpUnderlyingBalances(uint8 multiplier_) internal view {
+    function _assertLpUnderlyingBalances() internal view {
         // Get the pools deployed by the DTL callback
         IUniswapV2Pair pool = _getUniswapV2Pool();
         address poolAddress = address(pool);
 
         // Check the underlying balances
-        assertEq(
-            _quoteToken.balanceOf(poolAddress),
-            _quoteTokensToDeposit * multiplier_,
-            "pair: quote token balance"
+        assertGe(
+            _quoteToken.balanceOf(poolAddress), _quoteTokensToDeposit, "pair: quote token balance"
         );
         assertApproxEqRel(
             _baseToken.balanceOf(poolAddress),
-            _baseTokensToDeposit * multiplier_,
+            _baseTokensToDeposit,
             1e14, // 0.01%
             "pair: base token balance"
         );
@@ -109,16 +107,28 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         // Check that the reserves match
         (uint256 reserve0, uint256 reserve1,) = pool.getReserves();
         bool quoteTokenIsToken0 = pool.token0() == address(_quoteToken);
-        assertEq(
+        assertGe(
             quoteTokenIsToken0 ? reserve0 : reserve1,
-            _quoteTokensToDeposit * multiplier_,
+            _quoteTokensToDeposit,
             "pair: quote token reserve"
         );
         assertApproxEqRel(
             quoteTokenIsToken0 ? reserve1 : reserve0,
-            _baseTokensToDeposit * multiplier_,
+            _baseTokensToDeposit,
             1e14, // 0.01%
             "pair: base token reserve"
+        );
+
+        // Assert the price of the pool
+        assertApproxEqRel(
+            FixedPointMathLib.mulDivDown(
+                _quoteToken.balanceOf(poolAddress),
+                10 ** _baseToken.decimals(),
+                _baseToken.balanceOf(poolAddress)
+            ),
+            _auctionPrice,
+            1e14, // 0.01%
+            "pair: price"
         );
     }
 
@@ -331,7 +341,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -363,7 +373,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -396,7 +406,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -429,7 +439,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -461,7 +471,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -494,7 +504,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -527,7 +537,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -557,7 +567,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -590,7 +600,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -623,7 +633,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -655,7 +665,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -688,7 +698,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
@@ -721,7 +731,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Assertions
         _assertLpTokenBalance();
-        _assertLpUnderlyingBalances(1);
+        _assertLpUnderlyingBalances();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
