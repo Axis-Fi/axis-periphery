@@ -4,7 +4,6 @@ pragma solidity ^0.8.19;
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {FullMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FullMath.sol";
-import {Math} from "@openzeppelin-contracts-4.9.2/utils/math/Math.sol";
 
 // Uniswap
 import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
@@ -198,67 +197,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         return abi.decode(lotConfig.implParams, (UniswapV2OnCreateParams));
     }
 
-    /// @notice Calculates what the desired post-swap state of a UniswapV2 pool should be, in order for the reserves to be in line with the auction price
-    /// @dev    This function has the following assumptions:
-    ///         - The pool has had quote tokens donated to it
-    ///
-    ///         The function performs the following steps:
-    ///         - Calculates the existing liquidity in the pool as establishes it as the hurdle
-    ///         - Calculates the desired base token reserves based on the auction price
-    ///         - Calculates the desired quote token reserves based on the desired base token reserves
-    ///
-    /// @param  pairAddress_                The address of the Uniswap V2 pair
-    /// @param  auctionPrice_               The price of the auction
-    /// @param  quoteToken_                 The quote token of the pair
-    /// @param  baseToken_                  The base token of the pair
-    /// @return desiredQuoteTokenReserves   The desired quote token reserves
-    /// @return desiredBaseTokenReserves    The desired base token reserves
-    function _calculateDesiredPoolPostSwapReserves(
-        address pairAddress_,
-        uint256 auctionPrice_,
-        address quoteToken_,
-        address baseToken_
-    ) internal view returns (uint256 desiredQuoteTokenReserves, uint256 desiredBaseTokenReserves) {
-        uint256 quoteTokenReserves;
-        uint256 baseTokenReserves;
-        {
-            IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
-            (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
-
-            quoteTokenReserves = pair.token0() == quoteToken_ ? reserve0 : reserve1;
-            baseTokenReserves = pair.token0() == baseToken_ ? reserve0 : reserve1;
-        }
-
-        // Calculate the liquidity hurdle
-        // Multiplies by 1003 / 1000 to account for the 0.3% fee
-        // TODO inflating by 0.4% seemed to work, but not 0.3%
-        uint256 liquidityHurdle =
-            Math.mulDiv(quoteTokenReserves, baseTokenReserves * 1004, 1000, Math.Rounding.Up);
-        console2.log("liquidityHurdle", liquidityHurdle);
-
-        uint256 baseTokenScale = 10 ** ERC20(baseToken_).decimals();
-
-        // Use the auction price to determine a quantity of quote tokens that would be required to reach the desired liquidity hurdle
-        // Since quoteTokenAmount / baseTokenAmount = auctionPrice
-        // quoteTokenAmount = auctionPrice * baseTokenAmount
-        // auctionPrice * baseTokenAmount * baseTokenAmount >= liquidity hurdle
-        // baseTokenAmount^2 >= liquidity hurdle / auctionPrice
-        // baseTokenAmount >= sqrt(liquidity hurdle / auctionPrice)
-        desiredBaseTokenReserves = Math.sqrt(
-            Math.mulDiv(liquidityHurdle, baseTokenScale, auctionPrice_, Math.Rounding.Up),
-            Math.Rounding.Up
-        );
-
-        // From that, we can calculate the required quote token balance
-        desiredQuoteTokenReserves =
-            Math.mulDiv(auctionPrice_, desiredBaseTokenReserves, baseTokenScale, Math.Rounding.Up);
-
-        console2.log("desiredQuoteTokenReserves", desiredQuoteTokenReserves);
-        console2.log("desiredBaseTokenReserves", desiredBaseTokenReserves);
-
-        return (desiredQuoteTokenReserves, desiredBaseTokenReserves);
-    }
-
     /// @notice This function mitigates the risk of a third-party bricking the auction settlement by donating quote tokens to the pool
     /// @dev    It performs the following:
     ///         - Checks if the pool has had quote tokens donated, or exits
@@ -277,13 +215,15 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         address baseToken_
     ) internal returns (uint256 quoteTokensUsed, uint256 baseTokensUsed) {
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
+        uint256 quoteTokenBalance = ERC20(quoteToken_).balanceOf(pairAddress_);
+        console2.log("quoteTokenBalance", quoteTokenBalance);
         {
-            // Check if the pool has had quote tokens donated
+            // Check if the pool has had quote tokens donated (whether synced or not)
             // Base tokens are not liquid, so we don't need to check for them
             (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
             uint112 quoteTokenReserve = pair.token0() == quoteToken_ ? reserve0 : reserve1;
 
-            if (quoteTokenReserve == 0) {
+            if (quoteTokenReserve == 0 && quoteTokenBalance == 0) {
                 return (0, 0);
             }
         }
@@ -299,16 +239,15 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             baseTokensUsed += 1;
         }
 
-        // We first calculate the desired end state of the pool after the swap
-        (uint256 desiredQuoteTokenReserves, uint256 desiredBaseTokenReserves) =
-        _calculateDesiredPoolPostSwapReserves(pairAddress_, auctionPrice_, quoteToken_, baseToken_);
+        // We want the pool to end up at the auction price
+        // The simplest way to do this is to have the auctionPrice_ of quote tokens
+        // and 1 of base tokens in the pool (accounting for decimals)
+        uint256 desiredQuoteTokenReserves = auctionPrice_;
+        uint256 desiredBaseTokenReserves = 10 ** ERC20(baseToken_).decimals();
 
         // Handle quote token transfers
         uint256 quoteTokensOut;
         {
-            uint256 quoteTokenBalance = ERC20(quoteToken_).balanceOf(pairAddress_);
-            console2.log("quoteTokenBalance", quoteTokenBalance);
-
             // If the balance is less than required, transfer in
             if (quoteTokenBalance < desiredQuoteTokenReserves) {
                 uint256 quoteTokensToTransfer = desiredQuoteTokenReserves - quoteTokenBalance;
