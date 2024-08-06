@@ -56,6 +56,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The discovery tick width is invalid
     error Callback_Params_InvalidDiscoveryTickWidth();
 
+    /// @notice The floor tick is invalid
+    error Callback_Params_InvalidFloorTick();
+
     /// @notice One of the ranges is out of bounds
     error Callback_Params_RangeOutOfBounds();
 
@@ -97,11 +100,13 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @param  poolPercent             The percentage of the proceeds to allocate to the pool, in basis points (1% = 100). The remainder will be sent to the `recipient`.
     /// @param  floorReservesPercent    The percentage of the pool proceeds to allocate to the floor range, in basis points (1% = 100). The remainder will be allocated to the anchor range.
     /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
+    /// @param  floorTickL              The lower tick of the floor range
     /// @param  allowlistParams         Additional parameters for an allowlist, passed to `__onCreate()` for further processing
     struct CreateData {
         address recipient;
         uint24 poolPercent;
         uint24 floorReservesPercent;
+        int24 floorTickL;
         int24 anchorTickWidth;
         bytes allowlistParams;
     }
@@ -295,7 +300,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Validate that the anchor tick width is at least 1 tick spacing and at most 10
         // Baseline supports only within this range
-        if (cbData.anchorTickWidth <= 0 || cbData.anchorTickWidth > 10) {
+        if (cbData.anchorTickWidth < 1 || cbData.anchorTickWidth > 10) {
             revert Callback_Params_InvalidAnchorTickWidth();
         }
 
@@ -366,9 +371,18 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             BPOOL.setTicks(Range.ANCHOR, anchorRangeLower, anchorRangeUpper);
 
             // Set the floor range
-            // Floor range lower is the anchor range lower minus one tick spacing
-            int24 floorRangeLower = anchorRangeLower - tickSpacing;
-            BPOOL.setTicks(Range.FLOOR, floorRangeLower, anchorRangeLower);
+            // Floor range lower is provided by the caller
+            // We normalize it to the nearest tick spacing boundary below the provided tick
+            // The floor range is one tick spacing wide
+            int24 floorRangeLower = (cbData.floorTickL / tickSpacing) * tickSpacing;
+            int24 floorRangeUpper = floorRangeLower + tickSpacing;
+
+            // Verify that the anchor and floor do not overlap
+            if (floorRangeUpper > anchorRangeLower) {
+                revert Callback_Params_InvalidFloorTick();
+            }
+
+            BPOOL.setTicks(Range.FLOOR, floorRangeLower, floorRangeUpper);
 
             // Set the discovery range
             int24 discoveryRangeUpper =
