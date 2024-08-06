@@ -318,6 +318,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // this can't fail because it's checked in the AH as well, but including for completeness
         if (!prefund_) revert Callback_Params_UnsupportedAuctionFormat();
 
+        // TODO Reference: M-02
+        // Validate that the price of the auction is >= the initial pool price.
+
         // Set the lot ID
         lotId = lotId_;
 
@@ -359,6 +362,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // Get the closest tick spacing boundary above the active tick
             // The active tick was set when the BPOOL was deployed
             // This is the top of the anchor range
+            //
+            // TODO we may need to pass in the active tick value
+            // to avoid a situation where someone front-runs the
+            // auction creation transaction and moves the active tick
+            // However, we do check that the floor tick provided below is lower than the anchor
+            // so it should be protected on the downside
             int24 anchorRangeUpper = BPOOL.getActiveTS();
 
             // Get the tick spacing from the pool
@@ -723,6 +732,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Only the anchor range is used, otherwise the liquidity would be too thick.
         // The anchor range is guranteed to have a tick spacing width
         // and to have reserves of at least 1% of the proceeds.
+        //
+        // TODO Reference: L-02 and L-07
+        // Consider making the amount of discovery liquidity an onCreate parameter
+        // This allows for more control over the liquidity distribution.
+        // Specifically, it can enable configurations with high amounts of reserves
+        // in the floor to still have adequate liquidity in the discovery range.
+        // We need to check that the discovery liquidity is > the anchor liquidity that ends
+        // up being deployed.
         BPOOL.addLiquidityTo(Range.DISCOVERY, BPOOL.getLiquidity(Range.ANCHOR) * 11 / 10);
 
         //// Step 4: Send remaining proceeds (and any excess reserves) to the recipient ////
