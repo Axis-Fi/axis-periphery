@@ -30,6 +30,8 @@ contract MockBPOOL is IBPOOLv1, ERC20 {
 
     int24 public activeTick;
 
+    bool public locked;
+
     constructor(
         string memory name_,
         string memory symbol_,
@@ -117,6 +119,10 @@ contract MockBPOOL is IBPOOLv1, ERC20 {
 
     function burnAllBAssetsInContract() external override {
         _burn(address(this), balanceOf[address(this)]);
+    }
+
+    function setTransferLock(bool _locked) external override {
+        locked = _locked;
     }
 
     function getBaselineValue() external view override returns (uint256) {}
