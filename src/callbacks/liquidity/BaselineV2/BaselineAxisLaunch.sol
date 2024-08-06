@@ -685,10 +685,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             console2.log("totalSpotSupply", totalSpotSupply);
 
             // verify the liquidity can support the intended supply
-            // and that there is no significant initial surplus
+            // we do not check for a surplus at this point to avoid a DoS attack vector
+            // during the onCreate callback, we check for a surplus and there shouldn't
+            // be one from this initialization at this point.
+            // any surplus reserves added to the pool by a 3rd party before
+            // the system is initialized will be snipable and effectively donated to the snipers
             uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
             console2.log("capacityRatio", capacityRatio);
-            if (capacityRatio < 100e16 || capacityRatio > 102e16) {
+            if (capacityRatio < 100e16) {
                 revert Callback_InvalidInitialization();
             }
         }
