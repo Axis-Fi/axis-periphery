@@ -13,6 +13,7 @@ import {
 } from "@axis-core-1.0.0/modules/Keycode.sol";
 import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
 import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
+import {Transfer} from "@axis-core-1.0.0/lib/Transfer.sol";
 
 // Baseline dependencies
 import {
@@ -22,13 +23,13 @@ import {
     toKeycode as toBaselineKeycode,
     Permissions as BaselinePermissions
 } from "./lib/Kernel.sol";
-import {Position, Range, IBPOOLv1} from "./lib/IBPOOL.sol";
+import {Position, Range, IBPOOLv1, IUniswapV3Pool} from "./lib/IBPOOL.sol";
 import {ICREDTv1} from "./lib/ICREDT.sol";
 
 // Other libraries
 import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
-import {Transfer} from "@axis-core-1.0.0/lib/Transfer.sol";
+import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
@@ -634,7 +635,59 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         Transfer.transfer(bAsset, address(BPOOL), refund_, false);
         BPOOL.burnAllBAssetsInContract();
 
-        //// Step 2: Deploy liquidity to the Baseline pool ////
+        //// Step 2: Ensure the pool is at the correct price ////
+        // Since there is no bAsset liquidity deployed yet,
+        // External LPs can move the current price of the pool.
+        // We move it back to the target active tick to ensure 
+        // the pool is at the correct price.
+        {
+            IUniswapV3Pool pool = BPOOL.pool();
+            
+            // TODO should we use rounded ticks instead of sqrtPrices?
+            // Will minor inaccuracies cause issues with the check?
+            // Current price of the pool
+            (uint160 currentSqrtPrice,,,,,,) = pool.slot0();
+            
+            // Get the target sqrt price from the anchor position
+            uint160 targetSqrtPrice = BPOOL.getPosition(Range.ANCHOR).sqrtPriceU;
+
+            // We assume there are no circulating bAssets that could be provided as liquidity yet.
+            // Therefore, there are three cases:
+            // 1. The current price is above the target price
+            if (currentSqrtPrice > targetSqrtPrice) {
+                // In this case, an external LP has provided reserve liquidity above our range.
+                // We can sell bAssets into this liquidity and the external LP will effectively be
+                // bAssets at a premium to the initial price of the pool.
+                // This does not affect the solvency of the system since the reserves received
+                // are greater than the tokens minted, but it may cause the system to be
+                // initialized with a surplus, which would allow for an immediate bump or snipe.
+                // We determine the amount of bAssets required to sell through the liquidity.
+                uint256 bAssetsIn = 0; // TODO
+            } 
+            // 2. The current price is below the target price
+            else if (currentSqrtPrice < targetSqrtPrice) {
+                // Swap 1 wei of token1 (reserve) for token0 (bAsset) with a limit at the targetSqrtPrice
+                // There are no bAssets in the pool, so we receive none
+                // TODO do you actually need to have the reserve token?
+                pool.swap(
+                    address(this), // recipient
+                    false, // zeroToOne, swapping token1 (reserve) for token0 (bAsset) so this is false
+                    int256(1), // amountSpecified, positive is exactIn, negative is exactOut
+                    targetSqrtPrice, // sqrtPriceLimitX96
+                    bytes("") // data
+                );
+            }
+            // 3. The current price is at the target price.
+            //    If so, we don't need to do anything.
+
+            // Check that the price is now at the target price
+            (currentSqrtPrice,,,,,,) = pool.slot0();
+            if (currentSqrtPrice != targetSqrtPrice) {
+                revert Callback_InvalidInitialization();
+            }
+        }
+
+        //// Step 3: Deploy liquidity to the Baseline pool ////
 
         // Calculate the percent of proceeds to allocate to the pool
         uint256 poolProceeds = proceeds_ * poolPercent / ONE_HUNDRED_PERCENT;
@@ -723,4 +776,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         return withdrawnAmount;
     }
+
+    // ========== UNIV3 FUNCTIONS ========== //
+
+    // This stub is required because we call `swap` on the UniV3 pool
+    // to ensure the pool is at the correct price before deploying liquidity
+    function uniswapV3SwapCallback(
+        int256,
+        int256,
+        bytes calldata
+    ) external {}
 }
