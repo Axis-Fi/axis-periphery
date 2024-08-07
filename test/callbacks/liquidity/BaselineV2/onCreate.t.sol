@@ -213,8 +213,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts due to the solvency check
     // [X] when the floorReservesPercent is 0-99%
     //  [X] it correctly records the allocation
-    // [X] when the tick spacing is narrow
-    //  [X] the ticks do not overlap
+    // [X] when the fee tier is not 10000 (1%)
+    //  [X] it reverts
     // [X] when the auction fixed price is very high
     //  [X] it handles the active tick correctly
     // [X] when the auction fixed price is very low
@@ -709,7 +709,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_tickSpacingNarrow()
+    function test_feeTier500_reverts()
         public
         givenBPoolFeeTier(500)
         givenBPoolIsCreated
@@ -717,13 +717,32 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenPoolPercent(100e2) // For the solvency check
     {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_UnsupportedPoolFeeTier.selector
+        );
+        vm.expectRevert(err);
+
         // Perform the call
         _onCreate();
+    }
 
-        // The pool should be initialised with the tick equivalent to the auction's fixed price
-        int24 fixedPriceTick = _getFixedPriceTick();
+    function test_feeTier3000_reverts()
+        public
+        givenBPoolFeeTier(3000)
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenPoolPercent(100e2) // For the solvency check
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_UnsupportedPoolFeeTier.selector
+        );
+        vm.expectRevert(err);
 
-        _assertTicks(fixedPriceTick);
+        // Perform the call
+        _onCreate();
     }
 
     function test_auctionHighPrice()

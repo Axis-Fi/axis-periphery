@@ -50,6 +50,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The auction format is not supported
     error Callback_Params_UnsupportedAuctionFormat();
 
+    /// @notice The pool fee tier is not supported
+    error Callback_Params_UnsupportedPoolFeeTier();
+
     /// @notice The anchor tick width is invalid
     error Callback_Params_InvalidAnchorTickWidth();
 
@@ -261,6 +264,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `baseToken_` is not lower than `quoteToken_`
     ///                 - `recipient` is the zero address
     ///                 - `lotId` is already set
+    ///                 - The pool fee tier is not supported
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
     ///                 - `CreateData.poolPercent` is less than 10% or greater than 100%
     ///                 - `CreateData.anchorTickWidth` is < 10 or > 50
@@ -297,6 +301,11 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         // Validate that the recipient is not the zero address
         if (cbData.recipient == address(0)) revert Callback_Params_InvalidRecipient();
+
+        // Validate that the pool fee tier is supported
+        // This callback only supports the 1% fee tier
+        // as other fee tiers are not supported by the Baseline pool
+        if (BPOOL.pool().fee() != 10_000) revert Callback_Params_UnsupportedPoolFeeTier();
 
         // Validate that the anchor tick width is at least 10 tick spacing and at most 50
         // Baseline supports only within this range
