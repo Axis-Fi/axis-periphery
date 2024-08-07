@@ -303,9 +303,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         if (cbData.recipient == address(0)) revert Callback_Params_InvalidRecipient();
 
         // Validate that the pool fee tier is supported
-        // This callback only supports the 1% fee tier
+        // This callback only supports the 1% fee tier (tick spacing = 200)
         // as other fee tiers are not supported by the Baseline pool
-        if (BPOOL.pool().fee() != 10_000) revert Callback_Params_UnsupportedPoolFeeTier();
+        if (BPOOL.TICK_SPACING() != 200) revert Callback_Params_UnsupportedPoolFeeTier();
 
         // Validate that the anchor tick width is at least 10 tick spacing and at most 50
         // Baseline supports only within this range
