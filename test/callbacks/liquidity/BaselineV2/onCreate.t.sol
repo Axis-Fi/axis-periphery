@@ -426,13 +426,13 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_poolPercent_underOnePercent_reverts(uint24 poolPercent_)
+    function test_poolPercent_belowBounds_reverts(uint24 poolPercent_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        uint24 poolPercent = uint24(bound(poolPercent_, 0, 1e2 - 1));
+        uint24 poolPercent = uint24(bound(poolPercent_, 0, 10e2 - 1));
         _setPoolPercent(poolPercent);
 
         // Expect revert
@@ -444,7 +444,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_poolPercent_aboveOneHundredPercent_reverts(uint24 poolPercent_)
+    function test_poolPercent_aboveBounds_reverts(uint24 poolPercent_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated

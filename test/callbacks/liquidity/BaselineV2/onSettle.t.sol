@@ -371,7 +371,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
     {
         // Adhere to the constraints of the poolPercent parameter
-        uint24 poolPercent = uint24(bound(poolPercent_, 1e2, 100e2));
+        uint24 poolPercent = uint24(bound(poolPercent_, 10e2, 100e2));
         _createData.poolPercent = poolPercent;
 
         // Perform the onCreate callback

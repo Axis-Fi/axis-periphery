@@ -262,7 +262,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `recipient` is the zero address
     ///                 - `lotId` is already set
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
-    ///                 - `CreateData.poolPercent` is less than 1% or greater than 100%
+    ///                 - `CreateData.poolPercent` is less than 10% or greater than 100%
     ///                 - `CreateData.anchorTickWidth` is <= 0 or > 10
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
@@ -309,8 +309,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             revert Callback_Params_InvalidFloorReservesPercent();
         }
 
-        // Validate that the pool percent is at least 1% and at most 100%
-        if (cbData.poolPercent < 1e2 || cbData.poolPercent > 100e2) {
+        // Validate that the pool percent is at least 10% and at most 100%
+        if (cbData.poolPercent < 10e2 || cbData.poolPercent > 100e2) {
             revert Callback_Params_InvalidPoolPercent();
         }
 
