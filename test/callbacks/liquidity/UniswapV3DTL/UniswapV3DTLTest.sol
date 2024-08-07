@@ -259,8 +259,12 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnSettle(_lotId);
     }
 
-    modifier givenPoolPercent(uint24 percent_) {
+    function _setPoolPercent(uint24 percent_) internal {
         _dtlCreateParams.poolPercent = percent_;
+    }
+
+    modifier givenPoolPercent(uint24 percent_) {
+        _setPoolPercent(percent_);
         _;
     }
 

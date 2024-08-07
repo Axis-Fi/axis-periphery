@@ -169,7 +169,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     modifier givenUnboundedPoolPercent(uint24 percent_) {
         // Bound the percent
-        uint24 percent = uint24(bound(percent_, 1, 100e2));
+        uint24 percent = uint24(bound(percent_, 10e2, 100e2));
 
         // Set the value on the DTL
         _dtlCreateParams.poolPercent = percent;

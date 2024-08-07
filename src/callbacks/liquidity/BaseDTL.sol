@@ -143,8 +143,8 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
         // Validate the parameters
         // Proceeds utilisation
-        if (params.poolPercent == 0 || params.poolPercent > ONE_HUNDRED_PERCENT) {
-            revert Callback_Params_PercentOutOfBounds(params.poolPercent, 1, ONE_HUNDRED_PERCENT);
+        if (params.poolPercent < 10e2 || params.poolPercent > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.poolPercent, 10e2, ONE_HUNDRED_PERCENT);
         }
 
         // Vesting

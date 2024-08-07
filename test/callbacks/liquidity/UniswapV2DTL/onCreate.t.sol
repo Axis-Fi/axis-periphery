@@ -110,28 +110,58 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_whenPoolPercentIs0_reverts() public givenCallbackIsCreated givenPoolPercent(0) {
+    function test_poolPercent_whenBelowBounds_reverts(uint24 poolPercent_)
+        public
+        givenCallbackIsCreated
+    {
+        uint24 poolPercent = uint24(bound(poolPercent_, 0, 10e2 - 1));
+
+        // Set pool percent
+        _setPoolPercent(poolPercent);
+
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector, 0, 1, 100e2
+            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector,
+            poolPercent,
+            10e2,
+            100e2
         );
         vm.expectRevert(err);
 
         _performOnCreate();
     }
 
-    function test_whenPoolPercentIsGreaterThan100Percent_reverts()
+    function test_poolPercent_whenAboveBounds_reverts(uint24 poolPercent_)
         public
         givenCallbackIsCreated
-        givenPoolPercent(100e2 + 1)
     {
+        uint24 poolPercent = uint24(bound(poolPercent_, 100e2 + 1, type(uint24).max));
+
+        // Set pool percent
+        _setPoolPercent(poolPercent);
+
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector, 100e2 + 1, 1, 100e2
+            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector,
+            poolPercent,
+            10e2,
+            100e2
         );
         vm.expectRevert(err);
 
         _performOnCreate();
+    }
+
+    function test_poolPercent_fuzz(uint24 poolPercent_) public givenCallbackIsCreated {
+        uint24 poolPercent = uint24(bound(poolPercent_, 10e2, 100e2));
+
+        _setPoolPercent(poolPercent);
+
+        _performOnCreate();
+
+        // Assert values
+        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+        assertEq(configuration.poolPercent, poolPercent, "poolPercent");
     }
 
     function test_paramsIncorrectLength_reverts() public givenCallbackIsCreated {
