@@ -458,7 +458,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 {
                     // We do this to avoid a situation where buyers are disincentivized to bid on the auction
                     // Pool price is number of token1 (reserve) per token0 (bAsset), which is what we want, but it needs to be squared
-                    (, int24 activeTick, , , , , ) = BPOOL.pool().slot0();
+                    (, int24 activeTick,,,,,) = BPOOL.pool().slot0();
 
                     // Calculate the tick for the auction price
                     // `getSqrtPriceX96` handles token ordering

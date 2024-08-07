@@ -750,7 +750,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_auctionHighPrice()
         public
         givenFixedPrice(1e32) // Seems to cause a revert above this when calculating the tick
-        givenFloorAtBottomOfAnchor()
+        givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -780,7 +780,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_auctionLowPrice()
         public
         givenFixedPrice(1e6)
-        givenFloorAtBottomOfAnchor()
+        givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -812,7 +812,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
     function test_narrowAnchorTickWidth()
         public
-        givenFloorAtBottomOfAnchor()
+        givenFloorAtBottomOfAnchor
         givenAnchorTickWidth(1)
         givenPoolPercent(100e2) // For the solvency check
         givenBPoolIsCreated
@@ -904,7 +904,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBPoolFeeTier(10_000)
         givenFixedPrice(1e18)
-        givenFloorAtBottomOfAnchor()
+        givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
