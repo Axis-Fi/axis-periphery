@@ -113,7 +113,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     function test_whenProceedsUtilisationIs0_reverts()
         public
         givenCallbackIsCreated
-        givenProceedsUtilisationPercent(0)
+        givenPoolPercent(0)
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
@@ -127,7 +127,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     function test_whenProceedsUtilisationIsGreaterThan100Percent_reverts()
         public
         givenCallbackIsCreated
-        givenProceedsUtilisationPercent(100e2 + 1)
+        givenPoolPercent(100e2 + 1)
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
@@ -336,11 +336,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         assertEq(configuration.recipient, _SELLER, "recipient");
         assertEq(configuration.lotCapacity, _LOT_CAPACITY, "lotCapacity");
         assertEq(configuration.lotCuratorPayout, 0, "lotCuratorPayout");
-        assertEq(
-            configuration.proceedsUtilisationPercent,
-            _dtlCreateParams.proceedsUtilisationPercent,
-            "proceedsUtilisationPercent"
-        );
+        assertEq(configuration.poolPercent, _dtlCreateParams.poolPercent, "poolPercent");
         assertEq(configuration.vestingStart, 0, "vestingStart");
         assertEq(configuration.vestingExpiry, 0, "vestingExpiry");
         assertEq(address(configuration.linearVestingModule), address(0), "linearVestingModule");
@@ -372,11 +368,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         assertEq(configuration.recipient, _NOT_SELLER, "recipient");
         assertEq(configuration.lotCapacity, _LOT_CAPACITY, "lotCapacity");
         assertEq(configuration.lotCuratorPayout, 0, "lotCuratorPayout");
-        assertEq(
-            configuration.proceedsUtilisationPercent,
-            _dtlCreateParams.proceedsUtilisationPercent,
-            "proceedsUtilisationPercent"
-        );
+        assertEq(configuration.poolPercent, _dtlCreateParams.poolPercent, "poolPercent");
         assertEq(configuration.vestingStart, 0, "vestingStart");
         assertEq(configuration.vestingExpiry, 0, "vestingExpiry");
         assertEq(address(configuration.linearVestingModule), address(0), "linearVestingModule");

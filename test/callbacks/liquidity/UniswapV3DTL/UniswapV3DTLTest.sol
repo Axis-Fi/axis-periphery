@@ -68,7 +68,7 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
     });
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
-        proceedsUtilisationPercent: 100e2,
+        poolPercent: 100e2,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
@@ -252,20 +252,15 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     function _performOnSettle(uint96 lotId_) internal {
         vm.prank(address(_auctionHouse));
-        _dtl.onSettle(
-            lotId_,
-            _proceeds,
-            _refund,
-            abi.encode("")
-        );
+        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
     }
 
     function _performOnSettle() internal {
         _performOnSettle(_lotId);
     }
 
-    modifier givenProceedsUtilisationPercent(uint24 percent_) {
-        _dtlCreateParams.proceedsUtilisationPercent = percent_;
+    modifier givenPoolPercent(uint24 percent_) {
+        _dtlCreateParams.poolPercent = percent_;
         _;
     }
 
@@ -315,7 +310,7 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
             address recipient_,
             uint256 lotCapacity_,
             uint256 lotCuratorPayout_,
-            uint24 proceedsUtilisationPercent_,
+            uint24 poolPercent_,
             uint48 vestingStart_,
             uint48 vestingExpiry_,
             LinearVesting linearVestingModule_,
@@ -327,7 +322,7 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
             recipient: recipient_,
             lotCapacity: lotCapacity_,
             lotCuratorPayout: lotCuratorPayout_,
-            proceedsUtilisationPercent: proceedsUtilisationPercent_,
+            poolPercent: poolPercent_,
             vestingStart: vestingStart_,
             vestingExpiry: vestingExpiry_,
             linearVestingModule: linearVestingModule_,

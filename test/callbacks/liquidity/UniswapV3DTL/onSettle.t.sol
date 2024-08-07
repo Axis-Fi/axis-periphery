@@ -203,20 +203,19 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _capacityUtilised = _LOT_CAPACITY * capacityUtilisationPercent / 100e2;
 
         // The proceeds utilisation percent scales the quote tokens and base tokens linearly
-        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
-        _baseTokensToDeposit =
-            _capacityUtilised * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
+        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.poolPercent / 100e2;
+        _baseTokensToDeposit = _capacityUtilised * _dtlCreateParams.poolPercent / 100e2;
 
         _sqrtPriceX96 = _calculateSqrtPriceX96(_quoteTokensToDeposit, _baseTokensToDeposit);
         _;
     }
 
-    modifier givenUnboundedProceedsUtilisationPercent(uint24 percent_) {
+    modifier givenUnboundedPoolPercent(uint24 percent_) {
         // Bound the percent
         uint24 percent = uint24(bound(percent_, 1, 100e2));
 
         // Set the value on the DTL
-        _dtlCreateParams.proceedsUtilisationPercent = percent;
+        _dtlCreateParams.poolPercent = percent;
         _;
     }
 
@@ -352,10 +351,10 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _performOnSettle();
     }
 
-    function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
+    function test_givenPoolPercent_fuzz(uint24 percent_)
         public
         givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
@@ -392,13 +391,13 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenProceedsUtilisationPercent_givenCurationPayout_fuzz(
+    function test_givenPoolPercent_givenCurationPayout_fuzz(
         uint24 percent_,
         uint96 curationPayout_
     )
         public
         givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
         givenOnCreate
         givenUnboundedOnCurate(curationPayout_)
         setCallbackParameters(_PROCEEDS, _REFUND)
