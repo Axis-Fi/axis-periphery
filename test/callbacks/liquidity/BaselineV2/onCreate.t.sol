@@ -237,6 +237,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
 
+    // TODO new tests for different combinations of initial price, floor tick, and anchor width
+
     function test_callbackDataIncorrect_reverts()
         public
         givenBPoolIsCreated
@@ -726,6 +728,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_auctionHighPrice()
         public
         givenFixedPrice(1e32) // Seems to cause a revert above this when calculating the tick
+        givenFloorAtBottomOfAnchor()
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -755,6 +758,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_auctionLowPrice()
         public
         givenFixedPrice(1e6)
+        givenFloorAtBottomOfAnchor()
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -786,11 +790,12 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
     function test_narrowAnchorTickWidth()
         public
+        givenFloorAtBottomOfAnchor()
+        givenAnchorTickWidth(1)
+        givenPoolPercent(100e2) // For the solvency check
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenAnchorTickWidth(1)
-        givenPoolPercent(100e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
@@ -875,6 +880,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBPoolFeeTier(10_000)
         givenFixedPrice(1e18)
+        givenFloorAtBottomOfAnchor()
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
