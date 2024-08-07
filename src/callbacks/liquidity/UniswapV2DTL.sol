@@ -13,8 +13,6 @@ import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswa
 // Callbacks
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 
-import {console2} from "@forge-std-1.9.1/console2.sol";
-
 /// @title      UniswapV2DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V2 pool
 ///             in order to create liquidity immediately.
@@ -99,6 +97,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     /// @inheritdoc BaseDirectToLiquidity
     /// @dev        This function implements the following:
     ///             - Creates the pool if necessary
+    ///             - Detects and handles (if necessary) manipulation of pool reserves
     ///             - Deposits the tokens into the pool
     function _mintAndDeposit(
         uint96 lotId_,
@@ -136,8 +135,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
                 quoteTokensToAdd = FullMath.mulDiv(
                     baseTokensToAdd, auctionPrice, 10 ** ERC20(baseToken_).decimals()
                 );
-                console2.log("quoteTokensToAdd", quoteTokensToAdd);
-                console2.log("baseTokensToAdd", baseTokensToAdd);
             }
         }
 
@@ -149,18 +146,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         ERC20(quoteToken_).approve(address(uniV2Router), quoteTokensToAdd);
         ERC20(baseToken_).approve(address(uniV2Router), baseTokensToAdd);
 
-        {
-            (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pairAddress).getReserves();
-
-            uint256 quoteTokenReserves =
-                IUniswapV2Pair(pairAddress).token0() == quoteToken_ ? reserve0 : reserve1;
-            uint256 baseTokenReserves =
-                IUniswapV2Pair(pairAddress).token0() == baseToken_ ? reserve0 : reserve1;
-
-            console2.log("quoteTokenReserves", quoteTokenReserves);
-            console2.log("baseTokenReserves", baseTokenReserves);
-        }
-
         // Deposit into the pool
         uniV2Router.addLiquidity(
             quoteToken_,
@@ -169,7 +154,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             baseTokensToAdd,
             quoteTokenAmountMin,
             baseTokenAmountMin,
-            address(this),
+            address(this), // LP tokens are sent to this contract and transferred later
             block.timestamp
         );
 
@@ -197,7 +182,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         return abi.decode(lotConfig.implParams, (UniswapV2OnCreateParams));
     }
 
-    /// @notice This function mitigates the risk of a third-party bricking the auction settlement by donating quote tokens to the pool
+    /// @notice This function mitigates the risk of a third-party having donated quote tokens to the pool causing the auction settlement to fail.
     /// @dev    It performs the following:
     ///         - Checks if the pool has had quote tokens donated, or exits
     ///         - Swaps the quote tokens for base tokens to adjust the reserves to the correct price
@@ -216,7 +201,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ) internal returns (uint256 quoteTokensUsed, uint256 baseTokensUsed) {
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
         uint256 quoteTokenBalance = ERC20(quoteToken_).balanceOf(pairAddress_);
-        console2.log("quoteTokenBalance", quoteTokenBalance);
         {
             // Check if the pool has had quote tokens donated (whether synced or not)
             // Base tokens are not liquid, so we don't need to check for them
@@ -230,9 +214,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // If there has been a donation into the pool, we need to adjust the reserves so that the price is correct
         // This can be performed by swapping the quote tokens for base tokens
-        // The pool also needs to have a minimum amount of liquidity for the swap to succeed
 
-        // To perform the swap, both reserves need to be non-zero, so we need to transfer in some tokens and update the reserves
+        // To perform the swap, both reserves need to be non-zero, so we need to transfer in some base tokens and update the reserves using `sync()`.
         {
             ERC20(baseToken_).transfer(pairAddress_, 1);
             pair.sync();
@@ -252,7 +235,6 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             if (quoteTokenBalance < desiredQuoteTokenReserves) {
                 uint256 quoteTokensToTransfer = desiredQuoteTokenReserves - quoteTokenBalance;
                 ERC20(quoteToken_).transfer(pairAddress_, quoteTokensToTransfer);
-                // TODO consider if this could be abused
 
                 quoteTokensUsed += quoteTokensToTransfer;
 
@@ -260,8 +242,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
                 quoteTokenBalance = desiredQuoteTokenReserves;
             }
 
+            // Determine the amount of quote tokens to swap out
             quoteTokensOut = quoteTokenBalance - desiredQuoteTokenReserves;
-            console2.log("quoteTokensOut", quoteTokensOut);
         }
 
         // Handle base token transfers
@@ -272,14 +254,11 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
                 ERC20(baseToken_).transfer(pairAddress_, baseTokensToTransfer);
                 baseTokensUsed += baseTokensToTransfer;
             }
-            console2.log("baseTokensToTransfer", baseTokensToTransfer);
         }
 
         // Perform the swap
         uint256 amount0Out = pair.token0() == quoteToken_ ? quoteTokensOut : 0;
         uint256 amount1Out = pair.token0() == quoteToken_ ? 0 : quoteTokensOut;
-        console2.log("amount0Out", amount0Out);
-        console2.log("amount1Out", amount1Out);
 
         if (amount0Out > 0 || amount1Out > 0) {
             pair.swap(amount0Out, amount1Out, address(this), "");
@@ -288,8 +267,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             pair.sync();
         }
 
-        // Do not adjust the quote tokens used in the subsequent liquidity deposit, as they could shift the price
-        // These tokens will be transferred to the seller during cleanup
+        // The pool reserves should now indicate the correct price.
+        // This contract may now hold additional quote tokens that were transferred from the pool.
+        // These tokens will be transferred to the seller during cleanup.
 
         return (quoteTokensUsed, baseTokensUsed);
     }
