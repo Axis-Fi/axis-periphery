@@ -661,16 +661,16 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         //// Step 2: Ensure the pool is at the correct price ////
         // Since there is no bAsset liquidity deployed yet,
         // External LPs can move the current price of the pool.
-        // We move it back to the target active tick to ensure 
+        // We move it back to the target active tick to ensure
         // the pool is at the correct price.
         {
             IUniswapV3Pool pool = BPOOL.pool();
-            
+
             // TODO should we use rounded ticks instead of sqrtPrices?
             // Will minor inaccuracies cause issues with the check?
             // Current price of the pool
             (uint160 currentSqrtPrice,,,,,,) = pool.slot0();
-            
+
             // Get the target sqrt price from the anchor position
             uint160 targetSqrtPrice = BPOOL.getPosition(Range.ANCHOR).sqrtPriceU;
 
@@ -686,7 +686,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // initialized with a surplus, which would allow for an immediate bump or snipe.
                 // We determine the amount of bAssets required to sell through the liquidity.
                 uint256 bAssetsIn = 0; // TODO
-            } 
+            }
             // 2. The current price is below the target price
             else if (currentSqrtPrice < targetSqrtPrice) {
                 // Swap 1 wei of token1 (reserve) for token0 (bAsset) with a limit at the targetSqrtPrice
@@ -812,9 +812,5 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     // This stub is required because we call `swap` on the UniV3 pool
     // to ensure the pool is at the correct price before deploying liquidity
-    function uniswapV3SwapCallback(
-        int256,
-        int256,
-        bytes calldata
-    ) external {}
+    function uniswapV3SwapCallback(int256, int256, bytes calldata) external {}
 }
