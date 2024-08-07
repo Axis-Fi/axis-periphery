@@ -398,8 +398,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
     {
         // Set the anchor tick width
-        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 1, 10));
-        _createData.anchorTickWidth = anchorTickWidth;
+        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 10, 50));
+        _setAnchorTickWidth(anchorTickWidth);
 
         // Perform the onCreate callback
         _onCreate();

@@ -263,7 +263,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `lotId` is already set
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
     ///                 - `CreateData.poolPercent` is less than 10% or greater than 100%
-    ///                 - `CreateData.anchorTickWidth` is <= 0 or > 10
+    ///                 - `CreateData.anchorTickWidth` is < 10 or > 50
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
     ///                 - Any of the tick ranges would exceed the tick bounds
@@ -298,9 +298,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Validate that the recipient is not the zero address
         if (cbData.recipient == address(0)) revert Callback_Params_InvalidRecipient();
 
-        // Validate that the anchor tick width is at least 1 tick spacing and at most 10
+        // Validate that the anchor tick width is at least 10 tick spacing and at most 50
         // Baseline supports only within this range
-        if (cbData.anchorTickWidth < 1 || cbData.anchorTickWidth > 10) {
+        if (cbData.anchorTickWidth < 10 || cbData.anchorTickWidth > 50) {
             revert Callback_Params_InvalidAnchorTickWidth();
         }
 

@@ -410,8 +410,12 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    modifier givenAnchorTickWidth(int24 anchorTickWidth_) {
+    function _setAnchorTickWidth(int24 anchorTickWidth_) internal {
         _createData.anchorTickWidth = anchorTickWidth_;
+    }
+
+    modifier givenAnchorTickWidth(int24 anchorTickWidth_) {
+        _setAnchorTickWidth(anchorTickWidth_);
         _;
     }
 
