@@ -50,6 +50,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The auction format is not supported
     error Callback_Params_UnsupportedAuctionFormat();
 
+    /// @notice The pool fee tier is not supported
+    error Callback_Params_UnsupportedPoolFeeTier();
+
     /// @notice The anchor tick width is invalid
     error Callback_Params_InvalidAnchorTickWidth();
 
@@ -261,9 +264,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `baseToken_` is not lower than `quoteToken_`
     ///                 - `recipient` is the zero address
     ///                 - `lotId` is already set
+    ///                 - The pool fee tier is not supported
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
-    ///                 - `CreateData.poolPercent` is less than 1% or greater than 100%
-    ///                 - `CreateData.anchorTickWidth` is <= 0 or > 10
+    ///                 - `CreateData.poolPercent` is less than 10% or greater than 100%
+    ///                 - `CreateData.anchorTickWidth` is < 10 or > 50
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
     ///                 - Any of the tick ranges would exceed the tick bounds
@@ -298,9 +302,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Validate that the recipient is not the zero address
         if (cbData.recipient == address(0)) revert Callback_Params_InvalidRecipient();
 
-        // Validate that the anchor tick width is at least 1 tick spacing and at most 10
+        // Validate that the pool fee tier is supported
+        // This callback only supports the 1% fee tier (tick spacing = 200)
+        // as other fee tiers are not supported by the Baseline pool
+        if (BPOOL.TICK_SPACING() != 200) revert Callback_Params_UnsupportedPoolFeeTier();
+
+        // Validate that the anchor tick width is at least 10 tick spacing and at most 50
         // Baseline supports only within this range
-        if (cbData.anchorTickWidth < 1 || cbData.anchorTickWidth > 10) {
+        if (cbData.anchorTickWidth < 10 || cbData.anchorTickWidth > 50) {
             revert Callback_Params_InvalidAnchorTickWidth();
         }
 
@@ -309,8 +318,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             revert Callback_Params_InvalidFloorReservesPercent();
         }
 
-        // Validate that the pool percent is at least 1% and at most 100%
-        if (cbData.poolPercent < 1e2 || cbData.poolPercent > 100e2) {
+        // Validate that the pool percent is at least 10% and at most 100%
+        if (cbData.poolPercent < 10e2 || cbData.poolPercent > 100e2) {
             revert Callback_Params_InvalidPoolPercent();
         }
 
@@ -319,7 +328,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         if (!prefund_) revert Callback_Params_UnsupportedAuctionFormat();
 
         // TODO Reference: M-02
-        // Validate that the price of the auction is >= the initial pool price.
+        // Validate that the initial pool price >= auction price.
 
         // Set the lot ID
         lotId = lotId_;
@@ -661,16 +670,16 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         //// Step 2: Ensure the pool is at the correct price ////
         // Since there is no bAsset liquidity deployed yet,
         // External LPs can move the current price of the pool.
-        // We move it back to the target active tick to ensure 
+        // We move it back to the target active tick to ensure
         // the pool is at the correct price.
         {
             IUniswapV3Pool pool = BPOOL.pool();
-            
+
             // TODO should we use rounded ticks instead of sqrtPrices?
             // Will minor inaccuracies cause issues with the check?
             // Current price of the pool
             (uint160 currentSqrtPrice,,,,,,) = pool.slot0();
-            
+
             // Get the target sqrt price from the anchor position
             uint160 targetSqrtPrice = BPOOL.getPosition(Range.ANCHOR).sqrtPriceU;
 
@@ -686,7 +695,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // initialized with a surplus, which would allow for an immediate bump or snipe.
                 // We determine the amount of bAssets required to sell through the liquidity.
                 uint256 bAssetsIn = 0; // TODO
-            } 
+            }
             // 2. The current price is below the target price
             else if (currentSqrtPrice < targetSqrtPrice) {
                 // Swap 1 wei of token1 (reserve) for token0 (bAsset) with a limit at the targetSqrtPrice
@@ -812,9 +821,5 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     // This stub is required because we call `swap` on the UniV3 pool
     // to ensure the pool is at the correct price before deploying liquidity
-    function uniswapV3SwapCallback(
-        int256,
-        int256,
-        bytes calldata
-    ) external {}
+    function uniswapV3SwapCallback(int256, int256, bytes calldata) external {}
 }

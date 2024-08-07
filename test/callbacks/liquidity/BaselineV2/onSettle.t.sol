@@ -237,6 +237,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertCirculatingSupply(0);
         _assertAuctionComplete();
         _assertPoolReserves();
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
     function test_curatorFee(uint256 curatorFee_)
@@ -397,8 +400,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
     {
         // Set the anchor tick width
-        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 1, 10));
-        _createData.anchorTickWidth = anchorTickWidth;
+        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 10, 50));
+        _setAnchorTickWidth(anchorTickWidth);
 
         // Perform the onCreate callback
         _onCreate();

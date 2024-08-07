@@ -197,7 +197,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the floorReservesPercent is not between 0 and 99%
     //  [X] it reverts
-    // [X] when the anchorTickWidth is <= 0
+    // [X] when the anchorTickWidth is < 10
     //  [X] it reverts
     // [X] when the auction format is not FPB
     //  [X] it reverts
@@ -213,8 +213,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts due to the solvency check
     // [X] when the floorReservesPercent is 0-99%
     //  [X] it correctly records the allocation
-    // [X] when the tick spacing is narrow
-    //  [X] the ticks do not overlap
+    // [X] when the fee tier is not 10000 (1%)
+    //  [X] it reverts
     // [X] when the auction fixed price is very high
     //  [X] it handles the active tick correctly
     // [X] when the auction fixed price is very low
@@ -372,14 +372,14 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_anchorTickWidth_belowZero_reverts(int24 anchorTickWidth_)
+    function test_anchorTickWidth_belowBounds_reverts(int24 anchorTickWidth_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        int24 anchorTickWidth = int24(bound(anchorTickWidth_, type(int24).min, 0));
-        _createData.anchorTickWidth = anchorTickWidth;
+        int24 anchorTickWidth = int24(bound(anchorTickWidth_, type(int24).min, 9));
+        _setAnchorTickWidth(anchorTickWidth);
 
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
@@ -391,14 +391,14 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_anchorTickWidth_aboveTen_reverts(int24 anchorTickWidth_)
+    function test_anchorTickWidth_aboveBounds_reverts(int24 anchorTickWidth_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 11, type(int24).max));
-        _createData.anchorTickWidth = anchorTickWidth;
+        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 50, type(int24).max));
+        _setAnchorTickWidth(anchorTickWidth);
 
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
@@ -428,13 +428,13 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_poolPercent_underOnePercent_reverts(uint24 poolPercent_)
+    function test_poolPercent_belowBounds_reverts(uint24 poolPercent_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        uint24 poolPercent = uint24(bound(poolPercent_, 0, 1e2 - 1));
+        uint24 poolPercent = uint24(bound(poolPercent_, 0, 10e2 - 1));
         _setPoolPercent(poolPercent);
 
         // Expect revert
@@ -446,7 +446,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_poolPercent_aboveOneHundredPercent_reverts(uint24 poolPercent_)
+    function test_poolPercent_aboveBounds_reverts(uint24 poolPercent_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -567,6 +567,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         int24 fixedPriceTick = _getFixedPriceTick();
 
         _assertTicks(fixedPriceTick);
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
     function test_floorReservesPercent_zero()
@@ -708,7 +711,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_tickSpacingNarrow()
+    function test_feeTier500_reverts()
         public
         givenBPoolFeeTier(500)
         givenBPoolIsCreated
@@ -716,13 +719,32 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenPoolPercent(100e2) // For the solvency check
     {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_UnsupportedPoolFeeTier.selector
+        );
+        vm.expectRevert(err);
+
         // Perform the call
         _onCreate();
+    }
 
-        // The pool should be initialised with the tick equivalent to the auction's fixed price
-        int24 fixedPriceTick = _getFixedPriceTick();
+    function test_feeTier3000_reverts()
+        public
+        givenBPoolFeeTier(3000)
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenPoolPercent(100e2) // For the solvency check
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_UnsupportedPoolFeeTier.selector
+        );
+        vm.expectRevert(err);
 
-        _assertTicks(fixedPriceTick);
+        // Perform the call
+        _onCreate();
     }
 
     function test_auctionHighPrice()
@@ -796,6 +818,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenAnchorTickWidth(10)
+        givenPoolPercent(100e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
@@ -911,7 +935,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenAnchorTickWidth(1)
+        givenAnchorTickWidth(10)
     {
         // Expect a revert
         bytes memory err =
@@ -928,7 +952,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenAnchorTickWidth(1)
+        givenAnchorTickWidth(10)
     {
         // Expect a revert
         bytes memory err =
@@ -945,7 +969,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenAnchorTickWidth(1)
+        givenAnchorTickWidth(10)
     {
         // Expect a revert
         bytes memory err =
@@ -966,7 +990,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenAnchorTickWidth(1)
+        givenAnchorTickWidth(10)
     {
         // Expect a revert
         bytes memory err =

@@ -68,6 +68,9 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
             balanceBefore + curatorFee,
             "base token: auction house"
         );
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
     function test_curatorFeeZero()

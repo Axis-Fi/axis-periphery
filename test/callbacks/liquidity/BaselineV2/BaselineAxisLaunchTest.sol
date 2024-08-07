@@ -263,10 +263,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         vm.prank(_OWNER);
         _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, address(_bPoolMinter));
 
-        // Enable transfers
-        vm.prank(_OWNER);
-        _bPoolMinter.setTransferLock(false);
-
         // Update the mock for the CREDT module
         _mockBaselineGetModuleForKeycode();
     }
@@ -414,8 +410,12 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    modifier givenAnchorTickWidth(int24 anchorTickWidth_) {
+    function _setAnchorTickWidth(int24 anchorTickWidth_) internal {
         _createData.anchorTickWidth = anchorTickWidth_;
+    }
+
+    modifier givenAnchorTickWidth(int24 anchorTickWidth_) {
+        _setAnchorTickWidth(anchorTickWidth_);
         _;
     }
 
