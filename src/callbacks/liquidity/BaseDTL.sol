@@ -387,7 +387,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
                 true // Wrap vesting LP tokens so they are easily visible
             );
         }
-        // Send the LP tokens to the seller
+        // Send the LP tokens to the specified recipient
         else {
             poolToken.safeTransfer(config.recipient, poolTokenQuantity);
         }
