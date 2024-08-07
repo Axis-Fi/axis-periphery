@@ -263,10 +263,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         vm.prank(_OWNER);
         _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, address(_bPoolMinter));
 
-        // Enable transfers
-        vm.prank(_OWNER);
-        _bPoolMinter.setTransferLock(false);
-
         // Update the mock for the CREDT module
         _mockBaselineGetModuleForKeycode();
     }

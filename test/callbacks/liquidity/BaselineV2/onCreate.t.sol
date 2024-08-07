@@ -565,6 +565,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         int24 fixedPriceTick = _getFixedPriceTick();
 
         _assertTicks(fixedPriceTick);
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
     function test_floorReservesPercent_zero()

@@ -139,5 +139,8 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         // Check the refunded base token quantity is burned
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback balance");
         assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract balance");
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 }

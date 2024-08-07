@@ -237,6 +237,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertCirculatingSupply(0);
         _assertAuctionComplete();
         _assertPoolReserves();
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
     function test_curatorFee(uint256 curatorFee_)
