@@ -63,6 +63,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The floor tick is invalid
     error Callback_Params_InvalidFloorTick();
 
+    /// @notice The anchor tick upper is invalid
+    error Callback_Params_InvalidAnchorTickUpper();
+
     /// @notice One of the ranges is out of bounds
     error Callback_Params_RangeOutOfBounds();
 
@@ -106,14 +109,16 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @param  recipient               The address to receive proceeds that do not go to the pool
     /// @param  poolPercent             The percentage of the proceeds to allocate to the pool, in basis points (1% = 100). The remainder will be sent to the `recipient`.
     /// @param  floorReservesPercent    The percentage of the pool proceeds to allocate to the floor range, in basis points (1% = 100). The remainder will be allocated to the anchor range.
-    /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
     /// @param  floorTickL              The lower tick of the floor range
+    /// @param  anchorTickU             The upper tick of the anchor range
+    /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
     /// @param  allowlistParams         Additional parameters for an allowlist, passed to `__onCreate()` for further processing
     struct CreateData {
         address recipient;
         uint24 poolPercent;
         uint24 floorReservesPercent;
         int24 floorTickL;
+        int24 anchorTickU;
         int24 anchorTickWidth;
         bytes allowlistParams;
     }
@@ -331,9 +336,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // this can't fail because it's checked in the AH as well, but including for completeness
         if (!prefund_) revert Callback_Params_UnsupportedAuctionFormat();
 
-        // TODO Reference: M-02
-        // Validate that the initial pool price >= auction price.
-
         // Set the lot ID
         lotId = lotId_;
 
@@ -372,16 +374,16 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // - The anchor range upper tick is the active tick rounded up to the nearest tick spacing
         // - The other range boundaries are calculated accordingly
         {
-            // Get the closest tick spacing boundary above the active tick
-            // The active tick was set when the BPOOL was deployed
-            // This is the top of the anchor range
-            //
-            // TODO we may need to pass in the active tick value
-            // to avoid a situation where someone front-runs the
+            
+            // Check that the anchor tick range upper bound is the same
+            // as the closest tick spacing boundary above the active tick on the BPOOL
+            // We check this value against a parameter instead of reading
+            // directly to avoid a situation where someone front-runs the
             // auction creation transaction and moves the active tick
-            // However, we do check that the floor tick provided below is lower than the anchor
-            // so it should be protected on the downside
-            int24 anchorRangeUpper = BPOOL.getActiveTS();
+            if (cbData.anchorTickU != BPOOL.activeTS()) {
+                revert Callback_Params_InvalidAnchorTickUpper();
+            }
+            int24 anchorRangeUpper = cbData.anchorTickU;
 
             // Get the tick spacing from the pool
             int24 tickSpacing = BPOOL.TICK_SPACING();
