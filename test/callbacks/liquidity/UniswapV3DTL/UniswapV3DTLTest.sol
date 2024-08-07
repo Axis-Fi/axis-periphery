@@ -252,12 +252,7 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     function _performOnSettle(uint96 lotId_) internal {
         vm.prank(address(_auctionHouse));
-        _dtl.onSettle(
-            lotId_,
-            _proceeds,
-            _refund,
-            abi.encode("")
-        );
+        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
     }
 
     function _performOnSettle() internal {
