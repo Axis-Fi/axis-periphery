@@ -30,6 +30,7 @@ import {ICREDTv1} from "./lib/ICREDT.sol";
 import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
+import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
@@ -82,6 +83,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     /// @notice The initialization is invalid
     error Callback_InvalidInitialization();
+
+    /// @notice The pool price is lower than the auction price
+    error Callback_PoolLessThanAuctionPrice();
 
     /// @notice The BPOOL reserve token does not match the configured `RESERVE` address
     error Callback_BPOOLReserveMismatch();
@@ -449,6 +453,26 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // This value is in the number of reserve tokens per baseline token
                 uint256 auctionPrice = auctionModule.getAuctionData(lotId_).price;
                 console2.log("auctionPrice", auctionPrice);
+
+                // Get the active tick from the pool and confirm it is >= the auction price corresponds to
+                {
+                    // We do this to avoid a situation where buyers are disincentivized to bid on the auction
+                    // Pool price is number of token1 (reserve) per token0 (bAsset), which is what we want, but it needs to be squared
+                    (, int24 activeTick, , , , , ) = BPOOL.pool().slot0();
+
+                    // Calculate the tick for the auction price
+                    // `getSqrtPriceX96` handles token ordering
+                    // The resulting tick will incorporate any differences in decimals between the tokens
+                    uint160 sqrtPriceX96 = SqrtPriceMath.getSqrtPriceX96(
+                        address(RESERVE), address(bAsset), auctionPrice, 10 ** bAsset.decimals()
+                    );
+                    int24 auctionTick = TickMath.getTickAtSqrtRatio(sqrtPriceX96);
+
+                    // Verify that the active tick is at least the auction tick
+                    if (activeTick < auctionTick) {
+                        revert Callback_PoolLessThanAuctionPrice();
+                    }
+                }
 
                 // Calculate the expected proceeds from the auction and how much will be deposited in the pool
                 uint256 expectedProceeds = (auctionPrice * capacity_) / (10 ** bAsset.decimals());
