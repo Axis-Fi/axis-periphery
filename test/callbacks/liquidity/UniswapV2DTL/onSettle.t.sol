@@ -326,12 +326,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenCallbackIsCreated
         givenOnCreate
         givenPoolIsCreated
-        setCallbackParameters(_PROCEEDS, _REFUND)
+        setCallbackParameters(_PROCEEDS, _REFUND) // Price is 2
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -355,12 +356,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenCallbackIsCreated
         givenOnCreate
         givenPoolIsCreated
-        setCallbackParameters(_PROCEEDS, _REFUND)
+        setCallbackParameters(_PROCEEDS, _REFUND) // Price is 2
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -388,12 +390,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenQuoteTokenDecimals(17)
         givenOnCreate
         givenPoolIsCreated
-        setCallbackParameters(_PROCEEDS, _REFUND)
+        setCallbackParameters(_PROCEEDS, _REFUND) // Price is 2
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -421,12 +424,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenBaseTokenDecimals(17)
         givenOnCreate
         givenPoolIsCreated
-        setCallbackParameters(_PROCEEDS, _REFUND)
+        setCallbackParameters(_PROCEEDS, _REFUND) // Price is 2
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -458,7 +462,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -491,7 +496,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -524,7 +530,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -554,7 +561,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -587,7 +595,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -620,7 +629,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -652,7 +662,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e18);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -685,7 +696,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -718,7 +730,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 1e17);
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
