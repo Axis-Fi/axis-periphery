@@ -112,11 +112,7 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_whenProceedsUtilisationIs0_reverts()
-        public
-        givenCallbackIsCreated
-        givenPoolPercent(0)
-    {
+    function test_whenPoolPercentIs0_reverts() public givenCallbackIsCreated givenPoolPercent(0) {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
             BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector, 0, 1, 100e2
@@ -126,7 +122,7 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_whenProceedsUtilisationIsGreaterThan100Percent_reverts()
+    function test_whenPoolPercentIsGreaterThan100Percent_reverts()
         public
         givenCallbackIsCreated
         givenPoolPercent(100e2 + 1)
