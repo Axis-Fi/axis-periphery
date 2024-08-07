@@ -719,24 +719,38 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // This does not affect the solvency of the system since the reserves received
                 // are greater than the tokens minted, but it may cause the system to be
                 // initialized with a surplus, which would allow for an immediate bump or snipe.
-                // We determine the amount of bAssets required to sell through the liquidity.
-                uint256 bAssetsIn = 0; // TODO
+                //
+                // We want to swap out all of the reserves currently in the pool above the target price for bAssets.
+                // We just use the total balance in the pool because the price limit will prevent buying lower.
+                int256 amount1Out = -int256(RESERVE.balanceOf(address(pool)));
+
+                (int256 amount0, int256 amount1) = pool.swap(
+                    address(this), // recipient
+                    true, // zeroToOne, swapping token0 (bAsset) for token1 (reserve) so this is true
+                    amount1Out, // amountSpecified, positive is exactIn, negative is exactOut
+                    targetSqrtPrice, // sqrtPriceLimitX96
+                    abi.encode(1) // data, case 1
+                );
+
             }
             // 2. The current price is below the target price
             else if (currentSqrtPrice < targetSqrtPrice) {
                 // Swap 1 wei of token1 (reserve) for token0 (bAsset) with a limit at the targetSqrtPrice
                 // There are no bAssets in the pool, so we receive none
-                // TODO do you actually need to have the reserve token?
-                pool.swap(
+                (int256 amount0, int256 amount1) = pool.swap(
                     address(this), // recipient
                     false, // zeroToOne, swapping token1 (reserve) for token0 (bAsset) so this is false
                     int256(1), // amountSpecified, positive is exactIn, negative is exactOut
                     targetSqrtPrice, // sqrtPriceLimitX96
-                    bytes("") // data
+                    abi.encode(2) // data, case 2
                 );
             }
             // 3. The current price is at the target price.
             //    If so, we don't need to do anything.
+
+            // We don't need to track any of these amounts because the liquidity deployment and
+            // will handle any extra reserves and the solvency check ensures that the system
+            // can support the supply.
 
             // Check that the price is now at the target price
             (currentSqrtPrice,,,,,,) = pool.slot0();
@@ -747,8 +761,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
         //// Step 3: Deploy liquidity to the Baseline pool ////
 
-        // Calculate the percent of proceeds to allocate to the pool
-        uint256 poolProceeds = proceeds_ * poolPercent / ONE_HUNDRED_PERCENT;
+        // Calculate reserves to add to the pool
+        // Because we potentially extracted reserves from the pool in the previous step,
+        // we use the current balance minus the seller proceeds from the auction as
+        // the pool proceeds amount so that the surplus is provided to the pool.
+        // If no reserves were extracted, this will be the same amount as expected.
+        uint256 sellerProceeds = proceeds_ * (ONE_HUNDRED_PERCENT - poolPercent) / ONE_HUNDRED_PERCENT;
+
+        uint256 poolProceeds = RESERVE.balanceOf(address(this)) - sellerProceeds;
 
         // Approve spending of the reserve token
         Transfer.approve(RESERVE, address(BPOOL), poolProceeds);
@@ -845,7 +865,27 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     // ========== UNIV3 FUNCTIONS ========== //
 
-    // This stub is required because we call `swap` on the UniV3 pool
-    // to ensure the pool is at the correct price before deploying liquidity
-    function uniswapV3SwapCallback(int256, int256, bytes calldata) external {}
+    // Provide tokens when adjusting the pool price via a swap before deploying liquidity
+    function uniswapV3SwapCallback(int256 bAssetDelta_, int256, bytes calldata data_) external {
+        // Only the pool can call
+        address pool = address(BPOOL.pool());
+        if (msg.sender != pool) revert Callback_InvalidCaller();
+
+        // Decode the data
+        (uint8 case_) = abi.decode(data_, (uint8));
+
+        // Handle the swap case
+        if (case_ == 1) {
+            // Mint the bAsset delta to the pool (if greater than 0)
+            // TODO should we cap the amount here? if we do we will need to revert and that will make it so the auction cannot be settled
+            if (bAssetDelta_ > 0) {
+                BPOOL.mint(pool, uint256(bAssetDelta_));
+            }
+        } else if (case_ == 2) {
+            // Case 2: Swapped in 1 wei of reserve tokens
+            // We don't need to do anything here
+        } else {
+            revert Callback_InvalidCase();
+        }
+    }
 }
