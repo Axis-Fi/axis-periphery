@@ -328,7 +328,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         if (!prefund_) revert Callback_Params_UnsupportedAuctionFormat();
 
         // TODO Reference: M-02
-        // Validate that the price of the auction is >= the initial pool price.
+        // Validate that the initial pool price >= auction price.
 
         // Set the lot ID
         lotId = lotId_;
