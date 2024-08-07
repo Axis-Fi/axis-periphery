@@ -723,8 +723,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // We want to swap out all of the reserves currently in the pool above the target price for bAssets.
                 // We just use the total balance in the pool because the price limit will prevent buying lower.
                 int256 amount1Out = -int256(RESERVE.balanceOf(address(pool)));
-
-                (int256 amount0, int256 amount1) = pool.swap(
+                pool.swap(
                     address(this), // recipient
                     true, // zeroToOne, swapping token0 (bAsset) for token1 (reserve) so this is true
                     amount1Out, // amountSpecified, positive is exactIn, negative is exactOut
@@ -736,8 +735,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // 2. The current price is below the target price
             else if (currentSqrtPrice < targetSqrtPrice) {
                 // Swap 1 wei of token1 (reserve) for token0 (bAsset) with a limit at the targetSqrtPrice
-                // There are no bAssets in the pool, so we receive none
-                (int256 amount0, int256 amount1) = pool.swap(
+                // There are no bAssets in the pool, so we receive none. Because of this,
+                // we don't end up paying any reserves either, but the price of the pool is shifted.
+                pool.swap(
                     address(this), // recipient
                     false, // zeroToOne, swapping token1 (reserve) for token0 (bAsset) so this is false
                     int256(1), // amountSpecified, positive is exactIn, negative is exactOut
