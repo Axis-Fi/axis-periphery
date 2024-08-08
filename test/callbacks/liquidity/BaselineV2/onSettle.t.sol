@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
+import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
@@ -14,7 +15,23 @@ import {console2} from "@forge-std-1.9.1/console2.sol";
 contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     using FixedPointMathLib for uint256;
 
+    uint256 internal _curatorFee;
+
     // ============ Modifiers ============ //
+
+    function _setCuratorFeePercent(uint24 curatorFeePercent_) internal {
+        // Mock on the AuctionHouse
+        vm.mockCall(
+            address(_auctionHouse),
+            abi.encodeWithSelector(
+                IAuctionHouse.lotFees.selector, _lotId
+            ),
+            abi.encode(address(0), true, curatorFeePercent_, 0, 0)
+        );
+
+        // Update the value
+        _curatorFee = _LOT_CAPACITY * curatorFeePercent_ / 100e2;
+    }
 
     // ============ Assertions ============ //
 
@@ -246,27 +263,36 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
-    function test_curatorFee(uint256 curatorFee_)
+    function test_curatorFee(uint256 curatorFeePercent_)
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenOnCreate
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+        givenFloorReservesPercent(80e2) // For the solvency check
+        givenPoolPercent(90e2) // For the solvency check
     {
-        // This enables a curator fee theoretically up to the total proceeds
-        uint256 curatorFee = bound(curatorFee_, 1, (_PROCEEDS_AMOUNT - _REFUND_AMOUNT));
+        // TODO split into multiple tests
+        uint24 curatorFeePercent = uint24(bound(curatorFeePercent_, 1e2, 10e2));
+        _setCuratorFeePercent(curatorFeePercent);
+        console2.log("curatorFeePercent", curatorFeePercent);
+        console2.log("curatorFee", _curatorFee);
+
+        // Perform the onCreate callback
+        _onCreate();
+
+        // Mint tokens
+        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
+        _transferBaseTokenRefund(_REFUND_AMOUNT);
 
         // Perform the onCurate callback
-        _onCurate(curatorFee);
+        _onCurate(_curatorFee);
 
         // Perform the onSettle callback
         _onSettle();
 
         _assertQuoteTokenBalances();
-        _assertBaseTokenBalances(curatorFee);
-        _assertCirculatingSupply(curatorFee);
+        _assertBaseTokenBalances(_curatorFee);
+        _assertCirculatingSupply(_curatorFee);
         _assertAuctionComplete();
         _assertPoolReserves();
     }

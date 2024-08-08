@@ -342,6 +342,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onCancel() internal {
+        console2.log("Calling onCancel callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCancel(_lotId, _scaleBaseTokenAmount(_LOT_CAPACITY), true, abi.encode(""));
     }
@@ -352,6 +353,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onSettle() internal {
+        console2.log("Calling onSettle callback");
         vm.prank(address(_auctionHouse));
         _dtl.onSettle(
             _lotId, _PROCEEDS_AMOUNT, _scaleBaseTokenAmount(_REFUND_AMOUNT), abi.encode("")
@@ -364,6 +366,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onCurate(uint256 curatorFee_) internal {
+        console2.log("Calling onCurate callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorFee_, true, abi.encode(""));
     }
