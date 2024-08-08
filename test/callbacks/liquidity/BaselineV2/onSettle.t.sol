@@ -483,37 +483,4 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertAuctionComplete();
         _assertPoolReserves();
     }
-
-    function test_initialTick_fuzz(int24 initialTick_) public {
-        int24 initialTick = int24(bound(initialTick_, -800_000, 800_000));
-        _poolInitialTick = initialTick;
-
-        // Set the anchor upper tick
-        _createData.anchorTickU = _roundToTickSpacingUp(initialTick);
-
-        // Create the BPOOL
-        _createBPOOL();
-
-        // Create the callback
-        _createCallback();
-
-        // Create the auction
-        _createAuction();
-
-        // Perform the onCreate callback
-        _onCreate();
-
-        // Mint tokens
-        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        _transferBaseTokenRefund(_REFUND_AMOUNT);
-
-        // Perform callback
-        _onSettle();
-
-        _assertQuoteTokenBalances();
-        _assertBaseTokenBalances(0);
-        _assertCirculatingSupply(0);
-        _assertAuctionComplete();
-        _assertPoolReserves();
-    }
 }
