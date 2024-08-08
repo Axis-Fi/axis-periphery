@@ -296,7 +296,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_floorReservesPercent_zero()
+    function test_floorReservesPercent_lowPercent()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -317,7 +317,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_floorReservesPercent_ninetyNinePercent()
+    function test_floorReservesPercent_highPercent()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -338,26 +338,16 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_floorReservesPercent_fuzz(uint24 floorReservesPercent_)
+    function test_floorReservesPercent_middlePercent()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenFloorReservesPercent(50e2)
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        uint24 floorReservesPercent = uint24(bound(floorReservesPercent_, 0, _NINETY_NINE_PERCENT));
-
-        // Update the callback parameters
-        _createData.floorReservesPercent = floorReservesPercent;
-
-        // Call onCreate
-        _onCreate();
-
-        // Mint tokens
-        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-
-        // Transfer refund from auction house to the callback
-        _transferBaseTokenRefund(_REFUND_AMOUNT);
-
         // Perform callback
         _onSettle();
 
@@ -368,25 +358,17 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_poolPercent_fuzz(uint24 poolPercent_)
+    function test_poolPercent_lowPercent()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenPoolPercent(10e2)
+        givenFloorRangeGap(137) // For the solvency check
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        vm.assume(poolPercent_ >= 10e2 && poolPercent_ <= 100e2);
-
-        // Adhere to the constraints of the poolPercent parameter
-        // uint24 poolPercent = uint24(bound(poolPercent_, 10e2, 100e2));
-        _createData.poolPercent = poolPercent_;
-
-        // Perform the onCreate callback
-        _onCreate();
-
-        // Move tokens into place
-        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        _transferBaseTokenRefund(_REFUND_AMOUNT);
-
         // Perform callback
         _onSettle();
 
@@ -397,23 +379,101 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_anchorTickWidth_fuzz(int24 anchorTickWidth_)
+    function test_poolPercent_middlePercent()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenPoolPercent(50e2)
+        givenFloorRangeGap(44) // For the solvency check
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // Set the anchor tick width
-        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 10, 50));
-        _setAnchorTickWidth(anchorTickWidth);
+        // Perform callback
+        _onSettle();
 
-        // Perform the onCreate callback
-        _onCreate();
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
 
-        // Mint tokens
-        _quoteToken.mint(_dtlAddress, _PROCEEDS_AMOUNT);
-        _transferBaseTokenRefund(_REFUND_AMOUNT);
+    function test_poolPercent_highPercent()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenPoolPercent(90e2)
+        givenFloorReservesPercent(10e2) // For the solvency check
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Perform callback
+        _onSettle();
 
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_anchorTickWidth_low()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(10)
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_anchorTickWidth_middle()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(30)
+        givenPoolPercent(63e2) // For the solvency check
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_anchorTickWidth_high()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(50)
+        givenFloorReservesPercent(0e2) // For the solvency check
+        givenPoolPercent(61e2) // For the solvency check
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
         // Perform callback
         _onSettle();
 
