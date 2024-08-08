@@ -38,7 +38,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         console2.log("totalSupply", totalSupply);
 
         // No payout distributed to "bidders", so don't account for it here
-        uint256 spotSupply = 0;
+        uint256 spotSupply = _LOT_CAPACITY - _REFUND_AMOUNT;
         console2.log("spotSupply", spotSupply);
 
         uint256 poolSupply = totalSupply - spotSupply - curatorFee_;
