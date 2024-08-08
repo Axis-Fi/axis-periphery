@@ -202,6 +202,12 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it correctly records the allocation
     // [X] when the fee tier is not 10000 (1%)
     //  [X] it reverts
+    // [ ] when the anchorTickU parameter does not equal the calculated value
+    //  [ ] it reverts
+    // [ ] when the pool price is < the auction price
+    //  [ ] it reverts
+    // [ ] when the pool price is >= the auction price
+    //  [ ] it succeeds
     // [X] when the auction fixed price is very high
     //  [X] it handles the active tick correctly
     // [X] when the auction fixed price is very low

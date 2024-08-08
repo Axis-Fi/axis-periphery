@@ -100,6 +100,10 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when insufficient refund is sent to the callback
     //  [X] it reverts
+    // [ ] given there is liquidity in the pool at a higher price
+    //  [ ] it adjusts the pool price
+    // [ ] given there is liquidity in the pool at a lower price
+    //  [ ] it adjusts the pool price
     // [X] when the percent in floor reserves changes
     //  [X] it adds reserves to the floor and anchor ranges in the correct proportions
     // [X] given a curator fee has been paid
