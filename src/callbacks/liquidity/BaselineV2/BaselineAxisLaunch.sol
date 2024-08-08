@@ -60,8 +60,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The discovery tick width is invalid
     error Callback_Params_InvalidDiscoveryTickWidth();
 
-    /// @notice The floor tick is invalid
-    error Callback_Params_InvalidFloorTick();
+    /// @notice The floor range gap is invalid
+    error Callback_Params_InvalidFloorRangeGap();
 
     /// @notice The anchor tick upper is invalid
     error Callback_Params_InvalidAnchorTickUpper();
@@ -115,15 +115,15 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @param  recipient               The address to receive proceeds that do not go to the pool
     /// @param  poolPercent             The percentage of the proceeds to allocate to the pool, in basis points (1% = 100). The remainder will be sent to the `recipient`.
     /// @param  floorReservesPercent    The percentage of the pool proceeds to allocate to the floor range, in basis points (1% = 100). The remainder will be allocated to the anchor range.
-    /// @param  floorTickL              The lower tick of the floor range
-    /// @param  anchorTickU             The upper tick of the anchor range
+    /// @param  floorRangeGap           The gap between the floor and anchor ranges, as a multiple of the pool tick spacing.
+    /// @param  anchorTickU             The upper tick of the anchor range. Validated against the calculated upper bound of the anchor range. This is provided off-chain to prevent front-running.
     /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
     /// @param  allowlistParams         Additional parameters for an allowlist, passed to `__onCreate()` for further processing
     struct CreateData {
         address recipient;
         uint24 poolPercent;
         uint24 floorReservesPercent;
-        int24 floorTickL;
+        int24 floorRangeGap;
         int24 anchorTickU;
         int24 anchorTickWidth;
         bytes allowlistParams;
@@ -282,6 +282,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - The pool fee tier is not supported
     ///                 - `CreateData.floorReservesPercent` is greater than 99%
     ///                 - `CreateData.poolPercent` is less than 10% or greater than 100%
+    ///                 - `CreateData.floorRangeGap` is < 0
     ///                 - `CreateData.anchorTickWidth` is < 10 or > 50
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
@@ -321,6 +322,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // This callback only supports the 1% fee tier (tick spacing = 200)
         // as other fee tiers are not supported by the Baseline pool
         if (BPOOL.TICK_SPACING() != 200) revert Callback_Params_UnsupportedPoolFeeTier();
+
+        // Validate that the floor range gap is at least 0
+        if (cbData.floorRangeGap < 0) revert Callback_Params_InvalidFloorRangeGap();
 
         // Validate that the anchor tick width is at least 10 tick spacing and at most 50
         // Baseline supports only within this range
@@ -400,16 +404,11 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             BPOOL.setTicks(Range.ANCHOR, anchorRangeLower, anchorRangeUpper);
 
             // Set the floor range
-            // Floor range lower is provided by the caller
-            // We normalize it to the nearest tick spacing boundary below the provided tick
+            // The creator can provide the `floorRangeGap` to space the floor range from the anchor range
+            // If `floorRangeGap` is 0, the floor range will be directly below the anchor range
             // The floor range is one tick spacing wide
-            int24 floorRangeLower = (cbData.floorTickL / tickSpacing) * tickSpacing;
-            int24 floorRangeUpper = floorRangeLower + tickSpacing;
-
-            // Verify that the anchor and floor do not overlap
-            if (floorRangeUpper > anchorRangeLower) {
-                revert Callback_Params_InvalidFloorTick();
-            }
+            int24 floorRangeUpper = anchorRangeLower - cbData.floorRangeGap * tickSpacing;
+            int24 floorRangeLower = floorRangeUpper - tickSpacing;
 
             BPOOL.setTicks(Range.FLOOR, floorRangeLower, floorRangeUpper);
 

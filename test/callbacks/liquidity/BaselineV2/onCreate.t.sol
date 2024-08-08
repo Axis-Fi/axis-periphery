@@ -148,9 +148,12 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertLe(fixedPriceTick_, anchorTickUpper_, "active tick <= anchor tick upper");
 
         // Floor range should be the width of the tick spacing and below the anchor range
+        int24 floorTickUpper_ = anchorTickLower_ - _floorRangeGap * _tickSpacing;
+        int24 floorTickLower_ = floorTickUpper_ - _tickSpacing;
+
         (int24 floorTickLower, int24 floorTickUpper) = _baseToken.getTicks(Range.FLOOR);
-        assertEq(floorTickLower, anchorTickLower_ - _tickSpacing, "floor tick lower");
-        assertEq(floorTickUpper, anchorTickLower_, "floor tick upper");
+        assertEq(floorTickUpper, floorTickUpper_, "floor tick upper");
+        assertEq(floorTickLower, floorTickLower_, "floor tick lower");
 
         // Discovery range should be the width of discoveryTickWidth * tick spacing and above the active tick
         (int24 discoveryTickLower, int24 discoveryTickUpper) = _baseToken.getTicks(Range.DISCOVERY);
@@ -216,9 +219,17 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it handles it correctly
     // [X] when the quote token decimals are lower than the base token decimals
     //  [X] it handles it correctly
+    // [X] when there is a gap specified between the floor range and anchor range
+    //  [X] when the floor range gap is below 0
+    //   [X] it reverts
+    //  [X] when the floor range is calculated to be below the minimum tick
+    //   [X] it reverts
+    //  [X] it sets the ranges correctly
     // [X] when the anchorTickWidth is small
     //  [X] it correctly sets the anchor ticks to not overlap with the other ranges
-    // [X] when the anchorTickWidth is greater than 10
+    // [X] when the anchorTickWidth is less than 10
+    //  [X] it reverts
+    // [X] when the anchorTickWidth is greater than 50
     //  [X] it reverts
     // [X] when the activeTick and anchorTickWidth results in an overflow
     //  [X] it reverts
@@ -363,6 +374,73 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         // Perform the call
         _onCreate();
+    }
+
+    function test_floorRangeGap_belowBounds_reverts(int24 floorRangeGap_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        int24 floorRangeGap = int24(bound(floorRangeGap_, type(int24).min, -1));
+        _setFloorRangeGap(floorRangeGap);
+
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_InvalidFloorRangeGap.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_floorRangeGap_underflow_reverts()
+        public
+        givenPoolInitialTick(TickMath.MIN_TICK + 200 * _ANCHOR_TICK_WIDTH) // This will result in the floor range to be below the MIN_TICK, which should cause a revert
+        givenAnchorUpperTick(-885_200)
+        givenFloorRangeGap(1)
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Expect a revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_RangeOutOfBounds.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_floorRangeGap_zero()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenFloorRangeGap(0)
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert ticks
+        int24 fixedPriceTick = _getFixedPriceTick();
+        _assertTicks(fixedPriceTick);
+    }
+
+    function test_floorRangeGap_ten()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenFloorRangeGap(10)
+        givenFloorReservesPercent(15e2) // For the solvency check
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert ticks
+        int24 fixedPriceTick = _getFixedPriceTick();
+        _assertTicks(fixedPriceTick);
     }
 
     function test_anchorTickWidth_belowBounds_reverts(int24 anchorTickWidth_)
@@ -744,7 +822,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenFixedPrice(1e32) // Seems to cause a revert above this when calculating the tick
         givenAnchorUpperTick(322_400)
-        givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -775,7 +852,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenFixedPrice(1e6)
         givenAnchorUpperTick(-276_200)
-        givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -807,7 +883,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
     function test_narrowAnchorTickWidth()
         public
-        givenFloorAtBottomOfAnchor
         givenAnchorTickWidth(1)
         givenPoolPercent(100e2) // For the solvency check
         givenBPoolIsCreated
@@ -902,7 +977,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolFeeTier(10_000)
         givenFixedPrice(1e18)
         givenAnchorUpperTick(200) // Rounded up
-        givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated

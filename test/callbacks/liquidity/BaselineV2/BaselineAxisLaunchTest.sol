@@ -67,8 +67,8 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     uint24 internal _feeTier = _FEE_TIER;
     /// @dev Set in `_setPoolInitialTickFromAuctionPrice()`
     int24 internal _poolInitialTick;
-    /// @dev Set in `_setLowerFloorTick()`
-    int24 internal _floorTickL;
+    /// @dev Set in `_setFloorRangeGap()`
+    int24 internal _floorRangeGap;
 
     uint48 internal constant _START = 1_000_000;
 
@@ -102,7 +102,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         recipient: _SELLER,
         poolPercent: _POOL_PERCENT,
         floorReservesPercent: _FLOOR_RESERVES_PERCENT,
-        floorTickL: _floorTickL,
+        floorRangeGap: _floorRangeGap,
         anchorTickU: _FIXED_PRICE_TICK_UPPER,
         anchorTickWidth: _ANCHOR_TICK_WIDTH,
         allowlistParams: abi.encode("")
@@ -168,9 +168,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         // Calculate the initial tick
         _setPoolInitialTickFromPrice(_INITIAL_POOL_PRICE);
-
-        // Set the floor tick
-        _setFloorAtBottomOfAnchor();
     }
 
     // ========== MODIFIERS ========== //
@@ -197,23 +194,14 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _setFloorTickLower(int24 tick_) internal {
-        _floorTickL = tick_;
-        console2.log("Floor tick L set to: ", _floorTickL);
-        _createData.floorTickL = _floorTickL;
+    function _setFloorRangeGap(int24 tickSpacingWidth_) internal {
+        _floorRangeGap = tickSpacingWidth_;
+        console2.log("Floor range gap set to: ", _floorRangeGap);
+        _createData.floorRangeGap = _floorRangeGap;
     }
 
-    function _setFloorAtBottomOfAnchor() internal {
-        _setFloorTickLower(_poolInitialTick - (_ANCHOR_TICK_WIDTH + 0) * _tickSpacing);
-    }
-
-    modifier givenFloorAtBottomOfAnchor() {
-        _setFloorAtBottomOfAnchor();
-        _;
-    }
-
-    modifier givenFloorLowerTick(int24 floorTickL_) {
-        _setFloorTickLower(floorTickL_);
+    modifier givenFloorRangeGap(int24 tickSpacingWidth_) {
+        _setFloorRangeGap(tickSpacingWidth_);
         _;
     }
 
@@ -400,7 +388,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _baseTokenDecimals = decimals_;
 
         _setPoolInitialTickFromAuctionPrice();
-        _setFloorAtBottomOfAnchor();
         _;
     }
 
