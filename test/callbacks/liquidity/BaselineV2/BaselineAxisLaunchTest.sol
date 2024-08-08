@@ -56,6 +56,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     uint24 internal constant _FLOOR_RESERVES_PERCENT = 50e2; // 50%
     uint24 internal constant _POOL_PERCENT = 87e2; // 87%
     uint256 internal constant _FIXED_PRICE = 3e18;
+    int24 internal constant _FIXED_PRICE_TICK_UPPER = 11_000; // 10986 rounded up
     uint256 internal constant _INITIAL_POOL_PRICE = 3e18; // 3
     uint24 internal constant _FEE_TIER = 10_000;
     uint256 internal constant _BASE_SCALE = 1e18;
@@ -102,7 +103,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         poolPercent: _POOL_PERCENT,
         floorReservesPercent: _FLOOR_RESERVES_PERCENT,
         floorTickL: _floorTickL,
-        anchorTickU: 0, // TODO fix this
+        anchorTickU: _FIXED_PRICE_TICK_UPPER,
         anchorTickWidth: _ANCHOR_TICK_WIDTH,
         allowlistParams: abi.encode("")
     });
@@ -411,6 +412,12 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
+    modifier givenAnchorUpperTick(int24 anchorTickU_) {
+        _createData.anchorTickU = anchorTickU_;
+        console2.log("Anchor tick U set to: ", anchorTickU_);
+        _;
+    }
+
     function _setAnchorTickWidth(int24 anchorTickWidth_) internal {
         _createData.anchorTickWidth = anchorTickWidth_;
     }
@@ -500,6 +507,19 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     modifier givenFloorReservesPercent(uint24 floorReservesPercent_) {
         _setFloorReservesPercent(floorReservesPercent_);
         _;
+    }
+
+    function _roundToTickSpacingUp(int24 activeTick_) internal view returns (int24) {
+        // Rounds down
+        int24 roundedTick = (activeTick_ / _tickSpacing) * _tickSpacing;
+
+        // Add a tick spacing to round up
+        // This mimics BPOOL.getActiveTS()
+        if (activeTick_ >= 0 || activeTick_ % _tickSpacing == 0) {
+            roundedTick += _tickSpacing;
+        }
+
+        return roundedTick;
     }
 
     // ========== MOCKS ========== //

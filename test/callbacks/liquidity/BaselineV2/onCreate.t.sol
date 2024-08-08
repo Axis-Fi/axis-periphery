@@ -119,19 +119,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         revert("Unsupported decimal permutation");
     }
 
-    function _roundToTickSpacingUp(int24 activeTick_) internal view returns (int24) {
-        // Rounds down
-        int24 roundedTick = (activeTick_ / _tickSpacing) * _tickSpacing;
-
-        // Add a tick spacing to round up
-        // This mimics BPOOL.getActiveTS()
-        if (activeTick_ >= 0 || activeTick_ % _tickSpacing == 0) {
-            roundedTick += _tickSpacing;
-        }
-
-        return roundedTick;
-    }
-
     function _getPoolActiveTick() internal view returns (int24) {
         (, int24 activeTick,,,,,) = _baseToken.pool().slot0();
         return activeTick;
@@ -750,6 +737,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_auctionHighPrice()
         public
         givenFixedPrice(1e32) // Seems to cause a revert above this when calculating the tick
+        givenAnchorUpperTick(322_400)
         givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -780,6 +768,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_auctionLowPrice()
         public
         givenFixedPrice(1e6)
+        givenAnchorUpperTick(-276_200)
         givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -849,6 +838,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_baseTokenDecimalsHigher()
         public
         givenBaseTokenDecimals(19)
+        givenAnchorUpperTick(-12_000)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -876,6 +866,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_baseTokenDecimalsLower()
         public
         givenBaseTokenDecimals(17)
+        givenAnchorUpperTick(34_200)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -904,6 +895,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBPoolFeeTier(10_000)
         givenFixedPrice(1e18)
+        givenAnchorUpperTick(200) // Rounded up
         givenFloorAtBottomOfAnchor
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -932,6 +924,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_anchorRange_overflow_reverts()
         public
         givenPoolInitialTick(TickMath.MAX_TICK - 1) // This will result in the upper tick of the anchor range to be above the MAX_TICK, which should cause a revert
+        givenAnchorUpperTick(887_400)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -949,6 +942,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_anchorRange_underflow_reverts()
         public
         givenPoolInitialTick(TickMath.MIN_TICK + 1) // This will result in the lower tick of the anchor range to be below the MIN_TICK, which should cause a revert
+        givenAnchorUpperTick(-887_200)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -966,6 +960,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_discoveryRange_overflow_reverts()
         public
         givenPoolInitialTick(TickMath.MAX_TICK - _tickSpacing + 1) // This will result in the upper tick of the discovery range to be above the MAX_TICK, which should cause a revert
+        givenAnchorUpperTick(887_200)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -987,6 +982,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     function test_floorRange_underflow_reverts()
         public
         givenPoolInitialTick(TickMath.MIN_TICK) // This will result in the lower tick of the floor range to be below the MIN_TICK, which should cause a revert
+        givenAnchorUpperTick(-887_200)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated

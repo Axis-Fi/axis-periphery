@@ -424,6 +424,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         int24 initialTick = int24(bound(initialTick_, -800_000, 800_000));
         _poolInitialTick = initialTick;
 
+        // Set the anchor upper tick
+        _createData.anchorTickU = _roundToTickSpacingUp(initialTick);
+
         // Create the BPOOL
         _createBPOOL();
 
