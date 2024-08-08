@@ -205,12 +205,12 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it correctly records the allocation
     // [X] when the fee tier is not 10000 (1%)
     //  [X] it reverts
-    // [ ] when the anchorTickU parameter does not equal the calculated value
-    //  [ ] it reverts
-    // [ ] when the pool price is < the auction price
-    //  [ ] it reverts
-    // [ ] when the pool price is >= the auction price
-    //  [ ] it succeeds
+    // [X] when the anchorTickU parameter does not equal the calculated value
+    //  [X] it reverts
+    // [X] when the pool price is < the auction price
+    //  [X] it reverts
+    // [X] when the pool price is >= the auction price
+    //  [X] it succeeds
     // [X] when the auction fixed price is very high
     //  [X] it handles the active tick correctly
     // [X] when the auction fixed price is very low
@@ -240,8 +240,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     // [X] when the activeTick and discoveryTickWidth results in an underflow
     //  [X] it reverts
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
-
-    // TODO new tests for different combinations of initial price, floor tick, and anchor width
 
     function test_callbackDataIncorrect_reverts()
         public
@@ -376,6 +374,88 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
+    function test_anchorTickU_below_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Set the anchor range upper to be below the expected value
+        _createData.anchorTickU = _FIXED_PRICE_TICK_UPPER - 1;
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_InvalidAnchorTickUpper.selector
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_anchorTickU_above_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Set the anchor range upper to be above the expected value
+        _createData.anchorTickU = _FIXED_PRICE_TICK_UPPER + 1;
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_InvalidAnchorTickUpper.selector
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolPrice_belowAuctionPrice_reverts()
+        public
+        givenPoolInitialTick(10_985) // Below auction price tick of 10986
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_PoolLessThanAuctionPrice.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolPrice_aboveAuctionPrice()
+        public
+        givenPoolInitialTick(10_987) // Above auction price tick of 10986
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Perform the call
+        _onCreate();
+
+        // Check that the callback owner is correct
+        assertEq(_dtl.owner(), _OWNER, "owner");
+
+        // Assert base token balances
+        _assertBaseTokenBalances();
+
+        // Lot ID is set
+        assertEq(_dtl.lotId(), _lotId, "lot ID");
+
+        // Check circulating supply
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
+
+        _assertTicks(10_987);
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
+    }
+
     function test_floorRangeGap_belowBounds_reverts(int24 floorRangeGap_)
         public
         givenBPoolIsCreated
@@ -468,7 +548,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
     {
-        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 50, type(int24).max));
+        int24 anchorTickWidth = int24(bound(anchorTickWidth_, 51, type(int24).max));
         _setAnchorTickWidth(anchorTickWidth);
 
         // Expect revert
@@ -723,9 +803,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
-        givenFixedPrice(25e18) // For the solvency check
         givenAuctionIsCreated
         givenPoolPercent(10e2)
+        givenFloorRangeGap(110) // For the solvency check
         givenFloorReservesPercent(90e2) // For the solvency check
     {
         // Perform the call
@@ -883,13 +963,29 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
     function test_narrowAnchorTickWidth()
         public
-        givenAnchorTickWidth(1)
-        givenPoolPercent(100e2) // For the solvency check
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenAnchorTickWidth(10)
-        givenPoolPercent(100e2) // For the solvency check
+        givenFloorReservesPercent(50e2) // For the solvency check
+    {
+        // Perform the call
+        _onCreate();
+
+        // The pool should be initialised with the tick equivalent to the auction's fixed price
+        int24 fixedPriceTick = _getFixedPriceTick();
+
+        _assertTicks(fixedPriceTick);
+    }
+
+    function test_wideAnchorTickWidth()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(50)
+        givenFloorReservesPercent(10e2) // For the solvency check
+        givenPoolPercent(58e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
