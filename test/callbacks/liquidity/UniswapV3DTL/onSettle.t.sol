@@ -244,6 +244,11 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _;
     }
 
+    modifier givenPoolHasDepositMuchHigherPrice() {
+        _sqrtPriceX96 = _calculateSqrtPriceX96(_PROCEEDS * 10, _LOT_CAPACITY);
+        _;
+    }
+
     function _getPool() internal view returns (address) {
         (address token0, address token1) = address(_baseToken) < address(_quoteToken)
             ? (address(_baseToken), address(_quoteToken))
@@ -438,7 +443,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     function test_givenPoolHasDepositWithLowerPrice()
         public
         givenCallbackIsCreated
-        givenMaxSlippage(5100) // 51%
+        givenMaxSlippage(200) // 2%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositLowerPrice
@@ -449,7 +454,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     {
         _performOnSettle();
 
-        _assertPoolState(_sqrtPriceX96);
+        _assertPoolState(_calculateSqrtPriceX96(_PROCEEDS, _LOT_CAPACITY));
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
@@ -457,10 +462,12 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
+    // TODO need to add a case where the price is more than 2x the target price and there is too much liquidity to sell through
+    // the result should be the pool is initialized at a higher price than the target price, but with balanced liquidity
     function test_givenPoolHasDepositWithHigherPrice()
         public
         givenCallbackIsCreated
-        givenMaxSlippage(5100) // 51%
+        givenMaxSlippage(200) // 2%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositHigherPrice
@@ -471,7 +478,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     {
         _performOnSettle();
 
-        _assertPoolState(_sqrtPriceX96);
+        _assertPoolState(_calculateSqrtPriceX96(_PROCEEDS, _LOT_CAPACITY));
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
