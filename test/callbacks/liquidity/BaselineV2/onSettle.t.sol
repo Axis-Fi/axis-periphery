@@ -82,7 +82,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // BAssets deployed into the pool
         assertEq(_getRangeBAssets(Range.FLOOR), 0, "bAssets: floor");
-        assertGt(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
+        assertEq(_getRangeBAssets(Range.ANCHOR), 0, "bAssets: anchor");
         assertGt(_getRangeBAssets(Range.DISCOVERY), 0, "bAssets: discovery");
     }
 
