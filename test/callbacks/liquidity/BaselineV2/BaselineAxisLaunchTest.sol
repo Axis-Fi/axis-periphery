@@ -102,6 +102,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         poolPercent: _POOL_PERCENT,
         floorReservesPercent: _FLOOR_RESERVES_PERCENT,
         floorTickL: _floorTickL,
+        anchorTickU: 0, // TODO fix this
         anchorTickWidth: _ANCHOR_TICK_WIDTH,
         allowlistParams: abi.encode("")
     });

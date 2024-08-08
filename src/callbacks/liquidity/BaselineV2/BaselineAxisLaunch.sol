@@ -96,6 +96,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The address of the BPOOL is higher than the RESERVE token address, when it must be lower
     error Callback_BPOOLInvalidAddress();
 
+    /// @notice The caller to the Uniswap V3 swap callback is invalid
+    error Callback_Swap_InvalidCaller();
+
+    /// @notice The case for the Uniswap V3 swap callback is invalid
+    error Callback_Swap_InvalidCase();
+
     // ========== EVENTS ========== //
 
     event LiquidityDeployed(
@@ -374,13 +380,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // - The anchor range upper tick is the active tick rounded up to the nearest tick spacing
         // - The other range boundaries are calculated accordingly
         {
-            
             // Check that the anchor tick range upper bound is the same
             // as the closest tick spacing boundary above the active tick on the BPOOL
             // We check this value against a parameter instead of reading
             // directly to avoid a situation where someone front-runs the
             // auction creation transaction and moves the active tick
-            if (cbData.anchorTickU != BPOOL.activeTS()) {
+            if (cbData.anchorTickU != BPOOL.getActiveTS()) {
                 revert Callback_Params_InvalidAnchorTickUpper();
             }
             int24 anchorRangeUpper = cbData.anchorTickU;
@@ -730,7 +735,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                     targetSqrtPrice, // sqrtPriceLimitX96
                     abi.encode(1) // data, case 1
                 );
-
             }
             // 2. The current price is below the target price
             else if (currentSqrtPrice < targetSqrtPrice) {
@@ -766,7 +770,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // we use the current balance minus the seller proceeds from the auction as
         // the pool proceeds amount so that the surplus is provided to the pool.
         // If no reserves were extracted, this will be the same amount as expected.
-        uint256 sellerProceeds = proceeds_ * (ONE_HUNDRED_PERCENT - poolPercent) / ONE_HUNDRED_PERCENT;
+        uint256 sellerProceeds =
+            proceeds_ * (ONE_HUNDRED_PERCENT - poolPercent) / ONE_HUNDRED_PERCENT;
 
         uint256 poolProceeds = RESERVE.balanceOf(address(this)) - sellerProceeds;
 
@@ -869,7 +874,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     function uniswapV3SwapCallback(int256 bAssetDelta_, int256, bytes calldata data_) external {
         // Only the pool can call
         address pool = address(BPOOL.pool());
-        if (msg.sender != pool) revert Callback_InvalidCaller();
+        if (msg.sender != pool) revert Callback_Swap_InvalidCaller();
 
         // Decode the data
         (uint8 case_) = abi.decode(data_, (uint8));
@@ -885,7 +890,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // Case 2: Swapped in 1 wei of reserve tokens
             // We don't need to do anything here
         } else {
-            revert Callback_InvalidCase();
+            revert Callback_Swap_InvalidCase();
         }
     }
 }
