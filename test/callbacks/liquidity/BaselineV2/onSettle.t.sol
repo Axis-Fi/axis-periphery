@@ -6,7 +6,7 @@ import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-import {Range, Position} from "@baseline/modules/BPOOL.v1.sol";
+import {Range} from "@baseline/modules/BPOOL.v1.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";

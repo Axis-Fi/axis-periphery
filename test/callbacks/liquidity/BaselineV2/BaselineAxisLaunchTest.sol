@@ -37,6 +37,8 @@ import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
 import {MockCREDT} from "./mocks/MockCREDT.sol";
 import {BPOOLMinter} from "./BPOOLMinter.sol";
 
+// solhint-disable max-states-count
+
 abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for BaselineAxisLaunch;
 

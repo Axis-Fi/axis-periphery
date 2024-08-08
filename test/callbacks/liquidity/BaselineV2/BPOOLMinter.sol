@@ -2,13 +2,14 @@
 pragma solidity 0.8.19;
 
 import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
-import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 
 import {Kernel, Keycode, toKeycode, Policy, Permissions} from "@baseline/Kernel.sol";
 import {BPOOLv1} from "@baseline/modules/BPOOL.v1.sol";
 
 contract BPOOLMinter is Policy, Owned {
+    // solhint-disable var-name-mixedcase
     BPOOLv1 public BPOOL;
+    // solhint-enable var-name-mixedcase
 
     constructor(Kernel kernel_) Policy(kernel_) Owned(kernel_.executor()) {}
 
