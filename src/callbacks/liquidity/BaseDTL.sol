@@ -385,19 +385,19 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
             poolToken.safeTransfer(config.recipient, poolTokenQuantity);
         }
 
-        // Send any remaining quote tokens to the seller
+        // Send any remaining quote tokens to the specified recipient
         {
             uint256 quoteTokenBalance = ERC20(quoteToken).balanceOf(address(this));
             if (quoteTokenBalance > 0) {
-                ERC20(quoteToken).safeTransfer(seller, quoteTokenBalance);
+                ERC20(quoteToken).safeTransfer(config.recipient, quoteTokenBalance);
             }
         }
 
-        // Send any remaining base tokens to the seller
+        // Send any remaining base tokens to the specified recipient
         {
             uint256 baseTokenBalance = ERC20(baseToken).balanceOf(address(this));
             if (baseTokenBalance > 0) {
-                ERC20(baseToken).safeTransfer(seller, baseTokenBalance);
+                ERC20(baseToken).safeTransfer(config.recipient, baseTokenBalance);
             }
         }
     }

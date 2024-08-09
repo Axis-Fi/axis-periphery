@@ -120,6 +120,24 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
+
+        uint256 nonPoolProceeds = _proceeds - _quoteTokensToDeposit;
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_NOT_SELLER),
+            _dtlCreateParams.recipient == _NOT_SELLER ? nonPoolProceeds : 0,
+            _dtlCreateParams.recipient == _NOT_SELLER
+                ? _uniswapV2CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                : 0,
+            "not seller: quote token balance"
+        );
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_SELLER),
+            _dtlCreateParams.recipient == _SELLER ? nonPoolProceeds : 0,
+            _dtlCreateParams.recipient == _SELLER
+                ? _uniswapV2CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                : 0,
+            "seller: quote token balance"
+        );
     }
 
     function _assertBaseTokenBalance() internal view {
@@ -303,6 +321,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         public
         givenCallbackIsCreated
         givenUnboundedPoolPercent(percent_)
+        whenRecipientIsNotSeller
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
