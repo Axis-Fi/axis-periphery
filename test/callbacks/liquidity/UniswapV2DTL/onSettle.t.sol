@@ -13,7 +13,7 @@ import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.s
 // AuctionHouse
 import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
 contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
@@ -22,14 +22,10 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     /// @dev The minimum amount of liquidity retained in the pool
     uint256 internal constant _MINIMUM_LIQUIDITY = 10 ** 3;
 
-    uint96 internal _proceeds;
-    uint96 internal _refund;
     uint96 internal _capacityUtilised;
     uint96 internal _quoteTokensToDeposit;
     uint96 internal _baseTokensToDeposit;
     uint96 internal _curatorPayout;
-
-    uint24 internal _maxSlippage = 1; // 0.01%
 
     // ========== Internal functions ========== //
 
@@ -54,7 +50,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     // ========== Assertions ========== //
 
-    function _assertLpTokenBalance() internal {
+    function _assertLpTokenBalance() internal view {
         // Get the pools deployed by the DTL callback
         IUniswapV2Pair pool = _getUniswapV2Pool();
 
@@ -122,15 +118,33 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         );
     }
 
-    function _assertQuoteTokenBalance() internal {
+    function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
+
+        uint256 nonPoolProceeds = _proceeds - _quoteTokensToDeposit;
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_NOT_SELLER),
+            _dtlCreateParams.recipient == _NOT_SELLER ? nonPoolProceeds : 0,
+            _dtlCreateParams.recipient == _NOT_SELLER
+                ? _uniswapV2CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                : 0,
+            "not seller: quote token balance"
+        );
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_SELLER),
+            _dtlCreateParams.recipient == _SELLER ? nonPoolProceeds : 0,
+            _dtlCreateParams.recipient == _SELLER
+                ? _uniswapV2CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                : 0,
+            "seller: quote token balance"
+        );
     }
 
-    function _assertBaseTokenBalance() internal {
+    function _assertBaseTokenBalance() internal view {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "DTL: base token balance");
     }
 
-    function _assertApprovals() internal {
+    function _assertApprovals() internal view {
         // Ensure there are no dangling approvals
         assertEq(
             _quoteToken.allowance(_dtlAddress, address(_uniV2Router)),
@@ -143,20 +157,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     }
 
     // ========== Modifiers ========== //
-
-    function _performCallback(uint96 lotId_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onSettle(
-            lotId_,
-            _proceeds,
-            _refund,
-            abi.encode(UniswapV2DirectToLiquidity.OnSettleParams({maxSlippage: _maxSlippage}))
-        );
-    }
-
-    function _performCallback() internal {
-        _performCallback(_lotId);
-    }
 
     function _createPool() internal returns (address) {
         return _uniV2Factory.createPair(address(_quoteToken), address(_baseToken));
@@ -180,18 +180,17 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _capacityUtilised = _LOT_CAPACITY * capacityUtilisationPercent / 100e2;
 
         // The proceeds utilisation percent scales the quote tokens and base tokens linearly
-        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
-        _baseTokensToDeposit =
-            _capacityUtilised * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
+        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.poolPercent / 100e2;
+        _baseTokensToDeposit = _capacityUtilised * _dtlCreateParams.poolPercent / 100e2;
         _;
     }
 
-    modifier givenUnboundedProceedsUtilisationPercent(uint24 percent_) {
+    modifier givenUnboundedPoolPercent(uint24 percent_) {
         // Bound the percent
-        uint24 percent = uint24(bound(percent_, 1, 100e2));
+        uint24 percent = uint24(bound(percent_, 10e2, 100e2));
 
         // Set the value on the DTL
-        _dtlCreateParams.proceedsUtilisationPercent = percent;
+        _dtlCreateParams.poolPercent = percent;
         _;
     }
 
@@ -207,11 +206,6 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     modifier whenRefundIsBounded(uint96 refund_) {
         // Bound the refund
         _refund = uint96(bound(refund_, 1e17, 5e18));
-        _;
-    }
-
-    modifier givenMaxSlippage(uint24 maxSlippage_) {
-        _maxSlippage = maxSlippage_;
         _;
     }
 
@@ -269,6 +263,15 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
     // ========== Tests ========== //
 
+    // [X] given the onSettle callback has already been called
+    //  [X] when onSettle is called
+    //   [X] it reverts
+    //  [X] when onCancel is called
+    //   [X] it reverts
+    //  [X] when onCurate is called
+    //   [X] it reverts
+    //  [X] when onCreate is called
+    //   [X] it reverts
     // [X] given the pool is created
     //  [X] it initializes the pool
     // [X] given the pool is created and initialized
@@ -305,7 +308,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -314,17 +317,18 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
+    function test_givenPoolPercent_fuzz(uint24 percent_)
         public
         givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
+        whenRecipientIsNotSeller
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -343,7 +347,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -352,13 +356,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenProceedsUtilisationPercent_givenCurationPayout_fuzz(
+    function test_givenPoolPercent_givenCurationPayout_fuzz(
         uint24 percent_,
         uint96 curationPayout_
     )
         public
         givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
         givenOnCreate
         givenUnboundedOnCurate(curationPayout_)
         setCallbackParameters(_PROCEEDS, _REFUND)
@@ -366,7 +370,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -385,7 +389,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -408,12 +412,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         // Expect revert
         vm.expectRevert("UniswapV2Router: INSUFFICIENT_A_AMOUNT");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenPoolHasDepositWithLowerPrice_whenMaxSlippageIsSet()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(500) // 5%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreated
@@ -421,9 +426,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-        givenMaxSlippage(500) // 5%
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -446,12 +450,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         // Expect revert
         vm.expectRevert("UniswapV2Router: INSUFFICIENT_B_AMOUNT");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenPoolHasDepositWithHigherPrice_whenMaxSlippageIsSet()
         public
         givenCallbackIsCreated
+        givenMaxSlippage(500) // 5%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolIsCreated
@@ -459,9 +464,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
-        givenMaxSlippage(500) // 5%
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -474,15 +478,15 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -495,8 +499,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         whenRecipientIsNotSeller
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
@@ -504,7 +508,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -517,21 +521,25 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
         givenAddressHasBaseTokenBalance(_SELLER, _baseTokensToDeposit)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _baseTokensToDeposit)
     {
-        _performCallback();
+        _performOnSettle();
 
         // Warp to the end of the vesting period
-        vm.warp(_START + 3);
+        vm.warp(_AUCTION_CONCLUSION + 3);
+
+        // Check that there is a vested token balance
+        uint256 tokenId = _getVestingTokenId();
+        uint256 redeemable = _linearVesting.redeemable(_SELLER, tokenId);
+        assertGt(redeemable, 0, "redeemable");
 
         // Redeem the vesting tokens
-        uint256 tokenId = _getVestingTokenId();
         vm.prank(_SELLER);
         _linearVesting.redeemMax(tokenId);
 
@@ -554,7 +562,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         // Get the pools deployed by the DTL callback
         IUniswapV2Pair pool = _getUniswapV2Pool();
@@ -615,7 +623,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         );
         vm.expectRevert(err);
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_givenInsufficientBaseTokenAllowance_reverts()
@@ -630,7 +638,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         // Expect revert
         vm.expectRevert("TRANSFER_FROM_FAILED");
 
-        _performCallback();
+        _performOnSettle();
     }
 
     function test_success()
@@ -642,7 +650,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -663,7 +671,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         // Create second lot
         uint96 lotIdTwo = _createLot(_NOT_SELLER);
 
-        _performCallback(lotIdTwo);
+        _performOnSettle(lotIdTwo);
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
@@ -682,12 +690,95 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
         givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
     {
-        _performCallback();
+        _performOnSettle();
 
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
         _assertBaseTokenBalance();
         _assertApprovals();
+    }
+
+    function test_auctionCompleted_onCreate_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseCallback determines if the lot has already been registered
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCreate again
+        _performOnCreate();
+    }
+
+    function test_auctionCompleted_onCurate_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCurate
+        _performOnCurate(_curatorPayout);
+    }
+
+    function test_auctionCompleted_onCancel_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onCancel
+        _performOnCancel();
+    }
+
+    function test_auctionCompleted_onSettle_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        _performOnSettle();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Try to call onSettle
+        _performOnSettle();
     }
 }
