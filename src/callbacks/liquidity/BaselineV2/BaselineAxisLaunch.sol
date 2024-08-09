@@ -701,8 +701,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         {
             IUniswapV3Pool pool = BPOOL.pool();
 
-            // TODO should we use rounded ticks instead of sqrtPrices?
-            // Will minor inaccuracies cause issues with the check?
             // Current price of the pool
             (uint160 currentSqrtPrice,,,,,,) = pool.slot0();
 
@@ -791,14 +789,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Only the anchor range is used, otherwise the liquidity would be too thick.
         // The anchor range is guranteed to have a tick spacing width
         // and to have reserves of at least 1% of the proceeds.
-        //
-        // TODO Reference: L-02 and L-07
-        // Consider making the amount of discovery liquidity an onCreate parameter
-        // This allows for more control over the liquidity distribution.
-        // Specifically, it can enable configurations with high amounts of reserves
-        // in the floor to still have adequate liquidity in the discovery range.
-        // We need to check that the discovery liquidity is > the anchor liquidity that ends
-        // up being deployed.
         BPOOL.addLiquidityTo(Range.DISCOVERY, BPOOL.getLiquidity(Range.ANCHOR) * 11 / 10);
 
         //// Step 4: Send remaining proceeds (and any excess reserves) to the recipient ////
@@ -881,7 +871,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // Handle the swap case
         if (case_ == 1) {
             // Mint the bAsset delta to the pool (if greater than 0)
-            // TODO should we cap the amount here? if we do we will need to revert and that will make it so the auction cannot be settled
             if (bAssetDelta_ > 0) {
                 BPOOL.mint(pool, uint256(bAssetDelta_));
             }
