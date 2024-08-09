@@ -8,6 +8,9 @@ import {BaselineAxisLaunchTest} from "../BaselineAxisLaunchTest.sol";
 import {BALwithAllocatedAllowlist} from
     "../../../../../src/callbacks/liquidity/BaselineV2/BALwithAllocatedAllowlist.sol";
 
+// Baseline
+import {Actions as BaselineKernelActions} from "@baseline/Kernel.sol";
+
 contract BaselineAllocatedAllowlistTest is BaselineAxisLaunchTest {
     // ========== MODIFIERS ========== //
 
@@ -29,9 +32,9 @@ contract BaselineAllocatedAllowlistTest is BaselineAxisLaunchTest {
 
         _dtlAddress = address(_dtl);
 
-        // Call configureDependencies to set everything that's needed
-        _mockBaselineGetModuleForKeycode();
-        _dtl.configureDependencies();
+        // Install as a policy
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, _dtlAddress);
         _;
     }
 
