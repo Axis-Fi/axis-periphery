@@ -2,7 +2,7 @@
 
 echo ""
 echo "*** Installing forge dependencies"
-forge install
+rm -rf lib && forge install
 echo "    Done"
 
 echo ""
