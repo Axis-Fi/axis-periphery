@@ -71,6 +71,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     int24 internal _poolInitialTick;
     /// @dev Set in `_setFloorRangeGap()`
     int24 internal _floorRangeGap;
+    uint256 internal _curatorFee;
 
     uint48 internal constant _START = 1_000_000;
 
@@ -302,6 +303,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _createAuction() internal {
+        console2.log("");
         console2.log("Creating auction in FPB module");
 
         // Create a dummy auction in the module
@@ -323,6 +325,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onCreate() internal {
+        console2.log("");
         console2.log("Calling onCreate callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCreate(
@@ -342,6 +345,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onCancel() internal {
+        console2.log("");
         console2.log("Calling onCancel callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCancel(_lotId, _scaleBaseTokenAmount(_LOT_CAPACITY), true, abi.encode(""));
@@ -353,11 +357,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onSettle() internal {
+        console2.log("");
         console2.log("Calling onSettle callback");
+
+        uint256 capacityRefund = _scaleBaseTokenAmount(_REFUND_AMOUNT);
+        console2.log("capacity refund", capacityRefund);
+        uint256 curatorFeeRefund = capacityRefund * _curatorFee / _LOT_CAPACITY;
+        console2.log("curator fee refund", curatorFeeRefund);
+
         vm.prank(address(_auctionHouse));
-        _dtl.onSettle(
-            _lotId, _PROCEEDS_AMOUNT, _scaleBaseTokenAmount(_REFUND_AMOUNT), abi.encode("")
-        );
+        _dtl.onSettle(_lotId, _PROCEEDS_AMOUNT, capacityRefund + curatorFeeRefund, abi.encode(""));
     }
 
     modifier givenOnSettle() {
@@ -366,6 +375,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     }
 
     function _onCurate(uint256 curatorFee_) internal {
+        console2.log("");
         console2.log("Calling onCurate callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorFee_, true, abi.encode(""));
@@ -512,6 +522,18 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         }
 
         return roundedTick;
+    }
+
+    function _setCuratorFeePercent(uint24 curatorFeePercent_) internal {
+        // Mock on the AuctionHouse
+        vm.mockCall(
+            address(_auctionHouse),
+            abi.encodeWithSelector(IAuctionHouse.lotFees.selector, _lotId),
+            abi.encode(address(0), true, curatorFeePercent_, 0, 0)
+        );
+
+        // Update the value
+        _curatorFee = _LOT_CAPACITY * curatorFeePercent_ / 100e2;
     }
 
     // ========== MOCKS ========== //

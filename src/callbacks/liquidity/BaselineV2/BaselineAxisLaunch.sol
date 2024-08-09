@@ -436,15 +436,17 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             uint256 initialCircSupply;
             {
                 // Get the current supply values
-                uint256 currentSupply = bAsset.totalSupply(); // can use totalSupply here since no bAssets are in the pool yet
-                console2.log("currentSupply", currentSupply);
+                uint256 totalSupply = bAsset.totalSupply(); // can use totalSupply here since no bAssets are in the pool yet
+                console2.log("totalSupply", totalSupply);
                 uint256 currentCollatSupply = CREDT.totalCollateralized();
                 console2.log("currentCollatSupply", currentCollatSupply);
+
+                // Calculate the maximum curator fee that can be paid
                 (,, uint48 curatorFeePerc,,) = IAuctionHouse(AUCTION_HOUSE).lotFees(lotId_);
                 uint256 curatorFee = (capacity_ * curatorFeePerc) / ONE_HUNDRED_PERCENT;
-                console2.log("curatorFee", curatorFee);
-                console2.log("capacity", capacity_);
-                initialCircSupply = currentSupply + currentCollatSupply + capacity_ + curatorFee;
+
+                // Capacity and curator fee have not yet been minted, so we add those
+                initialCircSupply = totalSupply + currentCollatSupply + capacity_ + curatorFee;
                 console2.log("initialCircSupply", initialCircSupply);
             }
 
@@ -458,7 +460,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // Get the fixed price from the auction module
                 // This value is in the number of reserve tokens per baseline token
                 uint256 auctionPrice = auctionModule.getAuctionData(lotId_).price;
-                console2.log("auctionPrice", auctionPrice);
 
                 // Get the active tick from the pool and confirm it is >= the auction price corresponds to
                 {
@@ -483,15 +484,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // Calculate the expected proceeds from the auction and how much will be deposited in the pool
                 uint256 expectedProceeds = (auctionPrice * capacity_) / (10 ** bAsset.decimals());
                 uint256 poolProceeds = (expectedProceeds * poolPercent) / ONE_HUNDRED_PERCENT;
-                console2.log("expectedProceeds", expectedProceeds);
-                console2.log("poolProceeds", poolProceeds);
-                console2.log("spotProceeds", expectedProceeds - poolProceeds);
 
                 // Calculate the expected reserves for the floor and anchor ranges
                 uint256 floorReserves = (poolProceeds * floorReservesPercent) / ONE_HUNDRED_PERCENT;
                 uint256 anchorReserves = poolProceeds - floorReserves;
-                console2.log("floorReserves", floorReserves);
-                console2.log("anchorReserves", anchorReserves);
 
                 // Calculate the expected capacity of the pool
                 // Skip discovery range since no reserves will be deposited in it
