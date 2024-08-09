@@ -605,55 +605,33 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     }
 
     function uniswapV3MintCallback(uint256, uint256 amount1Owed, bytes calldata) external {
-        console2.log("mint callback", amount1Owed);
-
         // Transfer the quote tokens
         _quoteToken.mint(msg.sender, amount1Owed);
     }
 
-    struct MintCallbackData {
-        PoolAddress.PoolKey poolKey;
-        address payer;
-    }
-
     function _mintPosition(
-        uint256 quoteTokenAmount_,
         int24 tickLower_,
         int24 tickUpper_
     ) internal {
         // Using PoC: https://github.com/GuardianAudits/axis-1/pull/4/files
-        // Not currently working
-
         IUniswapV3Pool pool = _baseToken.pool();
-        // uint128 liquidity;
-        // {
-        //     (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
-        //     console2.log("sqrtPriceX96", sqrtPriceX96);
-        //     uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(tickLower_);
-        //     console2.log("sqrtRatioAX96", sqrtRatioAX96);
-        //     uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(tickUpper_);
-        //     console2.log("sqrtRatioBX96", sqrtRatioBX96);
 
-        //     liquidity = LiquidityAmounts.getLiquidityForAmounts(
-        //         sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, 1, quoteTokenAmount_
-        //     );
-        //     console2.log("liquidity", liquidity);
-        // }
-
-        // PoolAddress.PoolKey memory poolKey = PoolAddress.PoolKey({
-        //     token0: address(_baseToken),
-        //     token1: address(_quoteToken),
-        //     fee: _feeTier
-        // });
-
-        // This encounters an EVM revert with no error data
-        (uint256 amount0, uint256 amount1) =
-            pool.mint(address(this), tickLower_, tickUpper_, 1e18, "");
-        console2.log("amount0", amount0);
-        console2.log("amount1", amount1);
+        pool.mint(address(this), tickLower_, tickUpper_, 1e18, "");
     }
 
-    function test_poolPriceHigher(uint256 quoteTokenAmount_)
+    function uniswapV3SwapCallback(int256, int256, bytes memory) external pure {
+        return;
+    }
+
+    function _swap(
+        uint160 sqrtPrice_
+    ) internal {
+        IUniswapV3Pool pool = _baseToken.pool();
+
+        pool.swap(address(this), true, 1, sqrtPrice_, "");
+    }
+
+    function test_existingReservesAtHigherPoolTick()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -662,11 +640,28 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
         givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // Provide reserve tokens to the pool at a higher price
-        _mintPosition(quoteTokenAmount_, _poolInitialTick + 1, _poolInitialTick + 2);
+        // Assert the pool price
+        int24 poolTick;
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
+
+        // Swap at a tick higher than the anchor range
+        IUniswapV3Pool pool = _baseToken.pool();
+        pool.swap(address(this), false, 1, TickMath.getSqrtRatioAtTick(60_000), "");
+
+        // Assert that the pool tick has moved higher
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 60_000, "pool tick after swap");
+
+        // Provide reserve tokens to the pool at a tick higher than the anchor range and lower than the new active tick
+        _mintPosition(12_000, 12_000 + _tickSpacing);
 
         // Perform callback
         _onSettle();
+
+        // Assert that the pool tick has corrected
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
 
         // TODO supply and quote token balances will be different
 
@@ -677,7 +672,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_poolPriceLower(uint256 quoteTokenAmount_)
+    function test_existingReservesAtHigherPoolTick_noLiquidity()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -686,13 +681,104 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
         givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // Provide reserve tokens to the pool at a lower price
-        _mintPosition(quoteTokenAmount_, -60_000 - 60, -60_000);
+        // Assert the pool price
+        int24 poolTick;
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
+
+        // Swap at a tick higher than the anchor range
+        IUniswapV3Pool pool = _baseToken.pool();
+        pool.swap(address(this), false, 1, TickMath.getSqrtRatioAtTick(60_000), "");
+
+        // Assert that the pool tick has moved higher
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 60_000, "pool tick after swap");
+
+        // Do not mint any liquidity above the anchor range
 
         // Perform callback
         _onSettle();
 
+        // Assert that the pool tick has corrected
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_existingReservesAtLowerPoolTick()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Provide reserve tokens to the pool at a lower tick
+        _mintPosition(-60_000 - _tickSpacing, -60_000);
+
+        // Assert the pool price
+        int24 poolTick;
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
+
+        // Swap
+        _swap(TickMath.getSqrtRatioAtTick(-60_000));
+
+        // Assert that the pool price has moved lower
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, -60_001, "pool tick after swap");
+
+        // Perform callback
+        _onSettle();
+
+        // Assert that the pool tick has corrected
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
+
         // TODO supply and quote token balances will be different
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_existingReservesAtLowerPoolTick_noLiquidity()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Don't mint any liquidity
+
+        // Assert the pool price
+        int24 poolTick;
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
+
+        // Swap
+        _swap(TickMath.getSqrtRatioAtTick(-60_000));
+
+        // Assert that the pool price has moved lower
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, -60_000, "pool tick after swap");
+
+        // Perform callback
+        _onSettle();
+
+        // Assert that the pool tick has corrected
+        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
 
         _assertQuoteTokenBalances();
         _assertBaseTokenBalances(0);
