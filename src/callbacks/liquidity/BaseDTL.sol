@@ -155,7 +155,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
             // Get the linear vesting module (or revert)
             linearVestingModule = LinearVesting(_getLatestLinearVestingModule());
 
-            // Validate
+            // Use the native LinearVesting validation
             if (
                 // We will actually use the LP tokens, but this is a placeholder as we really want to validate the vesting parameters
                 !linearVestingModule.validate(
@@ -163,6 +163,13 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
                     _getEncodedVestingParams(params.vestingStart, params.vestingExpiry)
                 )
             ) {
+                revert Callback_Params_InvalidVestingParams();
+            }
+
+            // Validate that the vesting will not start before auction conclusion
+            (, uint48 conclusion,,,,,,) =
+                AuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_).lotData(lotId_);
+            if (params.vestingStart < conclusion) {
                 revert Callback_Params_InvalidVestingParams();
             }
         }

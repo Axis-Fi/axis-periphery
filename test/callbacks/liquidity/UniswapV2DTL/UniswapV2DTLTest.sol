@@ -40,6 +40,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     uint96 internal constant _LOT_CAPACITY = 10e18;
 
     uint48 internal constant _START = 1_000_000;
+    uint48 internal constant _DURATION = 1 days;
+    uint48 internal constant _AUCTION_START = _START + 1;
+    uint48 internal constant _AUCTION_CONCLUSION = _AUCTION_START + _DURATION;
 
     uint96 internal _lotId = 1;
 
@@ -173,7 +176,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _createLot(address seller_) internal returns (uint96 lotId) {
+    function _createLot(address seller_, bytes memory err_) internal returns (uint96 lotId) {
         // Mint and approve the capacity to the owner
         _baseToken.mint(seller_, _LOT_CAPACITY);
         vm.prank(seller_);
@@ -194,16 +197,24 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         });
 
         IAuction.AuctionParams memory auctionParams = IAuction.AuctionParams({
-            start: uint48(block.timestamp) + 1,
-            duration: 1 days,
+            start: _AUCTION_START,
+            duration: _DURATION,
             capacityInQuote: false,
             capacity: _LOT_CAPACITY,
             implParams: abi.encode("")
         });
 
+        if (err_.length > 0) {
+            vm.expectRevert(err_);
+        }
+
         // Create a new lot
         vm.prank(seller_);
         return _auctionHouse.auction(routingParams, auctionParams, "");
+    }
+
+    function _createLot(address seller_) internal returns (uint96 lotId) {
+        return _createLot(seller_, "");
     }
 
     modifier givenOnCreate() {
