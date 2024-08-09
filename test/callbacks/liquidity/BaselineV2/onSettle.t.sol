@@ -8,6 +8,11 @@ import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 import {Range} from "@baseline/modules/BPOOL.v1.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
+import {IUniswapV3Pool} from
+    "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
+import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
+import {LiquidityAmounts} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/LiquidityAmounts.sol";
+import {PoolAddress} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/PoolAddress.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
@@ -591,6 +596,103 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     {
         // Perform callback
         _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function uniswapV3MintCallback(uint256, uint256 amount1Owed, bytes calldata) external {
+        console2.log("mint callback", amount1Owed);
+
+        // Transfer the quote tokens
+        _quoteToken.mint(msg.sender, amount1Owed);
+    }
+
+    struct MintCallbackData {
+        PoolAddress.PoolKey poolKey;
+        address payer;
+    }
+
+    function _mintPosition(
+        uint256 quoteTokenAmount_,
+        int24 tickLower_,
+        int24 tickUpper_
+    ) internal {
+        // Using PoC: https://github.com/GuardianAudits/axis-1/pull/4/files
+        // Not currently working
+
+        IUniswapV3Pool pool = _baseToken.pool();
+        // uint128 liquidity;
+        // {
+        //     (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
+        //     console2.log("sqrtPriceX96", sqrtPriceX96);
+        //     uint160 sqrtRatioAX96 = TickMath.getSqrtRatioAtTick(tickLower_);
+        //     console2.log("sqrtRatioAX96", sqrtRatioAX96);
+        //     uint160 sqrtRatioBX96 = TickMath.getSqrtRatioAtTick(tickUpper_);
+        //     console2.log("sqrtRatioBX96", sqrtRatioBX96);
+
+        //     liquidity = LiquidityAmounts.getLiquidityForAmounts(
+        //         sqrtPriceX96, sqrtRatioAX96, sqrtRatioBX96, 1, quoteTokenAmount_
+        //     );
+        //     console2.log("liquidity", liquidity);
+        // }
+
+        // PoolAddress.PoolKey memory poolKey = PoolAddress.PoolKey({
+        //     token0: address(_baseToken),
+        //     token1: address(_quoteToken),
+        //     fee: _feeTier
+        // });
+
+        // This encounters an EVM revert with no error data
+        (uint256 amount0, uint256 amount1) =
+            pool.mint(address(this), tickLower_, tickUpper_, 1e18, "");
+        console2.log("amount0", amount0);
+        console2.log("amount1", amount1);
+    }
+
+    function test_poolPriceHigher(uint256 quoteTokenAmount_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Provide reserve tokens to the pool at a higher price
+        _mintPosition(quoteTokenAmount_, _poolInitialTick + 1, _poolInitialTick + 2);
+
+        // Perform callback
+        _onSettle();
+
+        // TODO supply and quote token balances will be different
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_poolPriceLower(uint256 quoteTokenAmount_)
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Provide reserve tokens to the pool at a lower price
+        _mintPosition(quoteTokenAmount_, -60_000 - 60, -60_000);
+
+        // Perform callback
+        _onSettle();
+
+        // TODO supply and quote token balances will be different
 
         _assertQuoteTokenBalances();
         _assertBaseTokenBalances(0);
