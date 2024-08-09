@@ -824,7 +824,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             console2.log("totalSupply", totalSupply);
             console2.log("totalCollatSupply", totalCollatSupply);
             uint256 totalSpotSupply =
-                totalSupply - floor.bAssets - anchor.bAssets - discovery.bAssets;
+                totalSupply - floor.bAssets - anchor.bAssets - discovery.bAssets - totalCollatSupply;
             console2.log("totalSpotSupply", totalSpotSupply);
 
             // verify the liquidity can support the intended supply
