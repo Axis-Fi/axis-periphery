@@ -348,21 +348,59 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_givenCreditAllocations_fuzz(uint256 creditAllocations_)
+    function test_givenCreditAllocations_low()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
+        givenCollateralized(1e18)
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
         givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // NOTE: somewhere around 88526166011773621485726186888697, this makes the Baseline token insolvent. Should this be accepted as an upper limit with tests? Any further action?
-        uint256 creditAllocations = bound(creditAllocations_, 0, type(uint256).max);
+        // Perform callback
+        _onSettle();
 
-        // Allocate credit accounts
-        _creditModule.setTotalCollateralized(creditAllocations);
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
 
+    function test_givenCreditAllocations_middle()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenCollateralized(10e18)
+        givenAnchorTickWidth(36) // For the solvency check
+        givenFloorReservesPercent(94e2) // For the solvency check
+        givenPoolPercent(100e2) // For the solvency check
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_givenCreditAllocations_high()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenCollateralized(20e18)
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
         // Perform callback
         _onSettle();
 

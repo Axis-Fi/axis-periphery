@@ -536,6 +536,15 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _curatorFee = _LOT_CAPACITY * curatorFeePercent_ / 100e2;
     }
 
+    function _setTotalCollateralized(uint256 totalCollateralized_) internal {
+        _creditModule.setTotalCollateralized(totalCollateralized_);
+    }
+
+    modifier givenCollateralized(uint256 totalCollateralized_) {
+        _setTotalCollateralized(totalCollateralized_);
+        _;
+    }
+
     // ========== MOCKS ========== //
 
     function _mockGetAuctionModuleForId() internal {
