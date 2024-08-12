@@ -26,6 +26,7 @@ import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkle
 import {MerkleAllowlist} from "../../src/callbacks/allowlists/MerkleAllowlist.sol";
 import {TokenAllowlist} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
 import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
+import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 import {BALwithAllowlist} from "../../src/callbacks/liquidity/BaselineV2/BALwithAllowlist.sol";
 import {BALwithAllocatedAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithAllocatedAllowlist.sol";
@@ -778,6 +779,56 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         );
 
         return (address(cbBatchAllocatedMerkleAllowlist), _PREFIX_CALLBACKS);
+    }
+
+    function deployBatchBaselineAxisLaunch(bytes memory args_)
+        public
+        returns (address, string memory)
+    {
+        // Decode arguments
+        (address baselineKernel, address reserveToken) = abi.decode(args_, (address, address));
+
+        // Validate arguments
+        require(baselineKernel != address(0), "baselineKernel not set");
+        require(reserveToken != address(0), "reserveToken not set");
+
+        console2.log("");
+        console2.log("Deploying BaselineAxisLaunch (Batch)");
+        console2.log("    Kernel", baselineKernel);
+        console2.log("    ReserveToken", reserveToken);
+
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+
+        // Get the salt
+        // This supports an arbitrary salt key, which can be set in the deployment sequence
+        // This is required as each callback is single-use
+        bytes32 salt_ = _getSalt(
+            "BaselineAxisLaunch",
+            type(BaselineAxisLaunch).creationCode,
+            abi.encode(batchAuctionHouse, baselineKernel, reserveToken)
+        );
+
+        // Revert if the salt is not set
+        require(salt_ != bytes32(0), "Salt not set");
+
+        // Deploy the module
+        console2.log("    salt:", vm.toString(salt_));
+
+        vm.broadcast();
+        BaselineAxisLaunch batchCallback =
+            new BaselineAxisLaunch{salt: salt_}(batchAuctionHouse, baselineKernel, reserveToken);
+        console2.log("");
+        console2.log("    BaselineAxisLaunch (Batch) deployed at:", address(batchCallback));
+
+        // Install the module as a policy in the Baseline kernel
+        vm.broadcast();
+        BaselineKernel(baselineKernel).executeAction(
+            BaselineKernelActions.ActivatePolicy, address(batchCallback)
+        );
+
+        console2.log("    Policy activated in Baseline Kernel");
+
+        return (address(batchCallback), _PREFIX_CALLBACKS);
     }
 
     function deployBatchBaselineAllocatedAllowlist(bytes memory args_)
