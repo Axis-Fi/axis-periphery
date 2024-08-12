@@ -438,9 +438,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         // Perform the call
         _onCreate();
 
-        // Check that the callback owner is correct
-        assertEq(_dtl.owner(), _OWNER, "owner");
-
         // Assert base token balances
         _assertBaseTokenBalances();
 
@@ -669,9 +666,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         // Perform the call
         _onCreate();
 
-        // Check that the callback owner is correct
-        assertEq(_dtl.owner(), _OWNER, "owner");
-
         // Assert base token balances
         _assertBaseTokenBalances();
 
@@ -701,9 +695,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     {
         // Perform the call
         _onCreate();
-
-        // Check that the callback owner is correct
-        assertEq(_dtl.owner(), _OWNER, "owner");
 
         // Assert base token balances
         _assertBaseTokenBalances();
@@ -1079,9 +1070,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     {
         // Perform the call
         _onCreate();
-
-        // Check that the callback owner is correct
-        assertEq(_dtl.owner(), _OWNER, "owner");
 
         // Assert base token balances
         _assertBaseTokenBalances();

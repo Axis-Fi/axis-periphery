@@ -44,9 +44,8 @@ contract BALwithTokenAllowlist is BaselineAxisLaunch {
     constructor(
         address auctionHouse_,
         address baselineKernel_,
-        address reserve_,
-        address owner_
-    ) BaselineAxisLaunch(auctionHouse_, baselineKernel_, reserve_, owner_) {}
+        address reserve_
+    ) BaselineAxisLaunch(auctionHouse_, baselineKernel_, reserve_) {}
 
     // ========== CALLBACK FUNCTIONS ========== //
 

@@ -23,7 +23,7 @@ contract BaselineTokenAllowlistTest is BaselineAxisLaunchTest {
     modifier givenCallbackIsCreated() override {
         // Get the salt
         bytes memory args =
-            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN);
         bytes32 salt =
             _getTestSalt("BaselineTokenAllowlist", type(BALwithTokenAllowlist).creationCode, args);
 
@@ -31,7 +31,7 @@ contract BaselineTokenAllowlistTest is BaselineAxisLaunchTest {
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
         _dtl = new BALwithTokenAllowlist{salt: salt}(
-            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER
+            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN
         );
         vm.stopBroadcast();
 
