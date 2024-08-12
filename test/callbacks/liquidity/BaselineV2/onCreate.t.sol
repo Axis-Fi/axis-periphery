@@ -241,9 +241,6 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
 
-    // TODO curator fee solvency check
-    // TODO allocations solvency check
-
     function test_callbackDataIncorrect_reverts()
         public
         givenBPoolIsCreated
