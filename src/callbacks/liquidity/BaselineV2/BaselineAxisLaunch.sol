@@ -32,8 +32,6 @@ import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
 
-import {console2} from "@forge-std-1.9.1/console2.sol";
-
 /// @notice     Axis auction callback to initialize a Baseline token using proceeds from a batch auction.
 /// @dev        This contract combines Baseline's InitializeProtocol Policy and Axis' Callback functionality to build an Axis auction callback specific to Baseline V2 token launches
 ///             It is designed to be used with a single auction and Baseline pool
@@ -271,6 +269,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - Performs validation
     ///                 - Sets the `lotId`, `percentReservesFloor`, `anchorTickWidth`, and `discoveryTickWidth` variables
     ///                 - Calls the allowlist callback
+    ///                 - Performs a solvency check to ensure the pool can support the intended supply
     ///                 - Mints the required bAsset tokens to the AuctionHouse
     ///
     ///                 This function has the following assumptions:
@@ -290,6 +289,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - The auction format is not supported
     ///                 - The auction is not prefunded
     ///                 - Any of the tick ranges would exceed the tick bounds
+    ///                 - The provided anchor range upper tick is not the same as the calculated value
+    ///                 - The pool tick is less than the auction price (in terms of ticks)
+    ///                 - The pool capacity is not sufficient to support the intended supply
     function _onCreate(
         uint96 lotId_,
         address seller_,
@@ -440,9 +442,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             {
                 // Get the current supply values
                 uint256 totalSupply = bAsset.totalSupply(); // can use totalSupply here since no bAssets are in the pool yet
-                console2.log("totalSupply", totalSupply);
-                uint256 currentCollatSupply = CREDT.totalCollateralized();
-                console2.log("currentCollatSupply", currentCollatSupply);
 
                 // Calculate the maximum curator fee that can be paid
                 (,, uint48 curatorFeePerc,,) = IAuctionHouse(AUCTION_HOUSE).lotFees(lotId_);
@@ -451,7 +450,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 // Capacity and curator fee have not yet been minted, so we add those
                 // Collateralized supply is already minted and included in total supply, so we do not need to add it
                 initialCircSupply = totalSupply + capacity_ + curatorFee;
-                console2.log("initialCircSupply", initialCircSupply);
             }
 
             // Calculate the initial capacity of the pool based on the ticks set and the expected proceeds to deposit in the pool
@@ -503,18 +501,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 uint256 anchorCapacity = BPOOL.getCapacityForReserves(
                     anchor.sqrtPriceL, anchor.sqrtPriceU, anchorReserves
                 );
-                console2.log("floorCapacity", floorCapacity);
-                console2.log("anchorCapacity", anchorCapacity);
 
                 // Calculate the debt capacity at the floor range
                 uint256 currentCredit = CREDT.totalCreditIssued();
                 uint256 debtCapacity =
                     BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
-                console2.log("debtCapacity", debtCapacity);
 
                 // Calculate the total initial capacity of the pool
                 initialCapacity = debtCapacity + floorCapacity + anchorCapacity;
-                console2.log("initialCapacity", initialCapacity);
             }
 
             // Verify the liquidity can support the intended supply
@@ -524,7 +518,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // - auction price (via the auction fixed price)
             // - system liquidity (via the pool allocation and floor reserves allocation)
             uint256 capacityRatio = initialCapacity.divWad(initialCircSupply);
-            console2.log("capacityRatio", capacityRatio);
             if (capacityRatio < 100e16 || capacityRatio > 102e16) {
                 revert Callback_InvalidInitialization();
             }
@@ -645,9 +638,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - Performs validation
     ///                 - Sets the auction as complete
     ///                 - Burns any refunded bAsset tokens
-    ///                 - Calculates the deployment parameters for the Baseline pool
-    ///                 - EMP auction format: calculates the ticks based on the clearing price
-    ///                 - Deploys reserves into the Baseline pool
+    ///                 - Ensures that the pool is at the correct price
+    ///                 - Deploys reserves and liquidity into the Baseline pool
+    ///                 - Performs a solvency check to ensure the pool can support the supply
     ///
     ///                 Note that there may be reserve assets left over after liquidity deployment, which must be manually withdrawn by the owner using `withdrawReserves()`.
     ///
@@ -657,13 +650,19 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 This function has the following assumptions:
     ///                 - BaseCallback has already validated the lot ID
     ///                 - The AuctionHouse has already sent the correct amount of quote tokens (proceeds)
+    ///                 - The AuctionHouse has already sent the correct amount of refunded base tokens
     ///                 - The AuctionHouse is pre-funded, so does not require additional base tokens (bAssets) to be supplied
+    ///                 - No new Baseline credit allocations have been made since the auction was created (and `onCreate` was called)
     ///
     ///                 This function reverts if:
     ///                 - `lotId_` is not the same as the stored `lotId`
     ///                 - The auction is already complete
     ///                 - The reported proceeds received are less than the reserve balance
     ///                 - The reported refund received is less than the bAsset balance
+    ///                 - The pool price is not at the target price
+    ///                 - The pool capacity is not sufficient to support the intended supply
+    ///
+    ///                 Note that while the solvency check in both `onCreate` and `onSettle` are consistent, if the auction is not fully subscribed (and hence there is a refund), it can cause the solvency check to fail in `onSettle`.
     function _onSettle(
         uint96 lotId_,
         uint256 proceeds_,
@@ -811,20 +810,11 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             uint256 currentCredit = CREDT.totalCreditIssued();
             uint256 debtCapacity =
                 BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
-            console2.log("floorCapacity", floor.capacity);
-            console2.log("anchorCapacity", anchor.capacity);
-            console2.log("discoverCapacity", discovery.capacity);
-            console2.log("debtCapacity", debtCapacity);
 
             uint256 totalCapacity =
                 debtCapacity + floor.capacity + anchor.capacity + discovery.capacity;
-            console2.log("totalCapacity", totalCapacity);
-            console2.log("totalSupply", totalSupply);
-            console2.log("totalCollatSupply", totalCollatSupply);
             uint256 totalSpotSupply =
                 totalSupply - floor.bAssets - anchor.bAssets - discovery.bAssets - totalCollatSupply;
-            console2.log("totalSpotSupply", totalSpotSupply);
-            console2.log("spotAndCollatSupply", totalSpotSupply + totalCollatSupply);
 
             // verify the liquidity can support the intended supply
             // we do not check for a surplus at this point to avoid a DoS attack vector
@@ -833,7 +823,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // any surplus reserves added to the pool by a 3rd party before
             // the system is initialized will be snipable and effectively donated to the snipers
             uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
-            console2.log("capacityRatio", capacityRatio);
             if (capacityRatio < 100e16) {
                 revert Callback_InvalidInitialization();
             }
