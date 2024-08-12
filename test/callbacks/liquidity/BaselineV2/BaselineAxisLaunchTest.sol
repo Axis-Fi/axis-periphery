@@ -72,6 +72,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     int24 internal _floorRangeGap;
     uint256 internal _curatorFee;
 
+    uint256 internal _proceeds = _PROCEEDS_AMOUNT;
+    uint256 internal _refund = _REFUND_AMOUNT;
+
     uint48 internal constant _START = 1_000_000;
 
     uint96 internal _lotId = 1;
@@ -355,17 +358,25 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _onSettle() internal {
+    function _onSettle(bytes memory err_) internal {
         console2.log("");
         console2.log("Calling onSettle callback");
 
-        uint256 capacityRefund = _scaleBaseTokenAmount(_REFUND_AMOUNT);
+        uint256 capacityRefund = _scaleBaseTokenAmount(_refund);
         console2.log("capacity refund", capacityRefund);
         uint256 curatorFeeRefund = capacityRefund * _curatorFee / _LOT_CAPACITY;
         console2.log("curator fee refund", curatorFeeRefund);
 
+        if (err_.length > 0) {
+            vm.expectRevert(err_);
+        }
+
         vm.prank(address(_auctionHouse));
-        _dtl.onSettle(_lotId, _PROCEEDS_AMOUNT, capacityRefund + curatorFeeRefund, abi.encode(""));
+        _dtl.onSettle(_lotId, _proceeds, capacityRefund + curatorFeeRefund, abi.encode(""));
+    }
+
+    function _onSettle() internal {
+        _onSettle("");
     }
 
     modifier givenOnSettle() {

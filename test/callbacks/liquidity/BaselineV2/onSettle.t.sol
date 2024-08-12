@@ -11,8 +11,6 @@ import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
 import {IUniswapV3Pool} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
-import {LiquidityAmounts} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/LiquidityAmounts.sol";
-import {PoolAddress} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/PoolAddress.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
@@ -23,20 +21,24 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
     // ============ Modifiers ============ //
 
+    modifier givenFullCapacity() {
+        _proceeds = 30e18;
+        _refund = 0;
+        _;
+    }
+
     // ============ Assertions ============ //
 
     function _assertQuoteTokenBalances() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
         assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        uint256 poolProceeds = _PROCEEDS_AMOUNT * _createData.poolPercent / 100e2;
+        uint256 poolProceeds = _proceeds * _createData.poolPercent / 100e2;
         assertEq(
             _quoteToken.balanceOf(address(_baseToken.pool())),
             poolProceeds + _additionalQuoteTokensMinted,
             "quote token: pool"
         );
-        assertEq(
-            _quoteToken.balanceOf(_SELLER), _PROCEEDS_AMOUNT - poolProceeds, "quote token: seller"
-        );
+        assertEq(_quoteToken.balanceOf(_SELLER), _proceeds - poolProceeds, "quote token: seller");
     }
 
     function _assertBaseTokenBalances(uint256 curatorFee_) internal view {
@@ -47,10 +49,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         console2.log("totalSupply", totalSupply);
 
         // No payout distributed to "bidders", so don't account for it here
-        uint256 spotSupply = _LOT_CAPACITY - _REFUND_AMOUNT;
+        uint256 spotSupply = _LOT_CAPACITY - _refund;
         console2.log("spotSupply", spotSupply);
 
-        uint256 poolSupply = totalSupply - spotSupply - curatorFee_;
+        uint256 poolSupply =
+            totalSupply - spotSupply - curatorFee_ - _creditModule.totalCollateralized();
         assertEq(_baseToken.balanceOf(address(_baseToken.pool())), poolSupply, "base token: pool");
         assertEq(_baseToken.balanceOf(_SELLER), 0, "base token: seller");
     }
@@ -61,8 +64,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertApproxEqAbs(
             totalSupply - _baseToken.getPosition(Range.FLOOR).bAssets
                 - _baseToken.getPosition(Range.ANCHOR).bAssets
-                - _baseToken.getPosition(Range.DISCOVERY).bAssets - _creditModule.totalCreditIssued(), // totalCreditIssued would affect supply, totalCollateralized will not
-            _LOT_CAPACITY - _REFUND_AMOUNT + curatorFee_,
+                - _baseToken.getPosition(Range.DISCOVERY).bAssets,
+            _LOT_CAPACITY - _refund + curatorFee_ + _creditModule.totalCollateralized(),
             2, // There is a difference (rounding error?) of 2
             "circulating supply"
         );
@@ -73,7 +76,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     }
 
     function _assertPoolReserves() internal view {
-        uint256 poolProceeds = _PROCEEDS_AMOUNT * _createData.poolPercent / 100e2;
+        uint256 poolProceeds = _proceeds * _createData.poolPercent / 100e2;
         uint256 floorProceeds = poolProceeds * _createData.floorReservesPercent / 100e2;
         assertApproxEqAbs(
             _getRangeReserves(Range.FLOOR),
@@ -362,10 +365,11 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenCollateralized(1e18)
+        givenPoolPercent(92e2) // For the solvency check
+        givenCollateralized(_BORROWER, 1e18)
         givenOnCreate
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenBaseTokenRefundIsTransferred(_refund)
     {
         // Perform callback
         _onSettle();
@@ -377,18 +381,17 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_givenCreditAllocations_middle()
+    function test_givenCreditAllocations_low_givenFullCapacity()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenCollateralized(10e18)
-        givenAnchorTickWidth(36) // For the solvency check
-        givenFloorReservesPercent(94e2) // For the solvency check
-        givenPoolPercent(100e2) // For the solvency check
+        givenPoolPercent(92e2) // For the solvency check
+        givenCollateralized(_BORROWER, 1e18)
         givenOnCreate
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+        givenFullCapacity
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenBaseTokenRefundIsTransferred(_refund)
     {
         // Perform callback
         _onSettle();
@@ -400,15 +403,83 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertPoolReserves();
     }
 
-    function test_givenCreditAllocations_high()
+    function test_givenCreditAllocations_middle_reverts()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenCollateralized(20e18)
+        givenAnchorTickWidth(20) // For the solvency check
+        givenFloorReservesPercent(25e2) // For the solvency check
+        givenPoolPercent(99e2) // For the solvency check
+        givenCollateralized(_BORROWER, 5e18)
         givenOnCreate
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenBaseTokenRefundIsTransferred(_refund)
+    {
+        // Expect revert
+        // The solvency check fails due to the refund
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+
+        // Perform callback
+        _onSettle(err);
+    }
+
+    function test_givenCreditAllocations_middle_givenFullCapacity()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(20) // For the solvency check
+        givenFloorReservesPercent(25e2) // For the solvency check
+        givenPoolPercent(99e2) // For the solvency check
+        givenCollateralized(_BORROWER, 5e18)
+        givenOnCreate
+        givenFullCapacity
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenBaseTokenRefundIsTransferred(_refund)
+    {
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+    }
+
+    function test_givenCreditAllocations_high_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(31) // For the solvency check
+        givenCollateralized(_BORROWER, 10e18)
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenBaseTokenRefundIsTransferred(_refund)
+    {
+        // Expect revert
+        // The solvency check fails due to the refund
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+
+        // Perform callback
+        _onSettle(err);
+    }
+
+    function test_givenCreditAllocations_high_givenFullCapacity()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAnchorTickWidth(31) // For the solvency check
+        givenCollateralized(_BORROWER, 10e18)
+        givenOnCreate
+        givenFullCapacity
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenBaseTokenRefundIsTransferred(_refund)
     {
         // Perform callback
         _onSettle();
@@ -665,8 +736,6 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
 
-        // TODO supply and quote token balances will be different
-
         _assertQuoteTokenBalances();
         _assertBaseTokenBalances(0);
         // _assertCirculatingSupply(0); // Difficult to calculate the additional base tokens minted
@@ -742,8 +811,6 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         // Assert that the pool tick has corrected
         (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
-
-        // TODO supply and quote token balances will be different
 
         _assertQuoteTokenBalances();
         _assertBaseTokenBalances(0);
