@@ -30,7 +30,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
         uint256 poolProceeds = _PROCEEDS_AMOUNT * _createData.poolPercent / 100e2;
         assertEq(
-            _quoteToken.balanceOf(address(_baseToken.pool())), poolProceeds + _additionalQuoteTokensMinted, "quote token: pool"
+            _quoteToken.balanceOf(address(_baseToken.pool())),
+            poolProceeds + _additionalQuoteTokensMinted,
+            "quote token: pool"
         );
         assertEq(
             _quoteToken.balanceOf(_SELLER), _PROCEEDS_AMOUNT - poolProceeds, "quote token: seller"
@@ -614,10 +616,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _quoteToken.mint(msg.sender, amount1Owed);
     }
 
-    function _mintPosition(
-        int24 tickLower_,
-        int24 tickUpper_
-    ) internal {
+    function _mintPosition(int24 tickLower_, int24 tickUpper_) internal {
         // Using PoC: https://github.com/GuardianAudits/axis-1/pull/4/files
         IUniswapV3Pool pool = _baseToken.pool();
 
@@ -628,9 +627,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         return;
     }
 
-    function _swap(
-        uint160 sqrtPrice_
-    ) internal {
+    function _swap(uint160 sqrtPrice_) internal {
         IUniswapV3Pool pool = _baseToken.pool();
 
         pool.swap(address(this), true, 1, sqrtPrice_, "");
@@ -647,7 +644,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     {
         // Assert the pool price
         int24 poolTick;
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
 
         // Swap at a tick higher than the anchor range
@@ -655,7 +652,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         pool.swap(address(this), false, 1, TickMath.getSqrtRatioAtTick(60_000), "");
 
         // Assert that the pool tick has moved higher
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 60_000, "pool tick after swap");
 
         // Provide reserve tokens to the pool at a tick higher than the anchor range and lower than the new active tick
@@ -665,7 +662,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _onSettle();
 
         // Assert that the pool tick has corrected
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
 
         // TODO supply and quote token balances will be different
@@ -688,7 +685,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     {
         // Assert the pool price
         int24 poolTick;
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
 
         // Swap at a tick higher than the anchor range
@@ -696,7 +693,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         pool.swap(address(this), false, 1, TickMath.getSqrtRatioAtTick(60_000), "");
 
         // Assert that the pool tick has moved higher
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 60_000, "pool tick after swap");
 
         // Do not mint any liquidity above the anchor range
@@ -705,7 +702,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _onSettle();
 
         // Assert that the pool tick has corrected
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
 
         _assertQuoteTokenBalances();
@@ -729,21 +726,21 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Assert the pool price
         int24 poolTick;
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
 
         // Swap
         _swap(TickMath.getSqrtRatioAtTick(-60_000));
 
         // Assert that the pool price has moved lower
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, -60_001, "pool tick after swap");
 
         // Perform callback
         _onSettle();
 
         // Assert that the pool tick has corrected
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
 
         // TODO supply and quote token balances will be different
@@ -768,21 +765,21 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
 
         // Assert the pool price
         int24 poolTick;
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 10_986, "pool tick after mint"); // Original active tick
 
         // Swap
         _swap(TickMath.getSqrtRatioAtTick(-60_000));
 
         // Assert that the pool price has moved lower
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, -60_000, "pool tick after swap");
 
         // Perform callback
         _onSettle();
 
         // Assert that the pool tick has corrected
-        (,poolTick,,,,,) = _baseToken.pool().slot0();
+        (, poolTick,,,,,) = _baseToken.pool().slot0();
         assertEq(poolTick, 11_000, "pool tick after settlement"); // Ends up rounded to the tick spacing
 
         _assertQuoteTokenBalances();
