@@ -65,8 +65,8 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
     // [X] when the start timestamp and expiry timestamp are specified
     //  [X] given the linear vesting module is not installed
     //   [X] it reverts
-    //  [ ] given the vesting start timestamp is before the auction conclusion
-    //   [ ] it reverts
+    //  [X] given the vesting start timestamp is before the auction conclusion
+    //   [X] it reverts
     //  [X] it records the address of the linear vesting module
     // [X] when the recipient is the zero address
     //  [X] it reverts
