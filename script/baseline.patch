@@ -48,12 +48,3 @@ index e4342f7..74f7ca8 100644
  
  
  /// @notice Individual credit account information per user
-@@ -74,7 +74,7 @@ contract CREDTv1 is Module {
-     /// @inheritdoc Module
-     function INIT() external override onlyKernel {
-         lastDefaultedTimeslot = TimeslotLib.today();
--        
-+
-         // Set BPOOL as bAsset
-         bAsset = ERC20(address(kernel.getModuleForKeycode(toKeycode("BPOOL"))));
-     }

@@ -30,11 +30,9 @@ import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 
 // Baseline
-import {toKeycode as toBaselineKeycode} from
-    "../../../../src/callbacks/liquidity/BaselineV2/lib/Kernel.sol";
 import {Kernel as BaselineKernel, Actions as BaselineKernelActions} from "@baseline/Kernel.sol";
 import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
-import {MockCREDT} from "./mocks/MockCREDT.sol";
+import {CREDTv1} from "@baseline/modules/CREDT.v1.sol";
 import {BPOOLMinter} from "./BPOOLMinter.sol";
 
 // solhint-disable max-states-count
@@ -45,6 +43,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
+    address internal constant _BORROWER = address(0x10);
     address internal constant _NOT_SELLER = address(0x20);
 
     uint24 internal constant _ONE_HUNDRED_PERCENT = 100e2;
@@ -91,8 +90,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     MockERC20 internal _quoteToken;
     BaselineKernel internal _baselineKernel;
     BPOOLv1 internal _baseToken;
-    /// @dev Use a mock CREDT module as CREDTv1 uses an incompatible solidity version
-    MockCREDT internal _creditModule;
+    CREDTv1 internal _creditModule;
     BPOOLMinter internal _bPoolMinter;
 
     // Inputs
@@ -165,7 +163,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         console2.log("Tick spacing: ", _tickSpacing);
 
         // Set up Baseline
-        _creditModule = new MockCREDT();
+        _creditModule = new CREDTv1(_baselineKernel);
         // Base token is created in the givenBPoolIsCreated modifier
         _bPoolMinter = new BPOOLMinter(_baselineKernel);
 
@@ -248,16 +246,17 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
             require(address(_baseToken) > _BASELINE_QUOTE_TOKEN, "Base token < quote token");
         }
 
-        // Install the module
+        // Install the BPOOL module
         vm.prank(_OWNER);
         _baselineKernel.executeAction(BaselineKernelActions.InstallModule, address(_baseToken));
+
+        // Install the CREDT module
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.InstallModule, address(_creditModule));
 
         // Activate the BPOOL minter
         vm.prank(_OWNER);
         _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, address(_bPoolMinter));
-
-        // Update the mock for the CREDT module
-        _mockBaselineGetModuleForKeycode();
     }
 
     modifier givenBPoolIsCreated() {
@@ -536,12 +535,34 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _curatorFee = _LOT_CAPACITY * curatorFeePercent_ / 100e2;
     }
 
-    function _setTotalCollateralized(uint256 totalCollateralized_) internal {
-        _creditModule.setTotalCollateralized(totalCollateralized_);
+    function _setTotalCollateralized(address user_, uint256 totalCollateralized_) internal {
+        // Mint enough base tokens to cover the total collateralized
+        _mintBaseTokens(user_, totalCollateralized_);
+
+        // Approve the spending of the base tokens
+        vm.prank(user_);
+        _baseToken.approve(address(_bPoolMinter), totalCollateralized_);
+
+        // Unlock transfers
+        bool transfersLocked = _baseToken.locked();
+        if (transfersLocked) {
+            vm.prank(_OWNER);
+            _bPoolMinter.setTransferLock(false);
+        }
+
+        // Borrow
+        vm.prank(user_);
+        _bPoolMinter.allocateCreditAccount(user_, totalCollateralized_, 365);
+
+        // Re-lock transfers if locked previously
+        if (transfersLocked) {
+            vm.prank(_OWNER);
+            _bPoolMinter.setTransferLock(true);
+        }
     }
 
-    modifier givenCollateralized(uint256 totalCollateralized_) {
-        _setTotalCollateralized(totalCollateralized_);
+    modifier givenCollateralized(address user_, uint256 totalCollateralized_) {
+        _setTotalCollateralized(user_, totalCollateralized_);
         _;
     }
 
@@ -552,16 +573,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
             address(_auctionHouse),
             abi.encodeWithSelector(IAuctionHouse.getAuctionModuleForId.selector, _lotId),
             abi.encode(address(_auctionModule))
-        );
-    }
-
-    function _mockBaselineGetModuleForKeycode() internal {
-        vm.mockCall(
-            _BASELINE_KERNEL,
-            abi.encodeWithSelector(
-                bytes4(keccak256("getModuleForKeycode(bytes5)")), toBaselineKeycode("CREDT")
-            ),
-            abi.encode(address(_creditModule))
         );
     }
 }

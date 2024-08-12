@@ -273,6 +273,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - Calls the allowlist callback
     ///                 - Mints the required bAsset tokens to the AuctionHouse
     ///
+    ///                 This function has the following assumptions:
+    ///                 - Any Baseline credit allocations have been minted and allocated prior to auction creation (and this callback)
+    ///
     ///                 This function reverts if:
     ///                 - `baseToken_` is not the same as `bAsset`
     ///                 - `quoteToken_` is not the same as `RESERVE`
@@ -432,7 +435,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         // We assume that the auction capacity will be completely filled. This can be guaranteed by
         // setting the minFillPercent to 100e2 on the auction.
         {
-            // Calculate the initial circulating supply
+            // Calculate the initial circulating supply (including collateralized supply)
             uint256 initialCircSupply;
             {
                 // Get the current supply values
@@ -446,7 +449,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 uint256 curatorFee = (capacity_ * curatorFeePerc) / ONE_HUNDRED_PERCENT;
 
                 // Capacity and curator fee have not yet been minted, so we add those
-                initialCircSupply = totalSupply + currentCollatSupply + capacity_ + curatorFee;
+                // Collateralized supply is already minted and included in total supply, so we do not need to add it
+                initialCircSupply = totalSupply + capacity_ + curatorFee;
                 console2.log("initialCircSupply", initialCircSupply);
             }
 
@@ -807,6 +811,10 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             uint256 currentCredit = CREDT.totalCreditIssued();
             uint256 debtCapacity =
                 BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
+            console2.log("floorCapacity", floor.capacity);
+            console2.log("anchorCapacity", anchor.capacity);
+            console2.log("discoverCapacity", discovery.capacity);
+            console2.log("debtCapacity", debtCapacity);
 
             uint256 totalCapacity =
                 debtCapacity + floor.capacity + anchor.capacity + discovery.capacity;
@@ -816,6 +824,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             uint256 totalSpotSupply =
                 totalSupply - floor.bAssets - anchor.bAssets - discovery.bAssets - totalCollatSupply;
             console2.log("totalSpotSupply", totalSpotSupply);
+            console2.log("spotAndCollatSupply", totalSpotSupply + totalCollatSupply);
 
             // verify the liquidity can support the intended supply
             // we do not check for a surplus at this point to avoid a DoS attack vector
