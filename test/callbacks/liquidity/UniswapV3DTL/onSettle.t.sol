@@ -901,7 +901,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         assertEq(poolTick, 60_000, "pool tick after swap");
 
         // Provide reserve tokens to the pool at a tick higher than the original active tick and lower than the new active tick
-        _mintPosition(7_200, 7_200 + _getPool().tickSpacing());
+        _mintPosition(7200, 7200 + _getPool().tickSpacing());
 
         // Perform callback
         _performOnSettle();
