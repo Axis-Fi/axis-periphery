@@ -1,7 +1,7 @@
-diff --git forkSrcPrefix/src/modules/BPOOL.v1.sol forkDstPrefix/src/modules/BPOOL.v1.sol
-index 0afaad9a6eebb5bf511df2a979466b3543058449..793a3c7f4c6e414b78fa61ab60003cb161507dc4 100644
---- forkSrcPrefix/src/modules/BPOOL.v1.sol
-+++ forkDstPrefix/src/modules/BPOOL.v1.sol
+diff --git a/src/modules/BPOOL.v1.sol b/src/modules/BPOOL.v1.sol
+index 0afaad9..793a3c7 100644
+--- a/src/modules/BPOOL.v1.sol
++++ b/src/modules/BPOOL.v1.sol
 @@ -1,16 +1,16 @@
  // SPDX-License-Identifier: AGPL-3.0-only
  pragma solidity ^0.8.0;
@@ -29,3 +29,31 @@ index 0afaad9a6eebb5bf511df2a979466b3543058449..793a3c7f4c6e414b78fa61ab60003cb1
  
  
  // Liquidity range
+diff --git a/src/modules/CREDT.v1.sol b/src/modules/CREDT.v1.sol
+index e4342f7..74f7ca8 100644
+--- a/src/modules/CREDT.v1.sol
++++ b/src/modules/CREDT.v1.sol
+@@ -1,10 +1,10 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity ^0.8.23;
++pragma solidity ^0.8.19;
+ 
+-import {ERC20} from "solmate/tokens/ERC20.sol";
++import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+ 
+-import "src/Kernel.sol";
+-import {TimeslotLib} from "src/utils/TimeslotLib.sol";
++import {Kernel, Module, Keycode, toKeycode} from "../Kernel.sol";
++import {TimeslotLib} from "../utils/TimeslotLib.sol";
+ 
+ 
+ /// @notice Individual credit account information per user
+@@ -74,7 +74,7 @@ contract CREDTv1 is Module {
+     /// @inheritdoc Module
+     function INIT() external override onlyKernel {
+         lastDefaultedTimeslot = TimeslotLib.today();
+-        
++
+         // Set BPOOL as bAsset
+         bAsset = ERC20(address(kernel.getModuleForKeycode(toKeycode("BPOOL"))));
+     }
