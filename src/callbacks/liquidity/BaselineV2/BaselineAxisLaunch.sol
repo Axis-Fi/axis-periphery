@@ -84,8 +84,16 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
     /// @notice The initialization is invalid
     error Callback_InvalidInitialization();
 
+    /// @notice The capacity ratio is invalid
+    ///
+    /// @param capacityRatio    The ratio of the pool capacity to the circulating supply
+    error Callback_InvalidCapacityRatio(uint256 capacityRatio);
+
     /// @notice The pool price is lower than the auction price
-    error Callback_PoolLessThanAuctionPrice();
+    ///
+    /// @param currentTick   The current tick of the pool
+    /// @param auctionTick   The tick corresponding to the auction price
+    error Callback_PoolLessThanAuctionPrice(int24 currentTick, int24 auctionTick);
 
     /// @notice The BPOOL reserve token does not match the configured `RESERVE` address
     error Callback_BPOOLReserveMismatch();
@@ -475,7 +483,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
 
                     // Verify that the active tick is at least the auction tick
                     if (activeTick < auctionTick) {
-                        revert Callback_PoolLessThanAuctionPrice();
+                        revert Callback_PoolLessThanAuctionPrice(activeTick, auctionTick);
                     }
                 }
 
@@ -515,7 +523,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
             // - system liquidity (via the pool allocation and floor reserves allocation)
             uint256 capacityRatio = initialCapacity.divWad(initialCircSupply);
             if (capacityRatio < 100e16 || capacityRatio > 102e16) {
-                revert Callback_InvalidInitialization();
+                revert Callback_InvalidCapacityRatio(capacityRatio);
             }
         }
 
@@ -819,7 +827,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
             // the system is initialized will be snipable and effectively donated to the snipers
             uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
             if (capacityRatio < 100e16) {
-                revert Callback_InvalidInitialization();
+                revert Callback_InvalidCapacityRatio(capacityRatio);
             }
         }
 
@@ -856,8 +864,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
         } else if (case_ == 2) {
             // Case 2: Swapped in 1 wei of reserve tokens
             // We don't need to do anything here
-        } else {
-            revert Callback_Swap_InvalidCase();
         }
+        else revert Callback_Swap_InvalidCase();
     }
 }

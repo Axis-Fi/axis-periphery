@@ -418,8 +418,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     {
         // Expect revert
         // The solvency check fails due to the refund
-        bytes memory err =
-            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 979_448_372_805_591_283
+        );
 
         // Perform callback
         _onSettle(err);
@@ -462,8 +463,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     {
         // Expect revert
         // The solvency check fails due to the refund
-        bytes memory err =
-            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 972_981_853_960_360_268
+        );
 
         // Perform callback
         _onSettle(err);

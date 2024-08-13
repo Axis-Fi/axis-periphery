@@ -420,8 +420,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
     {
         // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaselineAxisLaunch.Callback_PoolLessThanAuctionPrice.selector);
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_PoolLessThanAuctionPrice.selector, 10_985, 10_986
+        );
         vm.expectRevert(err);
 
         // Perform the call
@@ -737,8 +738,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenFloorReservesPercent(0)
     {
         // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 960_885_698_746_113_738
+        );
         vm.expectRevert(err);
 
         // Perform the call
@@ -782,8 +784,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenFloorReservesPercent(99e2)
     {
         // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_070_749_473_083_342_303
+        );
         vm.expectRevert(err);
 
         // Perform the call
@@ -814,8 +817,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenPoolPercent(10e2)
     {
         // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 116_824_419_938_147_786
+        );
         vm.expectRevert(err);
 
         // Perform the call
@@ -845,8 +849,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenPoolPercent(99e2)
     {
         // Expect revert
-        bytes memory err =
-            abi.encodeWithSelector(BaselineAxisLaunch.Callback_InvalidInitialization.selector);
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_156_561_757_387_663_084
+        );
         vm.expectRevert(err);
 
         // Perform the call
