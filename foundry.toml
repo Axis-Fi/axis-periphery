@@ -27,7 +27,10 @@ number_underscore = "thousands"
 wrap_comments = false
 ignore = [
   "lib/**",
+  "dependencies/**",
   "src/lib/**",
+  "test/lib/uniswap-v2/**",
+  "test/lib/uniswap-v3/**",
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
