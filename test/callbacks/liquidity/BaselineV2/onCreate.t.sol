@@ -185,7 +185,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the poolPercent is > 100%
     //  [X] it reverts
-    // [X] when the floorReservesPercent is not between 10% and 99%
+    // [X] when the floorReservesPercent is not between 10% and 90%
     //  [X] it reverts
     // [X] when the anchorTickWidth is < 10
     //  [X] it reverts
@@ -201,7 +201,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts due to the solvency check
     // [X] when the pool percent is too high
     //  [X] it reverts due to the solvency check
-    // [X] when the floorReservesPercent is 10-99%
+    // [X] when the floorReservesPercent is 10-90%
     //  [X] it correctly records the allocation
     // [X] when the fee tier is not 10000 (1%)
     //  [X] it reverts
@@ -374,7 +374,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         uint24 floorReservesPercent_
     ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
         uint24 floorReservesPercent =
-            uint24(bound(floorReservesPercent_, _NINETY_NINE_PERCENT + 1, type(uint24).max));
+            uint24(bound(floorReservesPercent_, 90e2 + 1, type(uint24).max));
         _createData.floorReservesPercent = floorReservesPercent;
 
         // Expect revert
@@ -674,8 +674,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenFixedPrice(25e17)
         givenAuctionIsCreated // Has to be after the fixed price is set
-        givenPoolPercent(98e2) // For the solvency check
-        givenFloorReservesPercent(99e2) // For the solvency check
+        givenPoolPercent(99e2) // For the solvency check
+        givenFloorReservesPercent(90e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
@@ -728,7 +728,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
-    function test_floorReservesPercent_ten()
+    function test_floorReservesPercent_low()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -743,7 +743,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.floorReservesPercent(), 10e2, "floor reserves percent");
     }
 
-    function test_floorReservesPercent_ten_reverts()
+    function test_floorReservesPercent_low_reverts()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -760,7 +760,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_floorReservesPercent_fiftyPercent()
+    function test_floorReservesPercent_middle()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -774,31 +774,31 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_dtl.floorReservesPercent(), 50e2, "floor reserves percent");
     }
 
-    function test_floorReservesPercent_ninetyNinePercent()
+    function test_floorReservesPercent_high()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenFloorReservesPercent(99e2)
-        givenPoolPercent(82e2) // For the solvency check
+        givenFloorReservesPercent(90e2)
+        givenPoolPercent(83e2) // For the solvency check
     {
         // Perform the call
         _onCreate();
 
         // Assert
-        assertEq(_dtl.floorReservesPercent(), 99e2, "floor reserves percent");
+        assertEq(_dtl.floorReservesPercent(), 90e2, "floor reserves percent");
     }
 
-    function test_floorReservesPercent_ninetyNine_reverts()
+    function test_floorReservesPercent_high_reverts()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenFloorReservesPercent(99e2)
+        givenFloorReservesPercent(90e2)
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_070_749_473_083_342_303
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_060_761_857_234_503_343
         );
         vm.expectRevert(err);
 

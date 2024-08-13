@@ -286,7 +286,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
     ///                 - `recipient` is the zero address
     ///                 - `lotId` is already set
     ///                 - The pool fee tier is not supported
-    ///                 - `CreateData.floorReservesPercent` is less than 10% or greater than 99%
+    ///                 - `CreateData.floorReservesPercent` is less than 10% or greater than 90%
     ///                 - `CreateData.poolPercent` is less than 10% or greater than 100%
     ///                 - `CreateData.floorRangeGap` is < 0
     ///                 - `CreateData.anchorTickWidth` is < 10 or > 50
@@ -341,8 +341,11 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
             revert Callback_Params_InvalidAnchorTickWidth();
         }
 
-        // Validate that the floor reserves percent is between 10% and 99%
-        if (cbData.floorReservesPercent < 10e2 || cbData.floorReservesPercent > 99e2) {
+        // Validate that the floor reserves percent is between 10% and 90%
+        // If the floor reserves are too low, it can render `MarketMaking.slide()` inoperable
+        // If the floor reserves are too high, it can render `MarketMaking.sweep()` inoperable
+        // as the anchor and discovery liquidity will be too thin
+        if (cbData.floorReservesPercent < 10e2 || cbData.floorReservesPercent > 90e2) {
             revert Callback_Params_InvalidFloorReservesPercent();
         }
 

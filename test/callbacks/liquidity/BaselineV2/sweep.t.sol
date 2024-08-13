@@ -33,8 +33,8 @@ contract BaselineOnSettleSlideTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenPoolPercent(82e2) // For the solvency check
-        givenFloorReservesPercent(99e2)
+        givenPoolPercent(83e2) // For the solvency check
+        givenFloorReservesPercent(90e2)
         givenAnchorTickWidth(10)
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)

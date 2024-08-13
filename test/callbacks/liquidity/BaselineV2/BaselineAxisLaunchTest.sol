@@ -48,7 +48,6 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     address internal constant _NOT_SELLER = address(0x20);
 
     uint24 internal constant _ONE_HUNDRED_PERCENT = 100e2;
-    uint24 internal constant _NINETY_NINE_PERCENT = 99e2;
 
     uint96 internal constant _LOT_CAPACITY = 10e18;
     uint96 internal constant _REFUND_AMOUNT = 2e18;
