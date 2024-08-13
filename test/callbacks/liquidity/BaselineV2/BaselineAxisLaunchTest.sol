@@ -34,6 +34,7 @@ import {Kernel as BaselineKernel, Actions as BaselineKernelActions} from "@basel
 import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
 import {CREDTv1} from "@baseline/modules/CREDT.v1.sol";
 import {BPOOLMinter} from "./BPOOLMinter.sol";
+import {MarketMaking} from "@baseline/policies/MarketMaking.sol";
 
 // solhint-disable max-states-count
 
@@ -94,6 +95,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     BaselineKernel internal _baselineKernel;
     BPOOLv1 internal _baseToken;
     CREDTv1 internal _creditModule;
+    MarketMaking internal _marketMaking;
     BPOOLMinter internal _bPoolMinter;
 
     // Inputs
@@ -167,6 +169,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         // Set up Baseline
         _creditModule = new CREDTv1(_baselineKernel);
+        _marketMaking = new MarketMaking(_baselineKernel, 25, 1000, 3e18, address(0));
         // Base token is created in the givenBPoolIsCreated modifier
         _bPoolMinter = new BPOOLMinter(_baselineKernel);
 
@@ -256,6 +259,10 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         // Install the CREDT module
         vm.prank(_OWNER);
         _baselineKernel.executeAction(BaselineKernelActions.InstallModule, address(_creditModule));
+
+        // Activate MarketMaking
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.ActivatePolicy, address(_marketMaking));
 
         // Activate the BPOOL minter
         vm.prank(_OWNER);
