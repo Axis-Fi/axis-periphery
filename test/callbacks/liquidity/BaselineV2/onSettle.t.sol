@@ -499,7 +499,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenPoolPercent(91e2) // For the solvency check
-        givenFloorReservesPercent(0)
+        givenFloorReservesPercent(10e2)
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
         givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
@@ -665,8 +665,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenAnchorTickWidth(50)
-        givenFloorReservesPercent(0e2) // For the solvency check
-        givenPoolPercent(61e2) // For the solvency check
+        givenFloorReservesPercent(10e2) // For the solvency check
+        givenPoolPercent(58e2) // For the solvency check
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
         givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
