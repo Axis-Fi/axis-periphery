@@ -31,6 +31,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     uint96 internal _baseTokensToDeposit;
     uint96 internal _curatorPayout;
     uint256 internal _auctionPrice;
+    uint256 internal _quoteTokensDonated;
 
     // ========== Internal functions ========== //
 
@@ -170,7 +171,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
 
-        uint256 nonPoolProceeds = _proceeds - _quoteTokensToDeposit;
+        uint256 nonPoolProceeds = _proceeds + _quoteTokensDonated - _quoteTokensToDeposit;
         assertApproxEqAbs(
             _quoteToken.balanceOf(_NOT_SELLER),
             _dtlCreateParams.recipient == _NOT_SELLER ? nonPoolProceeds : 0,
@@ -242,8 +243,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // The pool percent scales the quote tokens and base tokens linearly
         _quoteTokensToDeposit = _proceeds * _dtlCreateParams.poolPercent / 100e2;
-        _baseTokensToDeposit =
-            _capacityUtilised * _dtlCreateParams.poolPercent / 100e2;
+        _baseTokensToDeposit = _capacityUtilised * _dtlCreateParams.poolPercent / 100e2;
 
         _auctionPrice = _proceeds * 10 ** _baseToken.decimals() / (_lotCapacity - _refund);
         console2.log("Derived auction price is: ", _auctionPrice);
@@ -349,6 +349,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -379,6 +380,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -413,6 +415,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -447,6 +450,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -480,6 +484,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -514,6 +519,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -548,6 +554,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -579,6 +586,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -613,6 +621,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -647,6 +656,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -680,6 +690,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -714,6 +725,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e17);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
@@ -748,6 +760,7 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     {
         // Donation amount could be more or less than the auction price
         uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
 
         // Donate to the pool
         _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
