@@ -1,7 +1,7 @@
-lib/**
-dependencies/**
+lib/**/*
+dependencies/**/*
 
-test/lib/uniswap-v2/**
-test/lib/uniswap-v3/**
+test/lib/uniswap-v2/**/*
+test/lib/uniswap-v3/**/*
 
-src/callbacks/liquidity/BaselineV2/lib/**
+src/callbacks/liquidity/BaselineV2/lib/**/*
