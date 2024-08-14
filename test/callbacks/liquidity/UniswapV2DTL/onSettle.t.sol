@@ -170,7 +170,23 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
     function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
 
-        // TODO check the quote token balance for the seller
+        uint256 nonPoolProceeds = _proceeds - _quoteTokensToDeposit;
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_NOT_SELLER),
+            _dtlCreateParams.recipient == _NOT_SELLER ? nonPoolProceeds : 0,
+            _dtlCreateParams.recipient == _NOT_SELLER
+                ? _uniswapV2CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                : 0,
+            "not seller: quote token balance"
+        );
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_SELLER),
+            _dtlCreateParams.recipient == _SELLER ? nonPoolProceeds : 0,
+            _dtlCreateParams.recipient == _SELLER
+                ? _uniswapV2CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                : 0,
+            "seller: quote token balance"
+        );
     }
 
     function _assertBaseTokenBalance() internal view {
@@ -224,22 +240,22 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
             - uint96(FixedPointMathLib.mulDivDown(_refund, 100e2, _lotCapacity + _curatorPayout));
         _capacityUtilised = _lotCapacity * capacityUtilisationPercent / 100e2;
 
-        // The proceeds utilisation percent scales the quote tokens and base tokens linearly
-        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
+        // The pool percent scales the quote tokens and base tokens linearly
+        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.poolPercent / 100e2;
         _baseTokensToDeposit =
-            _capacityUtilised * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
+            _capacityUtilised * _dtlCreateParams.poolPercent / 100e2;
 
         _auctionPrice = _proceeds * 10 ** _baseToken.decimals() / (_lotCapacity - _refund);
         console2.log("Derived auction price is: ", _auctionPrice);
         _;
     }
 
-    modifier givenUnboundedProceedsUtilisationPercent(uint24 percent_) {
+    modifier givenUnboundedPoolPercent(uint24 percent_) {
         // Bound the percent
-        uint24 percent = uint24(bound(percent_, 1, 100e2));
+        uint24 percent = uint24(bound(percent_, 10e2, 100e2));
 
         // Set the value on the DTL
-        _dtlCreateParams.proceedsUtilisationPercent = percent;
+        _dtlCreateParams.poolPercent = percent;
         _;
     }
 
@@ -751,10 +767,11 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
+    function test_givenPoolPercent_fuzz(uint24 percent_)
         public
         givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
+        whenRecipientIsNotSeller
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
@@ -789,13 +806,13 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenProceedsUtilisationPercent_givenCurationPayout_fuzz(
+    function test_givenPoolPercent_givenCurationPayout_fuzz(
         uint24 percent_,
         uint96 curationPayout_
     )
         public
         givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
         givenOnCreate
         givenUnboundedOnCurate(curationPayout_)
         setCallbackParameters(_PROCEEDS, _REFUND)
@@ -835,8 +852,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
@@ -856,8 +873,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         whenRecipientIsNotSeller
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
@@ -878,8 +895,8 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
@@ -889,10 +906,14 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _performOnSettle();
 
         // Warp to the end of the vesting period
-        vm.warp(_START + 3);
+        vm.warp(_AUCTION_CONCLUSION + 3);
+
+        // Check that there is a vested token balance
+        uint256 tokenId = _getVestingTokenId();
+        uint256 redeemable = _linearVesting.redeemable(_SELLER, tokenId);
+        assertGt(redeemable, 0, "redeemable");
 
         // Redeem the vesting tokens
-        uint256 tokenId = _getVestingTokenId();
         vm.prank(_SELLER);
         _linearVesting.redeemMax(tokenId);
 

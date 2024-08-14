@@ -47,20 +47,20 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
     /// @notice     Configuration for the DTL callback
     ///
-    /// @param      recipient                   The recipient of the LP tokens
-    /// @param      lotCapacity                 The capacity of the lot
-    /// @param      lotCuratorPayout            The maximum curator payout of the lot
-    /// @param      proceedsUtilisationPercent  The percentage of the proceeds to deposit into the pool, in basis points (1% = 100)
-    /// @param      vestingStart                The start of the vesting period for the LP tokens (0 if disabled)
-    /// @param      vestingExpiry               The end of the vesting period for the LP tokens (0 if disabled)
-    /// @param      linearVestingModule         The LinearVesting module for the LP tokens (only set if linear vesting is enabled)
-    /// @param      active                      Whether the lot is active
-    /// @param      implParams                  The implementation-specific parameters
+    /// @param      recipient           Recipient of the LP tokens
+    /// @param      lotCapacity         Capacity of the lot
+    /// @param      lotCuratorPayout    Maximum curator payout of the lot
+    /// @param      poolPercent         Percentage of the proceeds to allocate to the pool, in basis points (1% = 100). The remainder will be sent to the `recipient`.
+    /// @param      vestingStart        Start of the vesting period for the LP tokens (0 if disabled)
+    /// @param      vestingExpiry       End of the vesting period for the LP tokens (0 if disabled)
+    /// @param      linearVestingModule LinearVesting module for the LP tokens (only set if linear vesting is enabled)
+    /// @param      active              Whether the lot is active
+    /// @param      implParams          Implementation-specific parameters
     struct DTLConfiguration {
         address recipient;
         uint256 lotCapacity;
         uint256 lotCuratorPayout;
-        uint24 proceedsUtilisationPercent;
+        uint24 poolPercent;
         uint48 vestingStart;
         uint48 vestingExpiry;
         LinearVesting linearVestingModule;
@@ -70,13 +70,13 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
     /// @notice     Parameters used in the onCreate callback
     ///
-    /// @param      proceedsUtilisationPercent   The percentage of the proceeds to use in the pool
-    /// @param      vestingStart                 The start of the vesting period for the LP tokens (0 if disabled)
-    /// @param      vestingExpiry                The end of the vesting period for the LP tokens (0 if disabled)
-    /// @param      recipient                    The recipient of the LP tokens
-    /// @param      implParams                   The implementation-specific parameters
+    /// @param      poolPercent   Percentage of the proceeds to allocate to the pool, in basis points (1% = 100). The remainder will be sent to the `recipient`.
+    /// @param      vestingStart  Start of the vesting period for the LP tokens (0 if disabled)
+    /// @param      vestingExpiry End of the vesting period for the LP tokens (0 if disabled)
+    /// @param      recipient     Recipient of the LP tokens
+    /// @param      implParams    Implementation-specific parameters
     struct OnCreateParams {
-        uint24 proceedsUtilisationPercent;
+        uint24 poolPercent;
         uint48 vestingStart;
         uint48 vestingExpiry;
         address recipient;
@@ -119,7 +119,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///             - Stores the configuration for the lot
     ///
     ///             This function reverts if:
-    ///             - OnCreateParams.proceedsUtilisationPercent is out of bounds
+    ///             - OnCreateParams.poolPercent is out of bounds
     ///             - OnCreateParams.vestingStart or OnCreateParams.vestingExpiry do not pass validation
     ///             - Vesting is enabled and the linear vesting module is not found
     ///             - The OnCreateParams.recipient address is the zero address
@@ -143,13 +143,8 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
         // Validate the parameters
         // Proceeds utilisation
-        if (
-            params.proceedsUtilisationPercent == 0
-                || params.proceedsUtilisationPercent > ONE_HUNDRED_PERCENT
-        ) {
-            revert Callback_Params_PercentOutOfBounds(
-                params.proceedsUtilisationPercent, 1, ONE_HUNDRED_PERCENT
-            );
+        if (params.poolPercent < 10e2 || params.poolPercent > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.poolPercent, 10e2, ONE_HUNDRED_PERCENT);
         }
 
         // Vesting
@@ -160,7 +155,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
             // Get the linear vesting module (or revert)
             linearVestingModule = LinearVesting(_getLatestLinearVestingModule());
 
-            // Validate
+            // Use the native LinearVesting validation
             if (
                 // We will actually use the LP tokens, but this is a placeholder as we really want to validate the vesting parameters
                 !linearVestingModule.validate(
@@ -168,6 +163,13 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
                     _getEncodedVestingParams(params.vestingStart, params.vestingExpiry)
                 )
             ) {
+                revert Callback_Params_InvalidVestingParams();
+            }
+
+            // Validate that the vesting will not start before auction conclusion
+            (, uint48 conclusion,,,,,,) =
+                AuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_).lotData(lotId_);
+            if (params.vestingStart < conclusion) {
                 revert Callback_Params_InvalidVestingParams();
             }
         }
@@ -182,7 +184,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
             recipient: params.recipient,
             lotCapacity: capacity_,
             lotCuratorPayout: 0,
-            proceedsUtilisationPercent: params.proceedsUtilisationPercent,
+            poolPercent: params.poolPercent,
             vestingStart: params.vestingStart,
             vestingExpiry: params.vestingExpiry,
             linearVestingModule: linearVestingModule,
@@ -348,10 +350,8 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
             }
 
             // Calculate the base tokens required to create the pool
-            baseTokensRequired =
-                _tokensRequiredForPool(capacityUtilised, config.proceedsUtilisationPercent);
-            quoteTokensRequired =
-                _tokensRequiredForPool(proceeds_, config.proceedsUtilisationPercent);
+            baseTokensRequired = _tokensRequiredForPool(capacityUtilised, config.poolPercent);
+            quoteTokensRequired = _tokensRequiredForPool(proceeds_, config.poolPercent);
         }
 
         // Ensure the required tokens are present before minting
@@ -387,24 +387,24 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
                 true // Wrap vesting LP tokens so they are easily visible
             );
         }
-        // Send the LP tokens to the seller
+        // Send the LP tokens to the specified recipient
         else {
             poolToken.safeTransfer(config.recipient, poolTokenQuantity);
         }
 
-        // Send any remaining quote tokens to the seller
+        // Send any remaining quote tokens to the specified recipient
         {
             uint256 quoteTokenBalance = ERC20(quoteToken).balanceOf(address(this));
             if (quoteTokenBalance > 0) {
-                ERC20(quoteToken).safeTransfer(seller, quoteTokenBalance);
+                ERC20(quoteToken).safeTransfer(config.recipient, quoteTokenBalance);
             }
         }
 
-        // Send any remaining base tokens to the seller
+        // Send any remaining base tokens to the specified recipient
         {
             uint256 baseTokenBalance = ERC20(baseToken).balanceOf(address(this));
             if (baseTokenBalance > 0) {
-                ERC20(baseToken).safeTransfer(seller, baseTokenBalance);
+                ERC20(baseToken).safeTransfer(config.recipient, baseTokenBalance);
             }
         }
     }
@@ -449,9 +449,9 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
     function _tokensRequiredForPool(
         uint256 amount_,
-        uint24 proceedsUtilisationPercent_
+        uint24 poolPercent_
     ) internal pure returns (uint256) {
-        return (amount_ * proceedsUtilisationPercent_) / ONE_HUNDRED_PERCENT;
+        return (amount_ * poolPercent_) / ONE_HUNDRED_PERCENT;
     }
 
     function _getLatestLinearVestingModule() internal view returns (address) {

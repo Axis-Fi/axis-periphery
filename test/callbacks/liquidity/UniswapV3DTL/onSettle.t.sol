@@ -11,6 +11,7 @@ import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {IUniswapV3Pool} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 // G-UNI
 import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
@@ -21,6 +22,8 @@ import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL
 import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
 
+import {console2} from "@forge-std-1.9.1/console2.sol";
+
 contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTest {
     uint96 internal constant _PROCEEDS = 20e18;
     uint96 internal constant _REFUND = 0;
@@ -29,6 +32,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     uint96 internal _quoteTokensToDeposit;
     uint96 internal _baseTokensToDeposit;
     uint96 internal _curatorPayout;
+    uint256 internal _additionalQuoteTokensMinted;
 
     uint160 internal constant _SQRT_PRICE_X96_OVERRIDE = 125_270_724_187_523_965_593_206_000_000; // Different to what is normally calculated
 
@@ -63,9 +67,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
 
     function _assertPoolState(uint160 sqrtPriceX96_) internal view {
         // Get the pool
-        address pool = _getPool();
+        IUniswapV3Pool pool = _getPool();
 
-        (uint160 sqrtPriceX96,,,,,,) = IUniswapV3Pool(pool).slot0();
+        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
         assertEq(sqrtPriceX96, sqrtPriceX96_, "pool sqrt price");
     }
 
@@ -136,6 +140,28 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
 
     function _assertQuoteTokenBalance() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
+
+        uint256 nonPoolProceeds = _proceeds - _quoteTokensToDeposit;
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_NOT_SELLER),
+            _dtlCreateParams.recipient == _NOT_SELLER ? nonPoolProceeds : 0,
+            (
+                _dtlCreateParams.recipient == _NOT_SELLER
+                    ? _uniswapV3CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                    : 0
+            ) + 2, // Rounding errors
+            "not seller: quote token balance"
+        );
+        assertApproxEqAbs(
+            _quoteToken.balanceOf(_SELLER),
+            _dtlCreateParams.recipient == _SELLER ? nonPoolProceeds : 0,
+            (
+                _dtlCreateParams.recipient == _NOT_SELLER
+                    ? _uniswapV3CreateParams.maxSlippage * _quoteTokensToDeposit / 100e2
+                    : 0
+            ) + 2, // Rounding errors
+            "seller: quote token balance"
+        );
     }
 
     function _assertBaseTokenBalance() internal view {
@@ -203,20 +229,19 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _capacityUtilised = _LOT_CAPACITY * capacityUtilisationPercent / 100e2;
 
         // The proceeds utilisation percent scales the quote tokens and base tokens linearly
-        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
-        _baseTokensToDeposit =
-            _capacityUtilised * _dtlCreateParams.proceedsUtilisationPercent / 100e2;
+        _quoteTokensToDeposit = _proceeds * _dtlCreateParams.poolPercent / 100e2;
+        _baseTokensToDeposit = _capacityUtilised * _dtlCreateParams.poolPercent / 100e2;
 
         _sqrtPriceX96 = _calculateSqrtPriceX96(_quoteTokensToDeposit, _baseTokensToDeposit);
         _;
     }
 
-    modifier givenUnboundedProceedsUtilisationPercent(uint24 percent_) {
+    modifier givenUnboundedPoolPercent(uint24 percent_) {
         // Bound the percent
-        uint24 percent = uint24(bound(percent_, 1, 100e2));
+        uint24 percent = uint24(bound(percent_, 10e2, 100e2));
 
         // Set the value on the DTL
-        _dtlCreateParams.proceedsUtilisationPercent = percent;
+        _dtlCreateParams.poolPercent = percent;
         _;
     }
 
@@ -245,11 +270,16 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _;
     }
 
-    function _getPool() internal view returns (address) {
+    modifier givenPoolHasDepositMuchHigherPrice() {
+        _sqrtPriceX96 = _calculateSqrtPriceX96(_PROCEEDS * 10, _LOT_CAPACITY);
+        _;
+    }
+
+    function _getPool() internal view returns (IUniswapV3Pool) {
         (address token0, address token1) = address(_baseToken) < address(_quoteToken)
             ? (address(_baseToken), address(_quoteToken))
             : (address(_quoteToken), address(_baseToken));
-        return _uniV3Factory.getPool(token0, token1, _poolFee);
+        return IUniswapV3Pool(_uniV3Factory.getPool(token0, token1, _poolFee));
     }
 
     // ========== Tests ========== //
@@ -267,6 +297,10 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     //  [X] it initializes the pool
     // [X] given the pool is created and initialized
     //  [X] it succeeds
+    // [X] given there is liquidity in the pool at a higher tick
+    //  [X] it adjusts the pool price
+    // [X] given there is liquidity in the pool at a lower tick
+    //  [X] it adjusts the pool price
     // [X] given the proceeds utilisation percent is set
     //  [X] it calculates the deposit amount correctly
     // [X] given curation is enabled
@@ -309,53 +343,11 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenPoolIsCreatedAndInitialized_givenMaxSlippage()
+    function test_givenPoolPercent_fuzz(uint24 percent_)
         public
         givenCallbackIsCreated
-        givenMaxSlippage(8100) // 81%
-        givenOnCreate
-        setCallbackParameters(_PROCEEDS, _REFUND)
-        givenPoolIsCreatedAndInitialized(_SQRT_PRICE_X96_OVERRIDE)
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
-        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
-        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
-    {
-        _performOnSettle();
-
-        _assertPoolState(_SQRT_PRICE_X96_OVERRIDE);
-        _assertLpTokenBalance();
-        _assertVestingTokenBalance();
-        _assertQuoteTokenBalance();
-        _assertBaseTokenBalance();
-        _assertApprovals();
-    }
-
-    function test_givenPoolIsCreatedAndInitialized_reverts()
-        public
-        givenCallbackIsCreated
-        givenOnCreate
-        setCallbackParameters(_PROCEEDS, _REFUND)
-        givenPoolIsCreatedAndInitialized(_SQRT_PRICE_X96_OVERRIDE)
-        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
-        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
-        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
-    {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            UniswapV3DirectToLiquidity.Callback_Slippage.selector,
-            address(_baseToken),
-            7_999_999_999_999_999_999, // Hardcoded
-            9_999_000_000_000_000_000 // Hardcoded
-        );
-        vm.expectRevert(err);
-
-        _performOnSettle();
-    }
-
-    function test_givenProceedsUtilisationPercent_fuzz(uint24 percent_)
-        public
-        givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
+        whenRecipientIsNotSeller
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
@@ -392,13 +384,13 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenProceedsUtilisationPercent_givenCurationPayout_fuzz(
+    function test_givenPoolPercent_givenCurationPayout_fuzz(
         uint24 percent_,
         uint96 curationPayout_
     )
         public
         givenCallbackIsCreated
-        givenUnboundedProceedsUtilisationPercent(percent_)
+        givenUnboundedPoolPercent(percent_)
         givenOnCreate
         givenUnboundedOnCurate(curationPayout_)
         setCallbackParameters(_PROCEEDS, _REFUND)
@@ -439,7 +431,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     function test_givenPoolHasDepositWithLowerPrice()
         public
         givenCallbackIsCreated
-        givenMaxSlippage(5100) // 51%
+        givenMaxSlippage(200) // 2%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositLowerPrice
@@ -450,7 +442,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     {
         _performOnSettle();
 
-        _assertPoolState(_sqrtPriceX96);
+        _assertPoolState(_calculateSqrtPriceX96(_PROCEEDS, _LOT_CAPACITY));
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
@@ -458,10 +450,12 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
+    // TODO need to add a case where the price is more than 2x the target price and there is too much liquidity to sell through
+    // the result should be the pool is initialized at a higher price than the target price, but with balanced liquidity
     function test_givenPoolHasDepositWithHigherPrice()
         public
         givenCallbackIsCreated
-        givenMaxSlippage(5100) // 51%
+        givenMaxSlippage(200) // 2%
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenPoolHasDepositHigherPrice
@@ -472,7 +466,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
     {
         _performOnSettle();
 
-        _assertPoolState(_sqrtPriceX96);
+        _assertPoolState(_calculateSqrtPriceX96(_PROCEEDS, _LOT_CAPACITY));
         _assertLpTokenBalance();
         _assertVestingTokenBalance();
         _assertQuoteTokenBalance();
@@ -526,8 +520,8 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
@@ -548,8 +542,8 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         whenRecipientIsNotSeller
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
@@ -571,8 +565,8 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         public
         givenLinearVestingModuleIsInstalled
         givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
         givenOnCreate
         setCallbackParameters(_PROCEEDS, _REFUND)
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
@@ -582,10 +576,14 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _performOnSettle();
 
         // Warp to the end of the vesting period
-        vm.warp(_START + 3);
+        vm.warp(_AUCTION_CONCLUSION + 3);
+
+        // Check that there is a vested token balance
+        uint256 tokenId = _getVestingTokenId();
+        uint256 redeemable = _linearVesting.redeemable(_SELLER, tokenId);
+        assertGt(redeemable, 0, "redeemable");
 
         // Redeem the vesting tokens
-        uint256 tokenId = _getVestingTokenId();
         vm.prank(_SELLER);
         _linearVesting.redeemMax(tokenId);
 
@@ -611,7 +609,7 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         assertEq(pools.length, 1, "pools length");
         GUniPool pool = GUniPool(pools[0]);
 
-        address uniPool = _getPool();
+        IUniswapV3Pool uniPool = _getPool();
 
         // Withdraw the LP token
         uint256 sellerBalance = pool.balanceOf(_SELLER);
@@ -627,8 +625,8 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "DTL: quote token balance");
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "DTL: base token balance");
         // There is a rounding error when burning the LP token, which leaves dust in the pool
-        assertEq(_quoteToken.balanceOf(uniPool), 1, "uni pool: quote token balance");
-        assertEq(_baseToken.balanceOf(uniPool), 1, "uni pool: base token balance");
+        assertEq(_quoteToken.balanceOf(address(uniPool)), 1, "uni pool: quote token balance");
+        assertEq(_baseToken.balanceOf(address(uniPool)), 1, "uni pool: base token balance");
     }
 
     function test_givenInsufficientBaseTokenBalance_reverts()
@@ -809,5 +807,186 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
 
         // Try to call onSettle
         _performOnSettle();
+    }
+
+    function uniswapV3MintCallback(uint256, uint256 amount1Owed, bytes calldata) external {
+        console2.log("Minting additional quote tokens", amount1Owed);
+        _additionalQuoteTokensMinted += amount1Owed;
+
+        // Transfer the quote tokens
+        _quoteToken.mint(msg.sender, amount1Owed);
+    }
+
+    function _mintPosition(int24 tickLower_, int24 tickUpper_) internal {
+        // Using PoC: https://github.com/GuardianAudits/axis-1/pull/4/files
+        IUniswapV3Pool pool = _getPool();
+
+        pool.mint(address(this), tickLower_, tickUpper_, 1e18, "");
+    }
+
+    function uniswapV3SwapCallback(int256, int256, bytes memory) external pure {
+        return;
+    }
+
+    function _swap(uint160 sqrtPrice_) internal {
+        IUniswapV3Pool pool = _getPool();
+
+        pool.swap(address(this), true, 1, sqrtPrice_, "");
+    }
+
+    function test_existingReservesAtHigherPoolTick()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+        givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
+    {
+        // Assert the pool price
+        int24 poolTick;
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after mint"); // Original active tick
+
+        // Swap at a tick higher than the anchor range
+        IUniswapV3Pool pool = _getPool();
+        pool.swap(address(this), false, 1, TickMath.getSqrtRatioAtTick(60_000), "");
+
+        // Assert that the pool tick has moved higher
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 60_000, "pool tick after swap");
+
+        // Provide reserve tokens to the pool at a tick higher than the original active tick and lower than the new active tick
+        _mintPosition(7200, 7200 + _getPool().tickSpacing());
+
+        // Perform callback
+        _performOnSettle();
+
+        // Assert that the pool tick has corrected
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after settlement"); // Ends up rounded to the tick spacing
+
+        _assertLpTokenBalance();
+        _assertVestingTokenBalance();
+        // _assertQuoteTokenBalance(); // Difficult to calculate the exact balance, given the swaps
+        // _assertBaseTokenBalance(); // Difficult to calculate the exact balance, given the swaps
+        _assertApprovals();
+    }
+
+    function test_existingReservesAtHigherPoolTick_noLiquidity()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+        givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
+    {
+        // Assert the pool price
+        int24 poolTick;
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after mint"); // Original active tick
+
+        // Swap at a tick higher than the active tick
+        IUniswapV3Pool pool = _getPool();
+        pool.swap(address(this), false, 1, TickMath.getSqrtRatioAtTick(60_000), "");
+
+        // Assert that the pool tick has moved higher
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 60_000, "pool tick after swap");
+
+        // Do not mint any liquidity above the previous active tick
+
+        // Perform callback
+        _performOnSettle();
+
+        // Assert that the pool tick has corrected
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after settlement"); // Ends up rounded to the tick spacing
+
+        _assertLpTokenBalance();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_existingReservesAtLowerPoolTick()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+        givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
+    {
+        // Provide reserve tokens to the pool at a lower tick
+        _mintPosition(-60_000 - _getPool().tickSpacing(), -60_000);
+
+        // Assert the pool price
+        int24 poolTick;
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after mint"); // Original active tick
+
+        // Swap at a tick lower than the active tick
+        _swap(TickMath.getSqrtRatioAtTick(-60_000));
+
+        // Assert that the pool price has moved lower
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, -60_001, "pool tick after swap");
+
+        // Perform callback
+        _performOnSettle();
+
+        // Assert that the pool tick has corrected
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after settlement"); // Ends up rounded to the tick spacing
+
+        _assertLpTokenBalance();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_existingReservesAtLowerPoolTick_noLiquidity()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        setCallbackParameters(_PROCEEDS, _REFUND)
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+        givenPoolIsCreatedAndInitialized(_sqrtPriceX96)
+    {
+        // Don't mint any liquidity
+
+        // Assert the pool price
+        int24 poolTick;
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after mint"); // Original active tick
+
+        // Swap at a tick lower than the active tick
+        _swap(TickMath.getSqrtRatioAtTick(-60_000));
+
+        // Assert that the pool price has moved lower
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, -60_000, "pool tick after swap");
+
+        // Perform callback
+        _performOnSettle();
+
+        // Assert that the pool tick has corrected
+        (, poolTick,,,,,) = _getPool().slot0();
+        assertEq(poolTick, 6931, "pool tick after settlement"); // Ends up rounded to the tick spacing
+
+        _assertLpTokenBalance();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
     }
 }

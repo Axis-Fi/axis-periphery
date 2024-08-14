@@ -63,6 +63,8 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
     // [X] when the start timestamp and expiry timestamp are specified
     //  [X] given the linear vesting module is not installed
     //   [X] it reverts
+    //  [X] given the vesting start timestamp is before the auction conclusion
+    //   [X] it reverts
     //  [X] it records the address of the linear vesting module
     // [X] when the recipient is the zero address
     //  [X] it reverts
@@ -110,32 +112,58 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_whenProceedsUtilisationIs0_reverts()
+    function test_poolPercent_whenBelowBounds_reverts(uint24 poolPercent_)
         public
         givenCallbackIsCreated
-        givenProceedsUtilisationPercent(0)
     {
+        uint24 poolPercent = uint24(bound(poolPercent_, 0, 10e2 - 1));
+
+        // Set pool percent
+        _setPoolPercent(poolPercent);
+
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector, 0, 1, 100e2
+            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector,
+            poolPercent,
+            10e2,
+            100e2
         );
         vm.expectRevert(err);
 
         _performOnCreate();
     }
 
-    function test_whenProceedsUtilisationIsGreaterThan100Percent_reverts()
+    function test_poolPercent_whenAboveBounds_reverts(uint24 poolPercent_)
         public
         givenCallbackIsCreated
-        givenProceedsUtilisationPercent(100e2 + 1)
     {
+        uint24 poolPercent = uint24(bound(poolPercent_, 100e2 + 1, type(uint24).max));
+
+        // Set pool percent
+        _setPoolPercent(poolPercent);
+
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector, 100e2 + 1, 1, 100e2
+            BaseDirectToLiquidity.Callback_Params_PercentOutOfBounds.selector,
+            poolPercent,
+            10e2,
+            100e2
         );
         vm.expectRevert(err);
 
         _performOnCreate();
+    }
+
+    function test_poolPercent_fuzz(uint24 poolPercent_) public givenCallbackIsCreated {
+        uint24 poolPercent = uint24(bound(poolPercent_, 10e2, 100e2));
+
+        _setPoolPercent(poolPercent);
+
+        _performOnCreate();
+
+        // Assert values
+        BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
+        assertEq(configuration.poolPercent, poolPercent, "poolPercent");
     }
 
     function test_paramsIncorrectLength_reverts() public givenCallbackIsCreated {
@@ -197,47 +225,104 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         public
         givenCallbackIsCreated
         givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 1)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 1)
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
             BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
         );
-        vm.expectRevert(err);
 
-        _performOnCreate();
+        _createLot(address(_SELLER), err);
     }
 
     function test_whenStartTimestampIsAfterExpiryTimestamp_reverts()
         public
         givenCallbackIsCreated
         givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 2)
-        givenVestingExpiry(_START + 1)
+        givenVestingStart(_AUCTION_CONCLUSION + 2)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 1)
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
             BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
         );
-        vm.expectRevert(err);
 
-        _performOnCreate();
+        _createLot(address(_SELLER), err);
     }
 
-    function test_whenStartTimestampIsBeforeCurrentTimestamp_succeeds()
+    function test_whenStartTimestampIsBeforeCurrentTimestamp_reverts()
         public
         givenCallbackIsCreated
         givenLinearVestingModuleIsInstalled
         givenVestingStart(_START - 1)
         givenVestingExpiry(_START + 1)
     {
-        _performOnCreate();
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
+        );
+
+        _createLot(address(_SELLER), err);
+    }
+
+    function test_whenExpiryTimestampIsBeforeCurrentTimestamp_reverts()
+        public
+        givenCallbackIsCreated
+        givenLinearVestingModuleIsInstalled
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION - 1)
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
+        );
+
+        _createLot(address(_SELLER), err);
+    }
+
+    function test_whenVestingSpecified_givenLinearVestingModuleNotInstalled_reverts()
+        public
+        givenCallbackIsCreated
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaseDirectToLiquidity.Callback_LinearVestingModuleNotFound.selector
+        );
+
+        _createLot(address(_SELLER), err);
+    }
+
+    function test_whenVestingSpecified_whenStartTimestampIsBeforeAuctionConclusion_reverts()
+        public
+        givenCallbackIsCreated
+        givenLinearVestingModuleIsInstalled
+        givenVestingStart(_AUCTION_CONCLUSION - 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
+        );
+
+        _createLot(address(_SELLER), err);
+    }
+
+    function test_whenVestingSpecified_whenVestingStartTimestampIsOnAuctionConclusion()
+        public
+        givenCallbackIsCreated
+        givenLinearVestingModuleIsInstalled
+        givenVestingStart(_AUCTION_CONCLUSION)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
+    {
+        _lotId = _createLot(address(_SELLER));
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
-        assertEq(configuration.vestingStart, _START - 1, "vestingStart");
-        assertEq(configuration.vestingExpiry, _START + 1, "vestingExpiry");
+        assertEq(configuration.vestingStart, _AUCTION_CONCLUSION, "vestingStart");
+        assertEq(configuration.vestingExpiry, _AUCTION_CONCLUSION + 2, "vestingExpiry");
         assertEq(
             address(configuration.linearVestingModule),
             address(_linearVesting),
@@ -248,50 +333,19 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         _assertBaseTokenBalances();
     }
 
-    function test_whenExpiryTimestampIsBeforeCurrentTimestamp_reverts()
-        public
-        givenCallbackIsCreated
-        givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START - 1)
-    {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_Params_InvalidVestingParams.selector
-        );
-        vm.expectRevert(err);
-
-        _performOnCreate();
-    }
-
-    function test_whenVestingSpecified_givenLinearVestingModuleNotInstalled_reverts()
-        public
-        givenCallbackIsCreated
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
-    {
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(
-            BaseDirectToLiquidity.Callback_LinearVestingModuleNotFound.selector
-        );
-        vm.expectRevert(err);
-
-        _performOnCreate();
-    }
-
     function test_whenVestingSpecified()
         public
         givenCallbackIsCreated
         givenLinearVestingModuleIsInstalled
-        givenVestingStart(_START + 1)
-        givenVestingExpiry(_START + 2)
+        givenVestingStart(_AUCTION_CONCLUSION + 1)
+        givenVestingExpiry(_AUCTION_CONCLUSION + 2)
     {
-        _performOnCreate();
+        _lotId = _createLot(address(_SELLER));
 
         // Assert values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
-        assertEq(configuration.vestingStart, _START + 1, "vestingStart");
-        assertEq(configuration.vestingExpiry, _START + 2, "vestingExpiry");
+        assertEq(configuration.vestingStart, _AUCTION_CONCLUSION + 1, "vestingStart");
+        assertEq(configuration.vestingExpiry, _AUCTION_CONCLUSION + 2, "vestingExpiry");
         assertEq(
             address(configuration.linearVestingModule),
             address(_linearVesting),
@@ -336,11 +390,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         assertEq(configuration.recipient, _SELLER, "recipient");
         assertEq(configuration.lotCapacity, _LOT_CAPACITY, "lotCapacity");
         assertEq(configuration.lotCuratorPayout, 0, "lotCuratorPayout");
-        assertEq(
-            configuration.proceedsUtilisationPercent,
-            _dtlCreateParams.proceedsUtilisationPercent,
-            "proceedsUtilisationPercent"
-        );
+        assertEq(configuration.poolPercent, _dtlCreateParams.poolPercent, "poolPercent");
         assertEq(configuration.vestingStart, 0, "vestingStart");
         assertEq(configuration.vestingExpiry, 0, "vestingExpiry");
         assertEq(address(configuration.linearVestingModule), address(0), "linearVestingModule");
@@ -372,11 +422,7 @@ contract UniswapV2DirectToLiquidityOnCreateTest is UniswapV2DirectToLiquidityTes
         assertEq(configuration.recipient, _NOT_SELLER, "recipient");
         assertEq(configuration.lotCapacity, _LOT_CAPACITY, "lotCapacity");
         assertEq(configuration.lotCuratorPayout, 0, "lotCuratorPayout");
-        assertEq(
-            configuration.proceedsUtilisationPercent,
-            _dtlCreateParams.proceedsUtilisationPercent,
-            "proceedsUtilisationPercent"
-        );
+        assertEq(configuration.poolPercent, _dtlCreateParams.poolPercent, "poolPercent");
         assertEq(configuration.vestingStart, 0, "vestingStart");
         assertEq(configuration.vestingExpiry, 0, "vestingExpiry");
         assertEq(address(configuration.linearVestingModule), address(0), "linearVestingModule");

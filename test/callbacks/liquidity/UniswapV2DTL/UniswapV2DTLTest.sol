@@ -41,6 +41,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     uint24 internal constant _MAX_SLIPPAGE = 1; // 0.01%
 
     uint48 internal constant _START = 1_000_000;
+    uint48 internal constant _DURATION = 1 days;
+    uint48 internal constant _AUCTION_START = _START + 1;
+    uint48 internal constant _AUCTION_CONCLUSION = _AUCTION_START + _DURATION;
 
     uint96 internal _lotId = 1;
 
@@ -66,7 +69,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         UniswapV2DirectToLiquidity.UniswapV2OnCreateParams({maxSlippage: uint24(_MAX_SLIPPAGE)});
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
-        proceedsUtilisationPercent: 100e2,
+        poolPercent: 100e2,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
@@ -190,7 +193,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _createLot(address seller_) internal returns (uint96 lotId) {
+    function _createLot(address seller_, bytes memory err_) internal returns (uint96 lotId) {
         // Mint and approve the capacity to the owner
         _baseToken.mint(seller_, _lotCapacity);
         vm.prank(seller_);
@@ -211,16 +214,24 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         });
 
         IAuction.AuctionParams memory auctionParams = IAuction.AuctionParams({
-            start: uint48(block.timestamp) + 1,
-            duration: 1 days,
+            start: _AUCTION_START,
+            duration: _DURATION,
             capacityInQuote: false,
             capacity: _lotCapacity,
             implParams: abi.encode("")
         });
 
+        if (err_.length > 0) {
+            vm.expectRevert(err_);
+        }
+
         // Create a new lot
         vm.prank(seller_);
         return _auctionHouse.auction(routingParams, auctionParams, "");
+    }
+
+    function _createLot(address seller_) internal returns (uint96 lotId) {
+        return _createLot(seller_, "");
     }
 
     modifier givenOnCreate() {
@@ -273,8 +284,12 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnSettle(_lotId);
     }
 
-    modifier givenProceedsUtilisationPercent(uint24 percent_) {
-        _dtlCreateParams.proceedsUtilisationPercent = percent_;
+    function _setPoolPercent(uint24 percent_) internal {
+        _dtlCreateParams.poolPercent = percent_;
+    }
+
+    modifier givenPoolPercent(uint24 percent_) {
+        _setPoolPercent(percent_);
         _;
     }
 
@@ -304,7 +319,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
             address recipient_,
             uint256 lotCapacity_,
             uint256 lotCuratorPayout_,
-            uint24 proceedsUtilisationPercent_,
+            uint24 poolPercent_,
             uint48 vestingStart_,
             uint48 vestingExpiry_,
             LinearVesting linearVestingModule_,
@@ -316,7 +331,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
             recipient: recipient_,
             lotCapacity: lotCapacity_,
             lotCuratorPayout: lotCuratorPayout_,
-            proceedsUtilisationPercent: proceedsUtilisationPercent_,
+            poolPercent: poolPercent_,
             vestingStart: vestingStart_,
             vestingExpiry: vestingExpiry_,
             linearVestingModule: linearVestingModule_,
