@@ -114,10 +114,9 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_poolPercent_whenBelowBounds_reverts(uint24 poolPercent_)
-        public
-        givenCallbackIsCreated
-    {
+    function test_poolPercent_whenBelowBounds_reverts(
+        uint24 poolPercent_
+    ) public givenCallbackIsCreated {
         uint24 poolPercent = uint24(bound(poolPercent_, 0, 10e2 - 1));
 
         // Set pool percent
@@ -135,10 +134,9 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_poolPercent_whenAboveBounds_reverts(uint24 poolPercent_)
-        public
-        givenCallbackIsCreated
-    {
+    function test_poolPercent_whenAboveBounds_reverts(
+        uint24 poolPercent_
+    ) public givenCallbackIsCreated {
         uint24 poolPercent = uint24(bound(poolPercent_, 100e2 + 1, type(uint24).max));
 
         // Set pool percent
@@ -179,10 +177,9 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_maxSlippageGreaterThan100Percent_reverts(uint24 maxSlippage_)
-        public
-        givenCallbackIsCreated
-    {
+    function test_maxSlippageGreaterThan100Percent_reverts(
+        uint24 maxSlippage_
+    ) public givenCallbackIsCreated {
         uint24 maxSlippage = uint24(bound(maxSlippage_, 100e2 + 1, type(uint24).max));
         _setMaxSlippage(maxSlippage);
 

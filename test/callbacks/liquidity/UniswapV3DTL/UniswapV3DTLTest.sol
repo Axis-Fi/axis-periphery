@@ -318,11 +318,9 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     // ========== FUNCTIONS ========== //
 
-    function _getDTLConfiguration(uint96 lotId_)
-        internal
-        view
-        returns (BaseDirectToLiquidity.DTLConfiguration memory)
-    {
+    function _getDTLConfiguration(
+        uint96 lotId_
+    ) internal view returns (BaseDirectToLiquidity.DTLConfiguration memory) {
         (
             address recipient_,
             uint256 lotCapacity_,

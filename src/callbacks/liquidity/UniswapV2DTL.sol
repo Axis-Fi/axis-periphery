@@ -168,11 +168,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
     /// @notice Decodes the configuration parameters from the DTLConfiguration
     /// @dev   The configuration parameters are stored in `DTLConfiguration.implParams`
-    function _decodeOnCreateParameters(uint96 lotId_)
-        internal
-        view
-        returns (UniswapV2OnCreateParams memory)
-    {
+    function _decodeOnCreateParameters(
+        uint96 lotId_
+    ) internal view returns (UniswapV2OnCreateParams memory) {
         DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
         // Validate that the callback data is of the correct length
         if (lotConfig.implParams.length != 32) {

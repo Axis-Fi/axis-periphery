@@ -343,7 +343,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenPoolPercent_fuzz(uint24 percent_)
+    function test_givenPoolPercent_fuzz(
+        uint24 percent_
+    )
         public
         givenCallbackIsCreated
         givenUnboundedPoolPercent(percent_)
@@ -364,7 +366,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_givenCurationPayout_fuzz(uint96 curationPayout_)
+    function test_givenCurationPayout_fuzz(
+        uint96 curationPayout_
+    )
         public
         givenCallbackIsCreated
         givenOnCreate
@@ -408,7 +412,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _assertApprovals();
     }
 
-    function test_whenRefund_fuzz(uint96 refund_)
+    function test_whenRefund_fuzz(
+        uint96 refund_
+    )
         public
         givenCallbackIsCreated
         givenOnCreate

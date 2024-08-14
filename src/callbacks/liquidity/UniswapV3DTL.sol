@@ -313,11 +313,9 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
 
     /// @notice Decodes the configuration parameters from the DTLConfiguration
     /// @dev   The configuration parameters are stored in `DTLConfiguration.implParams`
-    function _decodeOnCreateParameters(uint96 lotId_)
-        internal
-        view
-        returns (UniswapV3OnCreateParams memory)
-    {
+    function _decodeOnCreateParameters(
+        uint96 lotId_
+    ) internal view returns (UniswapV3OnCreateParams memory) {
         DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
         // Validate that the callback data is of the correct length
         if (lotConfig.implParams.length != 64) {
@@ -352,7 +350,8 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
         if (case_ == 1) {
             // Case 1: Swapped in 1 wei of quote tokens
             // We don't need to do anything here
-        } else if (case_ == 2) {
+        }
+        else if (case_ == 2) {
             // Case 2: We sold up to half of the base tokens into the pool to move the price down
             // Transfer the requested token1 amount to the pool
             if (token0 == baseToken) {

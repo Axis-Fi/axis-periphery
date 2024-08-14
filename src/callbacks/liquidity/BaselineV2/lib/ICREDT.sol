@@ -19,10 +19,9 @@ interface ICREDTv1 {
     function bAsset() external view returns (ERC20);
 
     /// @notice Individual credit account state
-    function creditAccounts(address)
-        external
-        view
-        returns (uint256 credit, uint256 collateral, uint256 expiry);
+    function creditAccounts(
+        address
+    ) external view returns (uint256 credit, uint256 collateral, uint256 expiry);
 
     /// @notice Container for aggregate credit and collateral to be defaulted at a timeslot
     struct Defaultable {
@@ -49,10 +48,9 @@ interface ICREDTv1 {
 
     /// @notice Gets current credit account for user.
     /// @dev    Returns zeroed account after full repayment or default.
-    function getCreditAccount(address _user)
-        external
-        view
-        returns (CreditAccount memory account_);
+    function getCreditAccount(
+        address _user
+    ) external view returns (CreditAccount memory account_);
 
     function updateCreditAccount(
         address _user,

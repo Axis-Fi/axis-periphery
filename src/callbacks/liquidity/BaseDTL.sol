@@ -93,7 +93,9 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
 
     // ========== CONSTRUCTOR ========== //
 
-    constructor(address auctionHouse_)
+    constructor(
+        address auctionHouse_
+    )
         BaseCallback(
             auctionHouse_,
             Callbacks.Permissions({
