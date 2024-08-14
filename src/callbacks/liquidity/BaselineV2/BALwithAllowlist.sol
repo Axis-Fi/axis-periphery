@@ -2,12 +2,13 @@
 pragma solidity 0.8.19;
 
 import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/MerkleProof.sol";
+import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 
 import {BaselineAxisLaunch} from "./BaselineAxisLaunch.sol";
 
 /// @notice Allowlist version of the Baseline Axis Launch callback.
 /// @notice This version allows for a merkle tree to be used to determine which addresses are allowed to participate. However, the amount of quote tokens they can spend is not limited.
-contract BALwithAllowlist is BaselineAxisLaunch {
+contract BALwithAllowlist is BaselineAxisLaunch, Owned {
     // ========== ERRORS ========== //
 
     /// @notice Error message when the callback state does not support the action
@@ -43,7 +44,7 @@ contract BALwithAllowlist is BaselineAxisLaunch {
         address baselineKernel_,
         address reserve_,
         address owner_
-    ) BaselineAxisLaunch(auctionHouse_, baselineKernel_, reserve_, owner_) {}
+    ) BaselineAxisLaunch(auctionHouse_, baselineKernel_, reserve_) Owned(owner_) {}
 
     // ========== CALLBACK FUNCTIONS ========== //
 

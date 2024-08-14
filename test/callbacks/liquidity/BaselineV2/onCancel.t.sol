@@ -82,9 +82,15 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenAddressHasBaseTokenBalance(_dtlAddress, _REFUND_AMOUNT)
-        givenOnSettle
     {
+        // Transfer refund from auction house to the callback
+        // We transfer instead of minting to not affect the supply
+        vm.prank(address(_auctionHouse));
+        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
+
+        // Perform onSettle callback
+        _onSettle();
+
         // Expect revert
         bytes memory err =
             abi.encodeWithSelector(BaselineAxisLaunch.Callback_AlreadyComplete.selector);
@@ -115,13 +121,17 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         givenCallbackIsCreated
         givenAuctionIsCreated
         givenOnCreate
-        givenAddressHasBaseTokenBalance(_dtlAddress, _LOT_CAPACITY)
     {
+        // Transfer capacity from auction house back to the callback
+        // We transfer instead of minting to not affect the supply
+        vm.prank(address(_auctionHouse));
+        _baseToken.transfer(_dtlAddress, _LOT_CAPACITY);
+
         // Perform callback
         _onCancel();
 
         // Check the circulating supply is updated
-        assertEq(_dtl.initialCirculatingSupply(), 0, "circulating supply");
+        assertEq(_baseToken.totalSupply(), 0, "circulating supply");
 
         // Check the auction is marked as completed
         assertEq(_dtl.auctionComplete(), true, "auction completed");
@@ -129,5 +139,8 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         // Check the refunded base token quantity is burned
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback balance");
         assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract balance");
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 }
