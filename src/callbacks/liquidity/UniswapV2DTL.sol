@@ -3,9 +3,11 @@ pragma solidity ^0.8.19;
 
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+import {FullMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FullMath.sol";
 
 // Uniswap
 import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
+import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";
 
 // Callbacks
@@ -26,11 +28,11 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     // ========== STRUCTS ========== //
 
-    /// @notice     Parameters for the onClaimProceeds callback
+    /// @notice     Parameters for the onCreate callback
     /// @dev        This will be encoded in the `callbackData_` parameter
     ///
-    /// @param      maxSlippage             The maximum slippage allowed when adding liquidity (in terms of `ONE_HUNDRED_PERCENT`)
-    struct OnSettleParams {
+    /// @param      maxSlippage     The maximum slippage allowed when adding liquidity (in terms of basis points, where 1% = 1e2)
+    struct UniswapV2OnCreateParams {
         uint24 maxSlippage;
     }
 
@@ -69,36 +71,44 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     ///             - Validates the parameters
     ///
     ///             This function reverts if:
-    ///             - The pool for the token combination already exists
+    ///             - The callback data is of the incorrect length
+    ///             - `UniswapV2OnCreateParams.maxSlippage` is out of bounds
+    ///
+    ///             Note that this function does not check if the pool already exists. The reason for this is that it could be used as a DoS vector.
     function __onCreate(
-        uint96,
+        uint96 lotId_,
         address,
-        address baseToken_,
-        address quoteToken_,
+        address,
+        address,
         uint256,
         bool,
         bytes calldata
     ) internal virtual override {
-        // Check that the pool does not exist
-        if (uniV2Factory.getPair(baseToken_, quoteToken_) != address(0)) {
-            revert Callback_Params_PoolExists();
+        UniswapV2OnCreateParams memory params = _decodeOnCreateParameters(lotId_);
+
+        // Check that the slippage amount is within bounds
+        // The maxSlippage is stored during onCreate, as the callback data is passed in by the auction seller.
+        // As AuctionHouse.settle() can be called by anyone, a value for maxSlippage could be passed that would result in a loss for the auction seller.
+        if (params.maxSlippage > ONE_HUNDRED_PERCENT) {
+            revert Callback_Params_PercentOutOfBounds(params.maxSlippage, 0, ONE_HUNDRED_PERCENT);
         }
     }
 
     /// @inheritdoc BaseDirectToLiquidity
     /// @dev        This function implements the following:
     ///             - Creates the pool if necessary
+    ///             - Detects and handles (if necessary) manipulation of pool reserves
     ///             - Deposits the tokens into the pool
     function _mintAndDeposit(
-        uint96,
+        uint96 lotId_,
         address quoteToken_,
         uint256 quoteTokenAmount_,
         address baseToken_,
         uint256 baseTokenAmount_,
-        bytes memory callbackData_
+        bytes memory
     ) internal virtual override returns (ERC20 poolToken) {
         // Decode the callback data
-        OnSettleParams memory params = abi.decode(callbackData_, (OnSettleParams));
+        UniswapV2OnCreateParams memory params = _decodeOnCreateParameters(lotId_);
 
         // Create and initialize the pool if necessary
         // Token orientation is irrelevant
@@ -107,23 +117,44 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             pairAddress = uniV2Factory.createPair(baseToken_, quoteToken_);
         }
 
+        // Handle a potential DoS attack caused by donate and sync
+        uint256 quoteTokensToAdd = quoteTokenAmount_;
+        uint256 baseTokensToAdd = baseTokenAmount_;
+        {
+            uint256 auctionPrice = FullMath.mulDiv(
+                quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_
+            );
+
+            (, uint256 baseTokensUsed) =
+                _mitigateDonation(pairAddress, auctionPrice, quoteToken_, baseToken_);
+
+            if (baseTokensUsed > 0) {
+                baseTokensToAdd -= baseTokensUsed;
+
+                // Re-calculate quoteTokensToAdd to be aligned with baseTokensToAdd
+                quoteTokensToAdd = FullMath.mulDiv(
+                    baseTokensToAdd, auctionPrice, 10 ** ERC20(baseToken_).decimals()
+                );
+            }
+        }
+
         // Calculate the minimum amount out for each token
-        uint256 quoteTokenAmountMin = _getAmountWithSlippage(quoteTokenAmount_, params.maxSlippage);
-        uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokenAmount_, params.maxSlippage);
+        uint256 quoteTokenAmountMin = _getAmountWithSlippage(quoteTokensToAdd, params.maxSlippage);
+        uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokensToAdd, params.maxSlippage);
 
         // Approve the router to spend the tokens
-        ERC20(quoteToken_).approve(address(uniV2Router), quoteTokenAmount_);
-        ERC20(baseToken_).approve(address(uniV2Router), baseTokenAmount_);
+        ERC20(quoteToken_).approve(address(uniV2Router), quoteTokensToAdd);
+        ERC20(baseToken_).approve(address(uniV2Router), baseTokensToAdd);
 
         // Deposit into the pool
         uniV2Router.addLiquidity(
             quoteToken_,
             baseToken_,
-            quoteTokenAmount_,
-            baseTokenAmount_,
+            quoteTokensToAdd,
+            baseTokensToAdd,
             quoteTokenAmountMin,
             baseTokenAmountMin,
-            address(this),
+            address(this), // LP tokens are sent to this contract and transferred later
             block.timestamp
         );
 
@@ -133,5 +164,111 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         ERC20(baseToken_).approve(address(uniV2Router), 0);
 
         return ERC20(pairAddress);
+    }
+
+    /// @notice Decodes the configuration parameters from the DTLConfiguration
+    /// @dev   The configuration parameters are stored in `DTLConfiguration.implParams`
+    function _decodeOnCreateParameters(
+        uint96 lotId_
+    ) internal view returns (UniswapV2OnCreateParams memory) {
+        DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
+        // Validate that the callback data is of the correct length
+        if (lotConfig.implParams.length != 32) {
+            revert Callback_InvalidParams();
+        }
+
+        return abi.decode(lotConfig.implParams, (UniswapV2OnCreateParams));
+    }
+
+    /// @notice This function mitigates the risk of a third-party having donated quote tokens to the pool causing the auction settlement to fail.
+    /// @dev    It performs the following:
+    ///         - Checks if the pool has had quote tokens donated, or exits
+    ///         - Swaps the quote tokens for base tokens to adjust the reserves to the correct price
+    ///
+    /// @param  pairAddress_    The address of the Uniswap V2 pair
+    /// @param  auctionPrice_   The price of the auction
+    /// @param  quoteToken_     The quote token of the pair
+    /// @param  baseToken_      The base token of the pair
+    /// @return quoteTokensUsed The amount of quote tokens used in the swap
+    /// @return baseTokensUsed  The amount of base tokens used in the swap
+    function _mitigateDonation(
+        address pairAddress_,
+        uint256 auctionPrice_,
+        address quoteToken_,
+        address baseToken_
+    ) internal returns (uint256 quoteTokensUsed, uint256 baseTokensUsed) {
+        IUniswapV2Pair pair = IUniswapV2Pair(pairAddress_);
+        uint256 quoteTokenBalance = ERC20(quoteToken_).balanceOf(pairAddress_);
+        {
+            // Check if the pool has had quote tokens donated (whether synced or not)
+            // Base tokens are not liquid, so we don't need to check for them
+            (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+            uint112 quoteTokenReserve = pair.token0() == quoteToken_ ? reserve0 : reserve1;
+
+            if (quoteTokenReserve == 0 && quoteTokenBalance == 0) {
+                return (0, 0);
+            }
+        }
+
+        // If there has been a donation into the pool, we need to adjust the reserves so that the price is correct
+        // This can be performed by swapping the quote tokens for base tokens
+
+        // To perform the swap, both reserves need to be non-zero, so we need to transfer in some base tokens and update the reserves using `sync()`.
+        {
+            ERC20(baseToken_).transfer(pairAddress_, 1);
+            pair.sync();
+            baseTokensUsed += 1;
+        }
+
+        // We want the pool to end up at the auction price
+        // The simplest way to do this is to have the auctionPrice_ of quote tokens
+        // and 1 of base tokens in the pool (accounting for decimals)
+        uint256 desiredQuoteTokenReserves = auctionPrice_;
+        uint256 desiredBaseTokenReserves = 10 ** ERC20(baseToken_).decimals();
+
+        // Handle quote token transfers
+        uint256 quoteTokensOut;
+        {
+            // If the balance is less than required, transfer in
+            if (quoteTokenBalance < desiredQuoteTokenReserves) {
+                uint256 quoteTokensToTransfer = desiredQuoteTokenReserves - quoteTokenBalance;
+                ERC20(quoteToken_).transfer(pairAddress_, quoteTokensToTransfer);
+
+                quoteTokensUsed += quoteTokensToTransfer;
+
+                // Update the balance
+                quoteTokenBalance = desiredQuoteTokenReserves;
+            }
+
+            // Determine the amount of quote tokens to swap out
+            quoteTokensOut = quoteTokenBalance - desiredQuoteTokenReserves;
+        }
+
+        // Handle base token transfers
+        {
+            uint256 baseTokensToTransfer =
+                desiredBaseTokenReserves - ERC20(baseToken_).balanceOf(pairAddress_);
+            if (baseTokensToTransfer > 0) {
+                ERC20(baseToken_).transfer(pairAddress_, baseTokensToTransfer);
+                baseTokensUsed += baseTokensToTransfer;
+            }
+        }
+
+        // Perform the swap
+        uint256 amount0Out = pair.token0() == quoteToken_ ? quoteTokensOut : 0;
+        uint256 amount1Out = pair.token0() == quoteToken_ ? 0 : quoteTokensOut;
+
+        if (amount0Out > 0 || amount1Out > 0) {
+            pair.swap(amount0Out, amount1Out, address(this), "");
+        } else {
+            // If no swap is needed, sync the pair to update the reserves
+            pair.sync();
+        }
+
+        // The pool reserves should now indicate the correct price.
+        // This contract may now hold additional quote tokens that were transferred from the pool.
+        // These tokens will be transferred to the seller during cleanup.
+
+        return (quoteTokensUsed, baseTokensUsed);
     }
 }

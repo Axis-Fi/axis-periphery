@@ -55,7 +55,9 @@ interface IBPOOLv1 {
         uint128 _liquidity
     ) external returns (uint256 bAssetsAdded_, uint256 reservesAdded_, uint128 liquidityFinal_);
 
-    function removeAllFrom(Range _range)
+    function removeAllFrom(
+        Range _range
+    )
         external
         returns (
             uint256 bAssetsRemoved_,

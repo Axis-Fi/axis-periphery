@@ -868,6 +868,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
             // Case 2: Swapped in 1 wei of reserve tokens
             // We don't need to do anything here
         }
-        else revert Callback_Swap_InvalidCase();
+        else {
+            revert Callback_Swap_InvalidCase();
+        }
     }
 }

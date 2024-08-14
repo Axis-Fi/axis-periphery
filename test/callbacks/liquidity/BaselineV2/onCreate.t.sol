@@ -467,12 +467,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.locked(), false, "transfer lock");
     }
 
-    function test_floorRangeGap_belowBounds_reverts(int24 floorRangeGap_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
+    function test_floorRangeGap_belowBounds_reverts(
+        int24 floorRangeGap_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
         int24 floorRangeGap = int24(bound(floorRangeGap_, type(int24).min, -1));
         _setFloorRangeGap(floorRangeGap);
 
@@ -534,12 +531,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _assertTicks(fixedPriceTick);
     }
 
-    function test_anchorTickWidth_belowBounds_reverts(int24 anchorTickWidth_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
+    function test_anchorTickWidth_belowBounds_reverts(
+        int24 anchorTickWidth_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
         int24 anchorTickWidth = int24(bound(anchorTickWidth_, type(int24).min, 9));
         _setAnchorTickWidth(anchorTickWidth);
 
@@ -553,12 +547,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_anchorTickWidth_aboveBounds_reverts(int24 anchorTickWidth_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
+    function test_anchorTickWidth_aboveBounds_reverts(
+        int24 anchorTickWidth_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
         int24 anchorTickWidth = int24(bound(anchorTickWidth_, 51, type(int24).max));
         _setAnchorTickWidth(anchorTickWidth);
 
@@ -590,12 +581,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_poolPercent_belowBounds_reverts(uint24 poolPercent_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
+    function test_poolPercent_belowBounds_reverts(
+        uint24 poolPercent_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
         uint24 poolPercent = uint24(bound(poolPercent_, 0, 10e2 - 1));
         _setPoolPercent(poolPercent);
 
@@ -608,12 +596,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _onCreate();
     }
 
-    function test_poolPercent_aboveBounds_reverts(uint24 poolPercent_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-    {
+    function test_poolPercent_aboveBounds_reverts(
+        uint24 poolPercent_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
         uint24 poolPercent = uint24(bound(poolPercent_, 100e2 + 1, type(uint24).max));
         _setPoolPercent(poolPercent);
 

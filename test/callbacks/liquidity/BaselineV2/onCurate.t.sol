@@ -49,13 +49,9 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         _dtl.onCurate(_lotId, 0, true, abi.encode(""));
     }
 
-    function test_curatorFeeNonZero(uint256 curatorFee_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-        givenOnCreate
-    {
+    function test_curatorFeeNonZero(
+        uint256 curatorFee_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated givenOnCreate {
         uint256 curatorFee = bound(curatorFee_, 1, type(uint96).max);
         uint256 balanceBefore = _baseToken.balanceOf(address(_auctionHouse));
 

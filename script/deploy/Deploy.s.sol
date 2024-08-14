@@ -274,10 +274,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
 
     // ========== DEPLOYMENTS ========== //
 
-    function deployAtomicUniswapV2DirectToLiquidity(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployAtomicUniswapV2DirectToLiquidity(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying UniswapV2DirectToLiquidity (Atomic)");
@@ -317,10 +316,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbAtomicUniswapV2Dtl), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchUniswapV2DirectToLiquidity(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchUniswapV2DirectToLiquidity(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying UniswapV2DirectToLiquidity (Batch)");
@@ -360,10 +358,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbBatchUniswapV2Dtl), _PREFIX_CALLBACKS);
     }
 
-    function deployAtomicUniswapV3DirectToLiquidity(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployAtomicUniswapV3DirectToLiquidity(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying UniswapV3DirectToLiquidity (Atomic)");
@@ -403,10 +400,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbAtomicUniswapV3Dtl), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchUniswapV3DirectToLiquidity(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchUniswapV3DirectToLiquidity(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying UniswapV3DirectToLiquidity (Batch)");
@@ -446,10 +442,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbBatchUniswapV3Dtl), _PREFIX_CALLBACKS);
     }
 
-    function deployAtomicCappedMerkleAllowlist(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployAtomicCappedMerkleAllowlist(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying CappedMerkleAllowlist (Atomic)");
@@ -491,10 +486,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbAtomicCappedMerkleAllowlist), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchCappedMerkleAllowlist(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchCappedMerkleAllowlist(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying CappedMerkleAllowlist (Batch)");
@@ -691,10 +685,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbBatchTokenAllowlist), _PREFIX_CALLBACKS);
     }
 
-    function deployAtomicAllocatedMerkleAllowlist(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployAtomicAllocatedMerkleAllowlist(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying AllocatedMerkleAllowlist (Atomic)");
@@ -736,10 +729,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbAtomicAllocatedMerkleAllowlist), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchAllocatedMerkleAllowlist(bytes memory)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchAllocatedMerkleAllowlist(
+        bytes memory
+    ) public returns (address, string memory) {
         // No args used
         console2.log("");
         console2.log("Deploying AllocatedMerkleAllowlist (Batch)");
@@ -781,10 +773,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(cbBatchAllocatedMerkleAllowlist), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchBaselineAxisLaunch(bytes memory args_)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchBaselineAxisLaunch(
+        bytes memory args_
+    ) public returns (address, string memory) {
         // Decode arguments
         (address baselineKernel, address reserveToken) = abi.decode(args_, (address, address));
 
@@ -831,10 +822,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(batchCallback), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchBaselineAllocatedAllowlist(bytes memory args_)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchBaselineAllocatedAllowlist(
+        bytes memory args_
+    ) public returns (address, string memory) {
         // Decode arguments
         (address baselineKernel, address baselineOwner, address reserveToken) =
             abi.decode(args_, (address, address, address));
@@ -885,10 +875,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(batchAllowlist), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchBaselineAllowlist(bytes memory args_)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchBaselineAllowlist(
+        bytes memory args_
+    ) public returns (address, string memory) {
         // Decode arguments
         (address baselineKernel, address baselineOwner, address reserveToken) =
             abi.decode(args_, (address, address, address));
@@ -939,10 +928,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(batchAllowlist), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchBaselineCappedAllowlist(bytes memory args_)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchBaselineCappedAllowlist(
+        bytes memory args_
+    ) public returns (address, string memory) {
         // Decode arguments
         (address baselineKernel, address baselineOwner, address reserveToken) =
             abi.decode(args_, (address, address, address));
@@ -993,10 +981,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         return (address(batchAllowlist), _PREFIX_CALLBACKS);
     }
 
-    function deployBatchBaselineTokenAllowlist(bytes memory args_)
-        public
-        returns (address, string memory)
-    {
+    function deployBatchBaselineTokenAllowlist(
+        bytes memory args_
+    ) public returns (address, string memory) {
         // Decode arguments
         (address baselineKernel, address reserveToken) = abi.decode(args_, (address, address));
 

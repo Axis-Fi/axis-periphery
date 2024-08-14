@@ -18,7 +18,7 @@ cd lib/baseline-v2/ && git checkout 60bed78b7bee28016321ddd8c590df6c61bae6e9  &&
 
 echo ""
 echo "*** Installing forge dependencies"
-forge install
+rm -rf lib && forge install
 echo "    Done"
 
 echo ""
