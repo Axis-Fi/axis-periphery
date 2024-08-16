@@ -24,7 +24,7 @@ estimateGas: false
 #seqLen defines how many transactions are in a test sequence
 seqLen: 100
 #shrinkLimit determines how much effort is spent shrinking failing sequences
-shrinkLimit: 100
+shrinkLimit: 5000
 #coverage controls coverage guided testing
 coverage: true
 #format can be "text" or "json" for different output (human or machine readable)

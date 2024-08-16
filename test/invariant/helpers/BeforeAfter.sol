@@ -13,6 +13,7 @@ abstract contract BeforeAfter is Setup {
         address seller;
         uint256 sellerBaseBalance;
         uint256 sellerBaselineBalance;
+        uint256 sellerQuoteBalance;
         uint256 dtlBaseBalance;
         uint256 dtlBaselineBalance;
         uint256 auctionHouseBaseBalance;
@@ -30,6 +31,7 @@ abstract contract BeforeAfter is Setup {
         _before.dtlConfigV3 = _getDTLConfigurationV3(lotId);
         (_before.seller,,,,,,,,) = _auctionHouse.lotRouting(lotId);
         _before.sellerBaseBalance = _baseToken.balanceOf(seller);
+        _before.sellerQuoteBalance = _quoteToken.balanceOf(seller);
         _before.dtlBaseBalance = _baseToken.balanceOf(_dtlAddress);
         _before.auctionHouseBaseBalance = _baseToken.balanceOf(address(_auctionHouse));
         _before.sellerBaselineBalance = _baselineToken.balanceOf(seller);
@@ -44,6 +46,7 @@ abstract contract BeforeAfter is Setup {
         _after.dtlConfigV3 = _getDTLConfigurationV3(lotId);
         (_after.seller,,,,,,,,) = _auctionHouse.lotRouting(lotId);
         _after.sellerBaseBalance = _baseToken.balanceOf(seller);
+        _after.sellerQuoteBalance = _quoteToken.balanceOf(seller);
         _after.dtlBaseBalance = _baseToken.balanceOf(_dtlAddress);
         _after.auctionHouseBaseBalance = _baseToken.balanceOf(address(_auctionHouse));
         _after.sellerBaselineBalance = _baselineToken.balanceOf(seller);

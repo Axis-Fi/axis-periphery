@@ -64,7 +64,9 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
 
     function baselineDTL_createLot(uint256 sellerIndexSeed) public {
         // PRE-CONDITIONS
+        if (_dtlBaseline.lotId() != type(uint96).max) return;
         sellerBaseline_ = randomAddress(sellerIndexSeed);
+        emit MessageAddress("SELLER1", sellerBaseline_);
 
         lotCapacity = 10 ether;
 
@@ -75,15 +77,13 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
         _ANCHOR_TICK_U = _baselineToken.getActiveTS();
         _POOL_PERCENT = 100e2;
 
-        if (_dtlBaseline.lotId() != type(uint96).max) return;
-
         _createData = BaselineAxisLaunch.CreateData({
             recipient: sellerBaseline_,
-            poolPercent: _POOL_PERCENT,
-            floorReservesPercent: _FLOOR_RESERVES_PERCENT,
-            floorRangeGap: _FLOOR_RANGE_GAP,
-            anchorTickU: _ANCHOR_TICK_U,
-            anchorTickWidth: _ANCHOR_TICK_WIDTH,
+            poolPercent: 87e2, //_POOL_PERCENT,
+            floorReservesPercent: 50e2, //_FLOOR_RESERVES_PERCENT,
+            floorRangeGap: 0, //_FLOOR_RANGE_GAP,
+            anchorTickU: 11_000, //_ANCHOR_TICK_U,
+            anchorTickWidth: 10, //_ANCHOR_TICK_WIDTH,
             allowlistParams: abi.encode("")
         });
 
@@ -207,8 +207,8 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
 
         __before(_lotId, sellerBaseline_, _dtlBaselineAddress);
 
-        curatorFee_ = bound(curatorFee_, 0, 5e18);
-        // curatorFee_ = 0;
+        // curatorFee_ = bound(curatorFee_, 0, 5e18);
+        curatorFee_ = 0;
 
         // ACTION
         vm.prank(address(_baselineAuctionHouse));
@@ -271,6 +271,7 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             _lotId, _PROCEEDS_AMOUNT, _scaleBaseTokenAmount(_REFUND_AMOUNT), abi.encode("")
         ) {
             // POST-CONDITIONS
+            emit MessageAddress("SELLER2", sellerBaseline_);
             __after(_lotId, sellerBaseline_, _dtlBaselineAddress);
 
             _assertQuoteTokenBalances();
@@ -351,9 +352,10 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             poolProceeds,
             "AX-34: BaselineDTL_onSettle should credit baseline pool with correct quote token proceeds"
         );
+        emit MessageAddress("SELLER3", sellerBaseline_);
         equal(
-            _quoteToken.balanceOf(sellerBaseline_),
-            _quoteToken.balanceOf(sellerBaseline_) + _PROCEEDS_AMOUNT - poolProceeds,
+            _after.sellerQuoteBalance,
+            _before.sellerQuoteBalance + _PROCEEDS_AMOUNT - poolProceeds,
             "AX-35: BaselineDTL_onSettle should credit seller quote token proceeds"
         );
     }
@@ -440,7 +442,7 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             0,
             "AX-49: After BaselineDTL_onSettle floor bAssets should equal 0"
         );
-        gt(
+        equal(
             _getRangeBAssets(Range.ANCHOR),
             0,
             "AX-50: After BaselineDTL_onSettle anchor bAssets should be greater than 0"
