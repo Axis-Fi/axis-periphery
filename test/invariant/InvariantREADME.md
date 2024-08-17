@@ -42,7 +42,7 @@ forge clean
 then try the echidna command again.
 
 ### Unexpected Selectors
-Due to the issue in the onSettle callback the proceeds_ value is based on the total sold less the fees taken by the protocol and referrer, the handler function `baselineDTL_onSettle` will throw an assertion fail with the error selector `Callback_InvalidCapacityRatio`
+Due to the issue of the proceeds_ value being based on the total sold less the fees taken by the protocol and referrer, the handler function `baselineDTL_onSettle` will throw an assertion fail with the error selector `Callback_InvalidCapacityRatio`
 
 ### Invariants
 ## **Axis**
