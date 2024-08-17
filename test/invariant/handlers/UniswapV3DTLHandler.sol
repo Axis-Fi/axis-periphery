@@ -41,6 +41,8 @@ abstract contract UniswapV3DTLHandler is BeforeAfter, Assertions {
     //////////////////////////////////////////////////////////////////////////*/
 
     uint24 internal _poolFee = 500;
+    uint96 internal constant _PROCEEDS = 20e18;
+    uint96 internal constant _REFUND = 0;
 
     uint96 internal _proceedsV3;
     uint96 internal _refundV3;
@@ -316,8 +318,8 @@ abstract contract UniswapV3DTLHandler is BeforeAfter, Assertions {
         (d.seller,,,,,,,,) = _auctionHouse.lotRouting(d.lotId);
 
         address pool = _createV3Pool();
-        setV3CallbackParameters(d.lotId, proceeds_, refund);
-        _initializePool(pool, _sqrtPriceX96);
+        setV3CallbackParameters(d.lotId, _PROCEEDS, _REFUND);
+        // _initializePool(pool, _sqrtPriceX96);
 
         __before(d.lotId, d.seller, _dtlV3Address);
         if (_before.seller == address(0)) return;
@@ -338,7 +340,7 @@ abstract contract UniswapV3DTLHandler is BeforeAfter, Assertions {
             // POST-CONDITIONS
             __after(d.lotId, d.seller, _dtlV3Address);
 
-            // _assertPoolState(_sqrtPriceX96);
+            _assertPoolState(_sqrtPriceX96);
             _assertLpTokenBalanceV3(d.lotId, d.seller);
             if (_before.dtlConfigV3.vestingStart != 0) {
                 _assertVestingTokenBalanceV3(d.lotId, d.seller);

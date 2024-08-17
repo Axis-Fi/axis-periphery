@@ -33,11 +33,15 @@ contract GuardianTester is
         uniswapV2DTL_onSettle(74242834330818981373611912035815288202893171282512133578955136337658302516,0,684922578086812823641066,2106608095978665836350501);
     }
 
-    function test_uni_v2() public {
-        uniswapV2DTL_createLot(0,0,0,0);
-        uniswapV2DTL_createLot(0,0,0,0);
-        uniswapV2DTL_onSettle(0,1,0,0);
-        uniswapV2DTL_onSettle(0,0,0,0);
+    function test_uni_v3() public {
+        // baselineDTL_createLot(32834951442023372761398138891550170);
+        // uniswapV2DTL_createLot(0,0,0,0);
+        // baselineDTL_onSettle(0,0,0,0);
+        // uniswapV2DTL_onSettle(0,0,0,0);
+        // V2PoolHandler_swapToken0(24989087196341648061875939510755979066808,0);
+        uniswapV3DTL_createLot(0,0,0,0);
+        uniswapV3DTL_onCurate(0,0);
+        uniswapV3DTL_onSettle(0,813287864469051073156,0,1005841494018651);
     }
 
     function test_baseline() public {

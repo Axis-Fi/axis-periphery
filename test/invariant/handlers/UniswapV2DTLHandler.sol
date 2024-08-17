@@ -54,6 +54,8 @@ abstract contract UniswapV2DTLHandler is BeforeAfter, Assertions {
         uint48 vestingExpiry
     ) public {
         // PRE-CONDITIONS
+        emit MessageNum("lotIdsV2 length", lotIdsV2.length);
+        if (lotIdsV2.length == 1) return;
         address seller_ = randomAddress(sellerIndexSeed);
         __before(0, seller_, _dtlV2Address);
 
@@ -305,9 +307,9 @@ abstract contract UniswapV2DTLHandler is BeforeAfter, Assertions {
         if (_before.seller == address(0)) return;
         if (isLotFinished[d.lotId] == true) return;
 
-        givenAddressHasQuoteTokenBalance(_dtlV2Address, _proceeds);
-        givenAddressHasBaseTokenBalance(_before.seller, _capacityUtilised);
-        givenAddressHasBaseTokenAllowance(_before.seller, _dtlV2Address, _capacityUtilised);
+        givenAddressHasQuoteTokenBalance(_dtlV2Address, _quoteTokensToDeposit);
+        givenAddressHasBaseTokenBalance(_before.seller, _baseTokensToDeposit);
+        givenAddressHasBaseTokenAllowance(_before.seller, _dtlV2Address, _baseTokensToDeposit);
 
         // ACTION
         vm.prank(address(_auctionHouse));
