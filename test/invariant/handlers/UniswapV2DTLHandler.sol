@@ -54,7 +54,6 @@ abstract contract UniswapV2DTLHandler is BeforeAfter, Assertions {
         uint48 vestingExpiry
     ) public {
         // PRE-CONDITIONS
-        emit MessageNum("lotIdsV2 length", lotIdsV2.length);
         if (lotIdsV2.length == 1) return;
         address seller_ = randomAddress(sellerIndexSeed);
         __before(0, seller_, _dtlV2Address);
@@ -350,9 +349,6 @@ abstract contract UniswapV2DTLHandler is BeforeAfter, Assertions {
             ];
             for (uint256 i = 0; i < stringErrors.length; i++) {
                 if (compareStrings(stringErrors[i], reason)) {
-                    if (i == 1 || i == 2) {
-                        return;
-                    }
                     t(
                         false,
                         "AX-52: UniswapV2DTL_onSettle should not fail with 'UniswapV2Library: INSUFFICIENT_LIQUIDITY'"
