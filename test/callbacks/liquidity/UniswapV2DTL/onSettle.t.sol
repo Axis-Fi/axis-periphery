@@ -437,6 +437,38 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertApprovals();
     }
 
+    function test_givenDonation_givenAuctionPriceGreaterThanOne_givenDifferentBaseTokenDecimals_fuzz(
+        uint256 donatedQuoteTokens_
+    )
+        public
+        givenCallbackIsCreated
+        givenBaseTokenDecimals(17)
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS, _REFUND) // Price is 2
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
+
+        // Donate to the pool
+        _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
+
+        // Callback
+        _performOnSettle();
+
+        // Assertions
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
     function test_givenDonation_givenSync_givenAuctionPriceGreaterThanOne_givenDifferentBaseTokenDecimals_fuzz(
         uint256 donatedQuoteTokens_
     )
@@ -576,6 +608,37 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _assertApprovals();
     }
 
+    function test_givenDonation_givenAuctionPriceOne_fuzz(
+        uint256 donatedQuoteTokens_
+    )
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_LOT_CAPACITY, 0) // Price = 1
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
+
+        // Donate to the pool
+        _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
+
+        // Callback
+        _performOnSettle();
+
+        // Assertions
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
     function test_givenDonation_givenSync_givenAuctionPriceOne_fuzz(
         uint256 donatedQuoteTokens_
     )
@@ -667,6 +730,37 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
 
         // Sync
         _syncPool();
+
+        // Callback
+        _performOnSettle();
+
+        // Assertions
+        _assertLpTokenBalance();
+        _assertLpUnderlyingBalances();
+        _assertVestingTokenBalance();
+        _assertQuoteTokenBalance();
+        _assertBaseTokenBalance();
+        _assertApprovals();
+    }
+
+    function test_givenDonation_givenAuctionPriceLessThanOne_fuzz(
+        uint256 donatedQuoteTokens_
+    )
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenPoolIsCreated
+        setCallbackParameters(_PROCEEDS_PRICE_LESS_THAN_ONE, 0) // Price = 0.5
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds)
+        givenAddressHasBaseTokenBalance(_SELLER, _capacityUtilised)
+        givenAddressHasBaseTokenAllowance(_SELLER, _dtlAddress, _capacityUtilised)
+    {
+        // Donation amount could be more or less than the auction price
+        uint256 donatedQuoteTokens = bound(donatedQuoteTokens_, 1, 3e18);
+        _quoteTokensDonated += donatedQuoteTokens;
+
+        // Donate to the pool
+        _quoteToken.mint(address(_getUniswapV2Pool()), donatedQuoteTokens);
 
         // Callback
         _performOnSettle();
