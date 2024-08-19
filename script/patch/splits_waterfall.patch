@@ -1,0 +1,30 @@
+diff --git a/src/WaterfallModule.sol b/src/WaterfallModule.sol
+index deb5c09..0429e4d 100644
+--- a/src/WaterfallModule.sol
++++ b/src/WaterfallModule.sol
+@@ -1,9 +1,9 @@
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ pragma solidity ^0.8.17;
+ 
+-import {Clone} from "solady/utils/Clone.sol";
+-import {ERC20} from "solmate/tokens/ERC20.sol";
+-import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
++import {Clone} from "@solady-0.0.124/utils/Clone.sol";
++import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
++import {SafeTransferLib} from "@solady-0.0.124/utils/SafeTransferLib.sol";
+ 
+ /// @title WaterfallModule
+ /// @author 0xSplits
+diff --git a/src/WaterfallModuleFactory.sol b/src/WaterfallModuleFactory.sol
+index 9fd7bd0..c9ac86a 100644
+--- a/src/WaterfallModuleFactory.sol
++++ b/src/WaterfallModuleFactory.sol
+@@ -2,7 +2,7 @@
+ pragma solidity ^0.8.17;
+ 
+ import {WaterfallModule} from "./WaterfallModule.sol";
+-import {LibClone} from "solady/utils/LibClone.sol";
++import {LibClone} from "@solady-0.0.124/utils/LibClone.sol";
+ 
+ /// @title WaterfallModuleFactory
+ /// @author 0xSplits
