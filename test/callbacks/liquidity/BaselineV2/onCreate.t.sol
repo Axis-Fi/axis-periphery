@@ -1205,11 +1205,11 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenProtocolFeePercent(10e2) // 10%
+        givenProtocolFeePercent(2e2) // 2%
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_060_761_857_234_503_343
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 996_045_004_392_648_025
         );
         vm.expectRevert(err);
 
@@ -1250,11 +1250,11 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenReferrerFeePercent(10e2) // 10%
+        givenReferrerFeePercent(2e2) // 2%
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_060_761_857_234_503_343
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 996_045_004_392_648_025
         );
         vm.expectRevert(err);
 
@@ -1267,8 +1267,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenProtocolFeePercent(1e2) // 1%
-        givenReferrerFeePercent(1e2) // 1%
+        givenProtocolFeePercent(5e1) // 0.5%
+        givenReferrerFeePercent(5e1) // 0.5%
     {
         // Perform the call
         _onCreate();
@@ -1296,12 +1296,12 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenProtocolFeePercent(10e2) // 10%
-        givenReferrerFeePercent(10e2) // 10%
+        givenProtocolFeePercent(1e2) // 1%
+        givenReferrerFeePercent(1e2) // 1%
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_060_761_857_234_503_343
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 996_045_004_392_648_025
         );
         vm.expectRevert(err);
 

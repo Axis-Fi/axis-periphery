@@ -383,7 +383,12 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         }
 
         vm.prank(address(_auctionHouse));
-        _dtl.onSettle(_lotId, _proceeds, capacityRefund + curatorFeeRefund, abi.encode(""));
+        _dtl.onSettle(
+            _lotId,
+            _proceeds - _protocolFee - _referrerFee,
+            capacityRefund + curatorFeeRefund,
+            abi.encode("")
+        );
     }
 
     function _onSettle() internal {

@@ -370,15 +370,17 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
         // Set the floor reserves percent
         floorReservesPercent = cbData.floorReservesPercent;
 
-        // Get the auction format
-        AxisKeycode auctionFormat = keycodeFromVeecode(
-            AxisModule(address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))).VEECODE(
-            )
-        );
-
         // Only supports Fixed Price Batch Auctions initially
-        if (fromAxisKeycode(auctionFormat) != bytes5("FPBA")) {
-            revert Callback_Params_UnsupportedAuctionFormat();
+        {
+            // Get the auction format
+            AxisKeycode auctionFormat = keycodeFromVeecode(
+                AxisModule(address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_)))
+                    .VEECODE()
+            );
+
+            if (fromAxisKeycode(auctionFormat) != bytes5("FPBA")) {
+                revert Callback_Params_UnsupportedAuctionFormat();
+            }
         }
 
         // This contract can be extended with an allowlist for the auction
@@ -462,13 +464,14 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
             // Calculate the initial capacity of the pool based on the ticks set and the expected proceeds to deposit in the pool
             uint256 initialCapacity;
             {
-                IFixedPriceBatch auctionModule = IFixedPriceBatch(
-                    address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))
-                );
-
                 // Get the fixed price from the auction module
                 // This value is in the number of reserve tokens per baseline token
-                uint256 auctionPrice = auctionModule.getAuctionData(lotId_).price;
+                uint256 auctionPrice;
+                {
+                    auctionPrice = IFixedPriceBatch(
+                        address(IAuctionHouse(AUCTION_HOUSE).getAuctionModuleForId(lotId_))
+                    ).getAuctionData(lotId_).price;
+                }
 
                 // Get the active tick from the pool and confirm it is >= the auction price corresponds to
                 {
@@ -490,9 +493,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
                     }
                 }
 
-                // Calculate the expected proceeds from the auction and how much will be deposited in the pool
-                uint256 expectedProceeds = (auctionPrice * capacity_) / (10 ** bAsset.decimals());
-                uint256 poolProceeds = (expectedProceeds * poolPercent) / ONE_HUNDRED_PERCENT;
+                uint256 poolProceeds = (
+                    _getExpectedProceeds(lotId_, capacity_, auctionPrice) * poolPercent
+                ) / ONE_HUNDRED_PERCENT;
 
                 // Calculate the expected reserves for the floor and anchor ranges
                 uint256 floorReserves = (poolProceeds * floorReservesPercent) / ONE_HUNDRED_PERCENT;
@@ -845,6 +848,29 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
                 BPOOL.getLiquidity(Range.ANCHOR)
             );
         }
+    }
+
+    // ========== INTERNAL FUNCTIONS ========== //
+
+    /// @notice Calculate the expected proceeds from the auction and how much will be deposited in the pool
+    /// @dev    The proceeds sent to the onSettle callback function will exclude any protocol and referrer fees, so this calculation mimics the behaviour
+    ///
+    /// @param  lotId_          Lot ID of the auction
+    /// @param  auctionPrice_   Price of the auction
+    /// @param  capacity_       Capacity of the auction
+    /// @return proceeds        Expected proceeds from the auction
+    function _getExpectedProceeds(
+        uint96 lotId_,
+        uint256 auctionPrice_,
+        uint256 capacity_
+    ) internal view returns (uint256) {
+        // Get the fees from the auction house
+        (,,, uint48 protocolFee, uint48 referrerFee) = IAuctionHouse(AUCTION_HOUSE).lotFees(lotId_);
+
+        // Calculate the expected proceeds after fees
+        uint256 proceedsBeforeFees = (auctionPrice_ * capacity_) / (10 ** bAsset.decimals());
+        return proceedsBeforeFees - (proceedsBeforeFees * protocolFee) / ONE_HUNDRED_PERCENT
+            - (proceedsBeforeFees * referrerFee) / ONE_HUNDRED_PERCENT;
     }
 
     // ========== UNIV3 FUNCTIONS ========== //

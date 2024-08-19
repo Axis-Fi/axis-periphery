@@ -80,7 +80,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     }
 
     function _assertPoolReserves() internal view {
-        uint256 poolProceeds = _proceeds * _createData.poolPercent / 100e2;
+        uint256 poolProceeds =
+            (_proceeds - _protocolFee - _referrerFee) * _createData.poolPercent / 100e2;
         uint256 floorProceeds = poolProceeds * _createData.floorReservesPercent / 100e2;
         assertApproxEqAbs(
             _getRangeReserves(Range.FLOOR),
@@ -917,8 +918,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
-        givenProtocolFeePercent(1e2) // 1%
-        givenReferrerFeePercent(1e2) // 1%
+        givenProtocolFeePercent(5e1) // 0.5%
+        givenReferrerFeePercent(5e1) // 0.5%
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds - _protocolFee - _referrerFee)
         givenBaseTokenRefundIsTransferred(_refund)
