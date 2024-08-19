@@ -10,8 +10,7 @@ import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
 
 abstract contract V2PoolHandler is BeforeAfter, Assertions {
     function V2PoolHandler_donate(uint256 tokenIndexSeed, uint256 amount) public {
-        // address _token = tokenIndexSeed % 2 == 0 ? address(_quoteToken) : address(_baseToken);
-        address _token = address(_quoteToken);
+        address _token = tokenIndexSeed % 2 == 0 ? address(_quoteToken) : address(_baseToken);
 
         address pairAddress = _uniV2Factory.getPair(address(_baseToken), address(_quoteToken));
         if (pairAddress == address(0)) {
@@ -20,12 +19,6 @@ abstract contract V2PoolHandler is BeforeAfter, Assertions {
         IUniswapV2Pair pool = IUniswapV2Pair(pairAddress);
 
         amount = bound(amount, 1, 10_000 ether);
-
-        if (_token == address(_baseToken)) {
-            emit Message("BASE TOKEN");
-        } else {
-            emit Message("QUOTE TOKEN");
-        }
 
         MockERC20(_token).mint(address(this), amount);
         MockERC20(_token).transfer(address(pool), amount);
