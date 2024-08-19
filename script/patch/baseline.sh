@@ -4,6 +4,6 @@
 cd lib/baseline-v2
 
 # Generate the diff
-git diff . > ../../script/baseline.patch
+git diff . > ../../script/patch/baseline.patch
 
 echo "Done!"
