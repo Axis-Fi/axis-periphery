@@ -62,7 +62,7 @@ contract BALwithAllocatedAllowlist is BaselineAxisLaunch, Owned {
     /// @param      allowlistData_ abi-encoded data: (bytes32) representing the merkle root
     function __onCreate(
         uint96,
-        address,
+        address seller_,
         address,
         address,
         uint256,
@@ -72,6 +72,11 @@ contract BALwithAllocatedAllowlist is BaselineAxisLaunch, Owned {
         // Check that the parameters are of the correct length
         if (allowlistData_.length != 32) {
             revert Callback_InvalidParams();
+        }
+
+        // Check that the seller is the owner
+        if (seller_ != owner) {
+            revert Callback_NotAuthorized();
         }
 
         // Decode the merkle root from the callback data
