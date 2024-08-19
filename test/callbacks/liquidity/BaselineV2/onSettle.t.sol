@@ -32,13 +32,15 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     function _assertQuoteTokenBalances() internal view {
         assertEq(_quoteToken.balanceOf(_dtlAddress), 0, "quote token: callback");
         assertEq(_quoteToken.balanceOf(address(_quoteToken)), 0, "quote token: contract");
-        uint256 poolProceeds = _proceeds * _createData.poolPercent / 100e2;
+
+        uint256 proceedsAfterFees = _proceeds - _protocolFee - _referrerFee;
+        uint256 poolProceeds = proceedsAfterFees * _createData.poolPercent / 100e2;
         assertEq(
             _quoteToken.balanceOf(address(_baseToken.pool())),
             poolProceeds + _additionalQuoteTokensMinted,
             "quote token: pool"
         );
-        assertEq(_quoteToken.balanceOf(_SELLER), _proceeds - poolProceeds, "quote token: seller");
+        assertEq(_quoteToken.balanceOf(_SELLER), proceedsAfterFees - poolProceeds, "quote token: seller");
     }
 
     function _assertBaseTokenBalances(uint256 curatorFee_) internal view {
@@ -128,6 +130,10 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] it allocates the proceeds correctly
     // [X] given the active tick is fuzzed
     //  [X] it allocates the proceeds correctly
+    // [X] given the protocol fee is set
+    //  [X] it correctly performs the solvency check
+    // [X] given the referrer fee is set
+    //  [X] it correctly performs the solvency check
     // [X] it burns refunded base tokens, updates the circulating supply, marks the auction as completed and deploys the reserves into the Baseline pool
 
     function test_lotNotRegistered_reverts()
@@ -266,7 +272,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenFloorReservesPercent(30e2) // For the solvency check
         givenPoolPercent(90e2) // For the solvency check
     {
-        uint24 curatorFeePercent = 1e2;
+        uint48 curatorFeePercent = 1e2;
         _setCuratorFeePercent(curatorFeePercent);
 
         // Perform the onCreate callback
@@ -300,7 +306,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenFloorReservesPercent(60e2) // For the solvency check
         givenPoolPercent(90e2) // For the solvency check
     {
-        uint24 curatorFeePercent = 5e2;
+        uint48 curatorFeePercent = 5e2;
         _setCuratorFeePercent(curatorFeePercent);
 
         // Perform the onCreate callback
@@ -334,7 +340,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         givenFloorReservesPercent(20e2) // For the solvency check
         givenPoolPercent(99e2) // For the solvency check
     {
-        uint24 curatorFeePercent = 10e2;
+        uint48 curatorFeePercent = 10e2;
         _setCuratorFeePercent(curatorFeePercent);
 
         // Perform the onCreate callback
@@ -856,5 +862,75 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertCirculatingSupply(0);
         _assertAuctionComplete();
         _assertPoolReserves();
+    }
+
+    function test_givenProtocolFee()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenProtocolFeePercent(1e2) // 1%
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds - _protocolFee)
+        givenBaseTokenRefundIsTransferred(_refund)
+    {
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
+    }
+
+    function test_givenReferrerFee()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenReferrerFeePercent(1e2) // 1%
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds - _referrerFee)
+        givenBaseTokenRefundIsTransferred(_refund)
+    {
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
+    }
+
+    function test_givenProtocolFee_givenReferrerFee()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenProtocolFeePercent(1e2) // 1%
+        givenReferrerFeePercent(1e2) // 1%
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _proceeds - _protocolFee - _referrerFee)
+        givenBaseTokenRefundIsTransferred(_refund)
+    {
+        // Perform callback
+        _onSettle();
+
+        _assertQuoteTokenBalances();
+        _assertBaseTokenBalances(0);
+        _assertCirculatingSupply(0);
+        _assertAuctionComplete();
+        _assertPoolReserves();
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
     }
 }

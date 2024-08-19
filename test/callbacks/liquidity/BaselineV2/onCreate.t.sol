@@ -239,6 +239,14 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the activeTick and discoveryTickWidth results in an underflow
     //  [X] it reverts
+    // [X] given the protocol fee is set
+    //  [X] given the protocol fee would result in a solvency check failure
+    //   [X] it reverts
+    //  [X] it correctly performs the solvency check
+    // [X] when the referrer fee is set
+    //  [X] when the referrer fee would result in a solvency check failure
+    //   [X] it reverts
+    //  [X] it correctly performs the solvency check
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
 
     function test_callbackDataIncorrect_reverts()
@@ -1158,6 +1166,143 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         // Expect a revert
         bytes memory err =
             abi.encodeWithSelector(BaselineAxisLaunch.Callback_Params_RangeOutOfBounds.selector);
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_givenProtocolFee()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenProtocolFeePercent(1e2) // 1%
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert base token balances
+        _assertBaseTokenBalances();
+
+        // Lot ID is set
+        assertEq(_dtl.lotId(), _lotId, "lot ID");
+
+        // Check circulating supply
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
+
+        // The pool should be initialised with the tick equivalent to the auction's fixed price
+        int24 fixedPriceTick = _getFixedPriceTick();
+
+        _assertTicks(fixedPriceTick);
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
+    }
+
+    function test_givenProtocolFee_high_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenProtocolFeePercent(10e2) // 10%
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_060_761_857_234_503_343
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_givenReferrerFee()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenReferrerFeePercent(1e2) // 1%
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert base token balances
+        _assertBaseTokenBalances();
+
+        // Lot ID is set
+        assertEq(_dtl.lotId(), _lotId, "lot ID");
+
+        // Check circulating supply
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
+
+        // The pool should be initialised with the tick equivalent to the auction's fixed price
+        int24 fixedPriceTick = _getFixedPriceTick();
+
+        _assertTicks(fixedPriceTick);
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
+    }
+
+    function test_givenReferrerFee_high_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenReferrerFeePercent(10e2) // 10%
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_060_761_857_234_503_343
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_givenProtocolFee_givenReferrerFee()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenProtocolFeePercent(1e2) // 1%
+        givenReferrerFeePercent(1e2) // 1%
+    {
+        // Perform the call
+        _onCreate();
+
+        // Assert base token balances
+        _assertBaseTokenBalances();
+
+        // Lot ID is set
+        assertEq(_dtl.lotId(), _lotId, "lot ID");
+
+        // Check circulating supply
+        assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
+
+        // The pool should be initialised with the tick equivalent to the auction's fixed price
+        int24 fixedPriceTick = _getFixedPriceTick();
+
+        _assertTicks(fixedPriceTick);
+
+        // Transfer lock should be disabled
+        assertEq(_baseToken.locked(), false, "transfer lock");
+    }
+
+    function test_givenProtocolFee_givenReferrerFee_high_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenProtocolFeePercent(10e2) // 10%
+        givenReferrerFeePercent(10e2) // 10%
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_InvalidCapacityRatio.selector, 1_060_761_857_234_503_343
+        );
         vm.expectRevert(err);
 
         // Perform the call

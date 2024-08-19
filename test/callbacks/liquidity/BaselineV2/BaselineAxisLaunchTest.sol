@@ -70,6 +70,11 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     int24 internal _poolInitialTick;
     /// @dev Set in `_setFloorRangeGap()`
     int24 internal _floorRangeGap;
+    uint48 internal _protocolFeePercent;
+    uint256 internal _protocolFee;
+    uint48 internal _referrerFeePercent;
+    uint256 internal _referrerFee;
+    uint48 internal _curatorFeePercent;
     uint256 internal _curatorFee;
 
     uint256 internal _proceeds = _PROCEEDS_AMOUNT;
@@ -540,16 +545,58 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         return roundedTick;
     }
 
-    function _setCuratorFeePercent(uint24 curatorFeePercent_) internal {
+    function _mockLotFees() internal {
         // Mock on the AuctionHouse
         vm.mockCall(
             address(_auctionHouse),
             abi.encodeWithSelector(IAuctionHouse.lotFees.selector, _lotId),
-            abi.encode(address(0), true, curatorFeePercent_, 0, 0)
+            abi.encode(address(0), true, _curatorFeePercent, _protocolFeePercent, _referrerFeePercent)
         );
+    }
+
+    function _setCuratorFeePercent(uint48 curatorFeePercent_) internal {
+        _curatorFeePercent = curatorFeePercent_;
+
+        // Update mock
+        _mockLotFees();
 
         // Update the value
-        _curatorFee = _LOT_CAPACITY * curatorFeePercent_ / 100e2;
+        _curatorFee = _LOT_CAPACITY * _curatorFeePercent / 100e2;
+    }
+
+    modifier givenCuratorFeePercent(uint48 curatorFeePercent_) {
+        _setCuratorFeePercent(curatorFeePercent_);
+        _;
+    }
+
+    function _setProtocolFeePercent(uint48 protocolFeePercent_) internal {
+        _protocolFeePercent = protocolFeePercent_;
+
+        // Update mock
+        _mockLotFees();
+
+        // Update the value
+        _protocolFee = _proceeds * _protocolFeePercent / 100e2;
+    }
+
+    modifier givenProtocolFeePercent(uint48 protocolFeePercent_) {
+        _setProtocolFeePercent(protocolFeePercent_);
+        _;
+    }
+
+    function _setReferrerFeePercent(uint48 referrerFeePercent_) internal {
+        _referrerFeePercent = referrerFeePercent_;
+
+        // Update mock
+        _mockLotFees();
+
+        // Update the value
+        _referrerFee = _proceeds * _referrerFeePercent / 100e2;
+    }
+
+    modifier givenReferrerFeePercent(uint48 referrerFeePercent_) {
+        _setReferrerFeePercent(referrerFeePercent_);
+        _;
     }
 
     function _setTotalCollateralized(address user_, uint256 totalCollateralized_) internal {
