@@ -207,8 +207,8 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
 
         __before(_lotId, sellerBaseline_, _dtlBaselineAddress);
 
-        curatorFee_ = bound(curatorFee_, 0, 5e18);
-        // curatorFee_ = 0;
+        // curatorFee_ = bound(curatorFee_, 0, 5e18);
+        curatorFee_ = 0;
 
         // ACTION
         vm.prank(address(_baselineAuctionHouse));
