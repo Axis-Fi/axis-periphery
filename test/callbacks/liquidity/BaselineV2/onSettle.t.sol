@@ -40,7 +40,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
             poolProceeds + _additionalQuoteTokensMinted,
             "quote token: pool"
         );
-        assertEq(_quoteToken.balanceOf(_SELLER), proceedsAfterFees - poolProceeds, "quote token: seller");
+        assertEq(
+            _quoteToken.balanceOf(_SELLER), proceedsAfterFees - poolProceeds, "quote token: seller"
+        );
     }
 
     function _assertBaseTokenBalances(uint256 curatorFee_) internal view {

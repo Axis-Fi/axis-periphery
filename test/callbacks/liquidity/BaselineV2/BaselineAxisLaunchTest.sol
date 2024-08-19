@@ -550,7 +550,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         vm.mockCall(
             address(_auctionHouse),
             abi.encodeWithSelector(IAuctionHouse.lotFees.selector, _lotId),
-            abi.encode(address(0), true, _curatorFeePercent, _protocolFeePercent, _referrerFeePercent)
+            abi.encode(
+                address(0), true, _curatorFeePercent, _protocolFeePercent, _referrerFeePercent
+            )
         );
     }
 
