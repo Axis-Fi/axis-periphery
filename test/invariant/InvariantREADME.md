@@ -50,7 +50,7 @@ In test/invariant/handlers/BaselineDTL_Handler.sol:
 + curatorFee_ = 0;
 ```
 
-There is also an issue where donating baseTokens will disrupt accounting in UniswapV2DTLHandler.sol. Base token donations have been disabled.
+There is also an issue where donating baseTokens will disrupt accounting in UniswapV2DTL.sol. Base token donations have been disabled. If base token donations are enabled AX-52 will fail.
 
 In test/invariant/handlers/V2PoolHandler.sol:
 ```diff
@@ -113,5 +113,5 @@ In test/invariant/handlers/V2PoolHandler.sol:
 | **AX-49** | After BaselineDTL_onSettle floor bAssets should equal 0 | PASS | PASS | 10,000,000+
 | **AX-50** | After BaselineDTL_onSettle anchor bAssets should be greater than 0 | PASS | PASS | 10,000,000+
 | **AX-51** | After BaselineDTL_onSettle discovery bAssets should be greater than 0 | PASS | PASS | 10,000,000+
-| **AX-52** | UniswapV2DTL_onSettle should not fail with 'UniswapV2Library: INSUFFICIENT_LIQUIDITY' | **FAIL** | **FAIL** | 10,000,000+
+| **AX-52** | UniswapV2DTL_onSettle should not fail with 'UniswapV2Library: INSUFFICIENT_LIQUIDITY' | **FAIL** | PASS | 10,000,000+
 | **AX-53** | Profit should not be extractable due to UniswapV3Pool price manipulation | **FAIL** | PASS | 10,000,000+
