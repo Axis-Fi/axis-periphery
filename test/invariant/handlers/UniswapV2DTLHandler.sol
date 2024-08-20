@@ -349,11 +349,10 @@ abstract contract UniswapV2DTLHandler is BeforeAfter, Assertions {
             ];
             for (uint256 i = 0; i < stringErrors.length; i++) {
                 if (compareStrings(stringErrors[i], reason)) {
-                    // t(
-                    //     false,
-                    //     "AX-52: UniswapV2DTL_onSettle should not fail with 'UniswapV2Library: INSUFFICIENT_LIQUIDITY'"
-                    // );
-                    return;
+                    t(
+                        false,
+                        "AX-52: UniswapV2DTL_onSettle should not fail with 'UniswapV2Library: INSUFFICIENT_LIQUIDITY'"
+                    );
                 }
             }
         }

@@ -42,7 +42,21 @@ forge clean
 then try the echidna command again.
 
 ### Unexpected Selectors
-Due to the issue of the proceeds_ value being based on the total sold less the fees taken by the protocol and referrer, the handler function `baselineDTL_onSettle` will throw an assertion fail with the error selector `Callback_InvalidCapacityRatio`
+Due to the issue of the proceeds_ value being based on the total sold less the fees taken by the protocol and referrer, the handler function `baselineDTL_onSettle` will revert with the error selector `Callback_InvalidCapacityRatio`. Curator fees have been disabled to bypass this issue.
+
+In test/invariant/handlers/BaselineDTL_Handler.sol:
+```diff
+- curatorFee_ = bound(curatorFee_, 0, 5e18);
++ curatorFee_ = 0;
+```
+
+There is also an issue where donating baseTokens will disrupt accounting in UniswapV2DTLHandler.sol. Base token donations have been disabled.
+
+In test/invariant/handlers/V2PoolHandler.sol:
+```diff
+- address _token = tokenIndexSeed % 2 == 0 ? address(_quoteToken) : address(_baseToken);
++ address _token = address(_quoteToken);
+```
 
 ### Invariants
 ## **Axis**
