@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 // Libraries
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {FullMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FullMath.sol";
+import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
 
 // Uniswap
 import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
@@ -26,6 +27,8 @@ import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 /// @dev        As a general rule, this callback contract does not retain balances of tokens between calls.
 ///             Transfers are performed within the same function that requires the balance.
 contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
+    using SafeTransferLib for ERC20;
+
     // ========== STRUCTS ========== //
 
     /// @notice     Parameters for the onCreate callback
@@ -121,9 +124,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 quoteTokensToAdd = quoteTokenAmount_;
         uint256 baseTokensToAdd = baseTokenAmount_;
         {
-            uint256 auctionPrice = FullMath.mulDiv(
-                quoteTokenAmount_, 10 ** ERC20(baseToken_).decimals(), baseTokenAmount_
-            );
+            uint256 baseTokenScale = 10 ** ERC20(baseToken_).decimals();
+            uint256 auctionPrice =
+                FullMath.mulDiv(quoteTokenAmount_, baseTokenScale, baseTokenAmount_);
 
             (, uint256 baseTokensUsed) =
                 _mitigateDonation(pairAddress, auctionPrice, quoteToken_, baseToken_);
@@ -132,9 +135,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
                 baseTokensToAdd -= baseTokensUsed;
 
                 // Re-calculate quoteTokensToAdd to be aligned with baseTokensToAdd
-                quoteTokensToAdd = FullMath.mulDiv(
-                    baseTokensToAdd, auctionPrice, 10 ** ERC20(baseToken_).decimals()
-                );
+                quoteTokensToAdd = FullMath.mulDiv(baseTokensToAdd, auctionPrice, baseTokenScale);
             }
         }
 
@@ -143,8 +144,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
         uint256 baseTokenAmountMin = _getAmountWithSlippage(baseTokensToAdd, params.maxSlippage);
 
         // Approve the router to spend the tokens
-        ERC20(quoteToken_).approve(address(uniV2Router), quoteTokensToAdd);
-        ERC20(baseToken_).approve(address(uniV2Router), baseTokensToAdd);
+        ERC20(quoteToken_).safeApprove(address(uniV2Router), quoteTokensToAdd);
+        ERC20(baseToken_).safeApprove(address(uniV2Router), baseTokensToAdd);
 
         // Deposit into the pool
         uniV2Router.addLiquidity(
@@ -160,8 +161,8 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Remove any dangling approvals
         // This is necessary, since the router may not spend all available tokens
-        ERC20(quoteToken_).approve(address(uniV2Router), 0);
-        ERC20(baseToken_).approve(address(uniV2Router), 0);
+        ERC20(quoteToken_).safeApprove(address(uniV2Router), 0);
+        ERC20(baseToken_).safeApprove(address(uniV2Router), 0);
 
         return ERC20(pairAddress);
     }
@@ -215,7 +216,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // To perform the swap, both reserves need to be non-zero, so we need to transfer in some base tokens and update the reserves using `sync()`.
         {
-            ERC20(baseToken_).transfer(pairAddress_, 1);
+            ERC20(baseToken_).safeTransfer(pairAddress_, 1);
             pair.sync();
             baseTokensUsed += 1;
         }
@@ -232,7 +233,7 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
             // If the balance is less than required, transfer in
             if (quoteTokenBalance < desiredQuoteTokenReserves) {
                 uint256 quoteTokensToTransfer = desiredQuoteTokenReserves - quoteTokenBalance;
-                ERC20(quoteToken_).transfer(pairAddress_, quoteTokensToTransfer);
+                ERC20(quoteToken_).safeTransfer(pairAddress_, quoteTokensToTransfer);
 
                 quoteTokensUsed += quoteTokensToTransfer;
 
@@ -246,10 +247,12 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
 
         // Handle base token transfers
         {
+            ERC20 baseToken = ERC20(baseToken_);
             uint256 baseTokensToTransfer =
-                desiredBaseTokenReserves - ERC20(baseToken_).balanceOf(pairAddress_);
+                desiredBaseTokenReserves - baseToken.balanceOf(pairAddress_);
+
             if (baseTokensToTransfer > 0) {
-                ERC20(baseToken_).transfer(pairAddress_, baseTokensToTransfer);
+                baseToken.safeTransfer(pairAddress_, baseTokensToTransfer);
                 baseTokensUsed += baseTokensToTransfer;
             }
         }

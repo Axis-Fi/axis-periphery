@@ -204,27 +204,23 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
             // Revert if the slippage is too high
             {
                 uint256 quoteTokenRequired = quoteTokenIsToken0 ? amount0Actual : amount1Actual;
-
-                // Ensures that `quoteTokenRequired` (as specified by GUniPool) is within the slippage range from the actual quote token amount
-                uint256 lower = _getAmountWithSlippage(quoteTokenAmount_, params.maxSlippage);
-                if (quoteTokenRequired < lower) {
-                    revert Callback_Slippage(quoteToken_, quoteTokenRequired, lower);
-                }
-
-                // Approve the vault to spend the tokens
-                ERC20(quoteToken_).approve(address(poolTokenAddress), quoteTokenRequired);
+                _approveMintAmount(
+                    quoteToken_,
+                    poolTokenAddress,
+                    quoteTokenAmount_,
+                    quoteTokenRequired,
+                    params.maxSlippage
+                );
             }
             {
                 uint256 baseTokenRequired = quoteTokenIsToken0 ? amount1Actual : amount0Actual;
-
-                // Ensures that `baseTokenRequired` (as specified by GUniPool) is within the slippage range from the actual base token amount
-                uint256 lower = _getAmountWithSlippage(baseTokenAmount_, params.maxSlippage);
-                if (baseTokenRequired < lower) {
-                    revert Callback_Slippage(baseToken_, baseTokenRequired, lower);
-                }
-
-                // Approve the vault to spend the tokens
-                ERC20(baseToken_).approve(address(poolTokenAddress), baseTokenRequired);
+                _approveMintAmount(
+                    baseToken_,
+                    poolTokenAddress,
+                    baseTokenAmount_,
+                    baseTokenRequired,
+                    params.maxSlippage
+                );
             }
 
             // Mint the LP tokens
@@ -323,6 +319,31 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
         }
 
         return abi.decode(lotConfig.implParams, (UniswapV3OnCreateParams));
+    }
+
+    /// @notice Approves the spender to spend the token amount with a maximum slippage
+    /// @dev    This function reverts if the slippage is too high from the original amount
+    ///
+    /// @param  token_          The token to approve
+    /// @param  spender_        The spender
+    /// @param  amount_         The amount available
+    /// @param  amountActual_   The actual amount required
+    /// @param  maxSlippage_    The maximum slippage allowed
+    function _approveMintAmount(
+        address token_,
+        address spender_,
+        uint256 amount_,
+        uint256 amountActual_,
+        uint24 maxSlippage_
+    ) internal {
+        // Revert if the slippage is too high
+        uint256 lower = _getAmountWithSlippage(amount_, maxSlippage_);
+        if (amountActual_ < lower) {
+            revert Callback_Slippage(token_, amountActual_, lower);
+        }
+
+        // Approve the vault to spend the tokens
+        ERC20(token_).safeApprove(spender_, amountActual_);
     }
 
     // ========== UNIV3 FUNCTIONS ========== //

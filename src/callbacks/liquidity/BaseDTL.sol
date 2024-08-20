@@ -378,7 +378,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         // If vesting is enabled, create the vesting tokens
         if (address(config.linearVestingModule) != address(0)) {
             // Approve spending of the tokens
-            poolToken.approve(address(config.linearVestingModule), poolTokenQuantity);
+            poolToken.safeApprove(address(config.linearVestingModule), poolTokenQuantity);
 
             // Mint the vesting tokens (it will deploy if necessary)
             config.linearVestingModule.mint(
