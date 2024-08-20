@@ -66,7 +66,6 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
         // PRE-CONDITIONS
         if (_dtlBaseline.lotId() != type(uint96).max) return;
         sellerBaseline_ = randomAddress(sellerIndexSeed);
-        emit MessageAddress("SELLER1", sellerBaseline_);
 
         lotCapacity = 10 ether;
 
@@ -271,7 +270,6 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             _lotId, _PROCEEDS_AMOUNT, _scaleBaseTokenAmount(_REFUND_AMOUNT), abi.encode("")
         ) {
             // POST-CONDITIONS
-            emit MessageAddress("SELLER2", sellerBaseline_);
             __after(_lotId, sellerBaseline_, _dtlBaselineAddress);
 
             _assertQuoteTokenBalances();
@@ -352,7 +350,6 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             poolProceeds,
             "AX-34: BaselineDTL_onSettle should credit baseline pool with correct quote token proceeds"
         );
-        emit MessageAddress("SELLER3", sellerBaseline_);
         equal(
             _after.sellerQuoteBalance,
             _before.sellerQuoteBalance + _PROCEEDS_AMOUNT - poolProceeds,

@@ -19,12 +19,6 @@ abstract contract V2PoolHandler is BeforeAfter, Assertions {
         }
         IUniswapV2Pair pool = IUniswapV2Pair(pairAddress);
 
-        if (_token == address(_quoteToken)) {
-            emit MessageAddress("QUPTE TOKEN", address(_quoteToken));
-        } else {
-            emit MessageAddress("BASE TOKEN", address(_baseToken));
-        }
-
         amount = bound(amount, 1, 10_000 ether);
 
         MockERC20(_token).mint(address(this), amount);
