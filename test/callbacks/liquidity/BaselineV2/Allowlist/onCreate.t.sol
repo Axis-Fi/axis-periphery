@@ -16,6 +16,8 @@ contract BaselineAllowlistOnCreateTest is BaselineAllowlistTest {
 
     // [X] when the allowlist parameters are in an incorrect format
     //  [X] it reverts
+    // [X] when the seller is not the owner
+    //  [X] it reverts
     // [X] it decodes and stores the merkle root
 
     function test_allowlistParamsIncorrect_reverts()
@@ -33,6 +35,21 @@ contract BaselineAllowlistOnCreateTest is BaselineAllowlistTest {
 
         // Call the callback
         _onCreate();
+    }
+
+    function test_sellerNotOwner_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAllowlistParams(_MERKLE_ROOT)
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
+        vm.expectRevert(err);
+
+        // Call the callback
+        _onCreate(_OWNER);
     }
 
     function test_success()

@@ -19,7 +19,7 @@ contract BaselineCappedAllowlistTest is BaselineAxisLaunchTest {
     modifier givenCallbackIsCreated() override {
         // Get the salt
         bytes memory args =
-            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         bytes32 salt =
             _getTestSalt("BaselineCappedAllowlist", type(BALwithCappedAllowlist).creationCode, args);
 
@@ -27,7 +27,7 @@ contract BaselineCappedAllowlistTest is BaselineAxisLaunchTest {
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
         _dtl = new BALwithCappedAllowlist{salt: salt}(
-            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER
+            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER
         );
         vm.stopBroadcast();
 

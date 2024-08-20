@@ -169,6 +169,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
     // [X] when the callback data is incorrect
     //  [X] it reverts
+    // [X] when the seller is not the owner
+    //  [X] it reverts
     // [X] when the callback is not called by the auction house
     //  [X] it reverts
     // [X] when the lot has already been registered
@@ -269,6 +271,20 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
             true,
             abi.encode(uint256(10), uint256(20))
         );
+    }
+
+    function test_sellerNotOwner_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
+        vm.expectRevert(err);
+
+        // Call the callback
+        _onCreate(_OWNER);
     }
 
     function test_notAuctionHouse_reverts()

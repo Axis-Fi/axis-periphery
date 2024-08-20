@@ -30,11 +30,12 @@ import {ICREDTv1} from "./lib/ICREDT.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
+import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 
 /// @notice     Axis auction callback to initialize a Baseline token using proceeds from a batch auction.
 /// @dev        This contract combines Baseline's InitializeProtocol Policy and Axis' Callback functionality to build an Axis auction callback specific to Baseline V2 token launches
 ///             It is designed to be used with a single auction and Baseline pool
-contract BaselineAxisLaunch is BaseCallback, Policy {
+contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     using FixedPointMathLib for uint256;
 
     // ========== ERRORS ========== //
@@ -185,10 +186,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
     /// @param  auctionHouse_   The AuctionHouse the callback is paired with
     /// @param  baselineKernel_ Address of the Baseline kernel
     /// @param  reserve_        Address of the reserve token. This should match the quote token for the auction lot.
+    /// @param  owner_          Address of the owner of the contract. Must be the same as the eventual seller of the auction lot.
     constructor(
         address auctionHouse_,
         address baselineKernel_,
-        address reserve_
+        address reserve_,
+        address owner_
     )
         BaseCallback(
             auctionHouse_,
@@ -204,6 +207,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
             })
         )
         Policy(Kernel(baselineKernel_))
+        Owned(owner_)
     {
         // Set lot ID to max uint(96) initially so it doesn't reference a lot
         lotId = type(uint96).max;
@@ -296,6 +300,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
     ///                 - Any Baseline credit allocations have been minted and allocated prior to auction creation (and this callback)
     ///
     ///                 This function reverts if:
+    ///                 - `seller_` is not the owner
     ///                 - `baseToken_` is not the same as `bAsset`
     ///                 - `quoteToken_` is not the same as `RESERVE`
     ///                 - `baseToken_` is not lower than `quoteToken_`
@@ -321,6 +326,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
         bool prefund_,
         bytes calldata callbackData_
     ) internal override {
+        // Validate that the seller is the owner
+        // Otherwise this single-use callback could be used by anyone
+        if (seller_ != owner) {
+            revert Callback_NotAuthorized();
+        }
+
         // Validate the base token is the baseline token
         // and the quote token is the reserve
         if (baseToken_ != address(bAsset)) {

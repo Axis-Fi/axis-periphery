@@ -14,12 +14,11 @@ import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/Allocated
 
 import {toVeecode} from "@axis-core-1.0.0/modules/Keycode.sol";
 import {WithSalts} from "../lib/WithSalts.sol";
+import {TestConstants} from "../Constants.sol";
 
-contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts {
+contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for AllocatedMerkleAllowlist;
 
-    address internal constant _OWNER = address(0x1);
-    address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
     address internal constant _BUYER_TWO = address(0x5);

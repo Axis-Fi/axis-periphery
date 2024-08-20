@@ -32,7 +32,6 @@ import {console2} from "@forge-std-1.9.1/console2.sol";
 abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV2DirectToLiquidity;
 
-    address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
     address internal constant _NOT_SELLER = address(0x20);

@@ -14,7 +14,7 @@ contract BaselineAllocatedAllowlistSetMerkleRootTest is BaselineAllocatedAllowli
         0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function _setMerkleRoot() internal {
-        vm.prank(_OWNER);
+        vm.prank(_SELLER);
         BALwithAllocatedAllowlist(address(_dtl)).setMerkleRoot(_NEW_MERKLE_ROOT);
     }
 

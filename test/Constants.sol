@@ -16,4 +16,6 @@ abstract contract TestConstants is TestConstantsCore {
         address(0xAA0d07fC9065B7910A9E50a8a8184eE2a0a6179e);
     address internal constant _CREATE2_DEPLOYER =
         address(0x4e59b44847b379578588920cA78FbF26c0B4956C);
+
+    address internal constant _SELLER = address(0x2);
 }

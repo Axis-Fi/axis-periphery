@@ -46,7 +46,7 @@ contract BALwithCappedAllowlist is BALwithAllowlist {
     /// @dev        This function reverts if:
     ///             - `allowlistData_` is not of the correct length
     ///
-    /// @param      allowlistData_ abi-encoded data: (bytes32) representing the merkle root
+    /// @param      allowlistData_  abi-encoded data: (bytes32, uint256) representing the merkle root and buyer limit
     function __onCreate(
         uint96,
         address,

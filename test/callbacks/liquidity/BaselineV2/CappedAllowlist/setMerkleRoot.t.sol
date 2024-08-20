@@ -16,7 +16,7 @@ contract BaselineCappedAllowlistSetMerkleRootTest is BaselineCappedAllowlistTest
         0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function _setMerkleRoot() internal {
-        vm.prank(_OWNER);
+        vm.prank(_SELLER);
         BALwithCappedAllowlist(address(_dtl)).setMerkleRoot(_NEW_MERKLE_ROOT);
     }
 

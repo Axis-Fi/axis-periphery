@@ -35,7 +35,6 @@ import {TestConstants} from "../../../Constants.sol";
 abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV3DirectToLiquidity;
 
-    address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
     address internal constant _NOT_SELLER = address(0x20);

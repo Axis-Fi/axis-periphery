@@ -19,14 +19,14 @@ contract BaselineAllowlistTest is BaselineAxisLaunchTest {
     modifier givenCallbackIsCreated() override {
         // Get the salt
         bytes memory args =
-            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         bytes32 salt = _getTestSalt("BaselineAllowlist", type(BALwithAllowlist).creationCode, args);
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
         _dtl = new BALwithAllowlist{salt: salt}(
-            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER
+            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER
         );
         vm.stopBroadcast();
 

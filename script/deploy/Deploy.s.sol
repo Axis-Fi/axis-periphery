@@ -777,15 +777,18 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         bytes memory args_
     ) public returns (address, string memory) {
         // Decode arguments
-        (address baselineKernel, address reserveToken) = abi.decode(args_, (address, address));
+        (address baselineKernel, address baselineOwner, address reserveToken) =
+            abi.decode(args_, (address, address, address));
 
         // Validate arguments
         require(baselineKernel != address(0), "baselineKernel not set");
+        require(baselineOwner != address(0), "baselineOwner not set");
         require(reserveToken != address(0), "reserveToken not set");
 
         console2.log("");
         console2.log("Deploying BaselineAxisLaunch (Batch)");
         console2.log("    Kernel", baselineKernel);
+        console2.log("    Owner", baselineOwner);
         console2.log("    ReserveToken", reserveToken);
 
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
@@ -796,7 +799,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         bytes32 salt_ = _getSalt(
             "BaselineAxisLaunch",
             type(BaselineAxisLaunch).creationCode,
-            abi.encode(batchAuctionHouse, baselineKernel, reserveToken)
+            abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
         );
 
         // Revert if the salt is not set
@@ -806,8 +809,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         console2.log("    salt:", vm.toString(salt_));
 
         vm.broadcast();
-        BaselineAxisLaunch batchCallback =
-            new BaselineAxisLaunch{salt: salt_}(batchAuctionHouse, baselineKernel, reserveToken);
+        BaselineAxisLaunch batchCallback = new BaselineAxisLaunch{salt: salt_}(
+            batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
+        );
         console2.log("");
         console2.log("    BaselineAxisLaunch (Batch) deployed at:", address(batchCallback));
 
@@ -1009,15 +1013,18 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         bytes memory args_
     ) public returns (address, string memory) {
         // Decode arguments
-        (address baselineKernel, address reserveToken) = abi.decode(args_, (address, address));
+        (address baselineKernel, address baselineOwner, address reserveToken) =
+            abi.decode(args_, (address, address, address));
 
         // Validate arguments
         require(baselineKernel != address(0), "baselineKernel not set");
+        require(baselineOwner != address(0), "baselineOwner not set");
         require(reserveToken != address(0), "reserveToken not set");
 
         console2.log("");
         console2.log("Deploying BaselineTokenAllowlist (Batch)");
         console2.log("    Kernel", baselineKernel);
+        console2.log("    Owner", baselineOwner);
         console2.log("    ReserveToken", reserveToken);
 
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
@@ -1028,7 +1035,7 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         bytes32 salt_ = _getSalt(
             "BaselineTokenAllowlist",
             type(BALwithTokenAllowlist).creationCode,
-            abi.encode(batchAuctionHouse, baselineKernel, reserveToken)
+            abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
         );
 
         // Revert if the salt is not set
@@ -1038,8 +1045,9 @@ contract Deploy is Script, WithEnvironment, WithSalts {
         console2.log("    salt:", vm.toString(salt_));
 
         vm.broadcast();
-        BALwithTokenAllowlist batchAllowlist =
-            new BALwithTokenAllowlist{salt: salt_}(batchAuctionHouse, baselineKernel, reserveToken);
+        BALwithTokenAllowlist batchAllowlist = new BALwithTokenAllowlist{salt: salt_}(
+            batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
+        );
         console2.log("");
         console2.log("    BaselineTokenAllowlist (Batch) deployed at:", address(batchAllowlist));
 

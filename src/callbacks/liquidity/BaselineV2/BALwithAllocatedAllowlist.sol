@@ -2,14 +2,13 @@
 pragma solidity 0.8.19;
 
 import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/MerkleProof.sol";
-import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 
 import {BaselineAxisLaunch} from "./BaselineAxisLaunch.sol";
 
 /// @notice Allocated allowlist version of the Baseline Axis Launch callback for batch auctions.
 /// @notice This version allows for each address in the Merkle tree to have a per-address amount of quote tokens they can spend.
 /// @dev    The merkle tree is expected to have both an address and an amount of quote tokens they can spend in each leaf.
-contract BALwithAllocatedAllowlist is BaselineAxisLaunch, Owned {
+contract BALwithAllocatedAllowlist is BaselineAxisLaunch {
     // ========== ERRORS ========== //
 
     /// @notice Error message when the bid amount exceeds the limit assigned to a buyer
@@ -51,7 +50,7 @@ contract BALwithAllocatedAllowlist is BaselineAxisLaunch, Owned {
         address baselineKernel_,
         address reserve_,
         address owner_
-    ) BaselineAxisLaunch(auctionHouse_, baselineKernel_, reserve_) Owned(owner_) {}
+    ) BaselineAxisLaunch(auctionHouse_, baselineKernel_, reserve_, owner_) {}
 
     // ========== CALLBACK FUNCTIONS ========== //
 
@@ -59,7 +58,7 @@ contract BALwithAllocatedAllowlist is BaselineAxisLaunch, Owned {
     /// @dev        This function reverts if:
     ///             - `allowlistData_` is not of the correct length
     ///
-    /// @param      allowlistData_ abi-encoded data: (bytes32) representing the merkle root
+    /// @param      allowlistData_  abi-encoded data: (bytes32) representing the merkle root
     function __onCreate(
         uint96,
         address,

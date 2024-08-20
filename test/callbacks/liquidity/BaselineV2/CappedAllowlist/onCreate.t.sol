@@ -18,6 +18,8 @@ contract BaselineCappedAllowlistOnCreateTest is BaselineCappedAllowlistTest {
     //  [X] it reverts
     // [X] when the buyer limit is 0
     //  [X] it reverts
+    // [X] when the seller is not the owner
+    //  [X] it reverts
     // [X] it decodes and stores the merkle root
 
     function test_allowlistParamsIncorrect_reverts()
@@ -50,6 +52,21 @@ contract BaselineCappedAllowlistOnCreateTest is BaselineCappedAllowlistTest {
 
         // Call the callback
         _onCreate();
+    }
+
+    function test_sellerNotOwner_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAllowlistParams(_MERKLE_ROOT, _BUYER_LIMIT)
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
+        vm.expectRevert(err);
+
+        // Call the callback
+        _onCreate(_OWNER);
     }
 
     function test_success()

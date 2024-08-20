@@ -41,7 +41,6 @@ import {MarketMaking} from "@baseline/policies/MarketMaking.sol";
 abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for BaselineAxisLaunch;
 
-    address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
     address internal constant _BORROWER = address(0x10);
@@ -285,7 +284,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
         // Get the salt
         bytes memory args =
-            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN);
+            abi.encode(address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         bytes32 salt =
             _getTestSalt("BaselineAxisLaunch", type(BaselineAxisLaunch).creationCode, args);
 
@@ -293,7 +292,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
         _dtl = new BaselineAxisLaunch{salt: salt}(
-            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN
+            address(_auctionHouse), _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER
         );
         vm.stopBroadcast();
 
@@ -337,19 +336,23 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _onCreate() internal {
+    function _onCreate(address seller_) internal {
         console2.log("");
         console2.log("Calling onCreate callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCreate(
             _lotId,
-            _SELLER,
+            seller_,
             address(_baseToken),
             address(_quoteToken),
             _scaleBaseTokenAmount(_LOT_CAPACITY),
             true,
             abi.encode(_createData)
         );
+    }
+
+    function _onCreate() internal {
+        _onCreate(_SELLER);
     }
 
     modifier givenOnCreate() {
