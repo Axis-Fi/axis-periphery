@@ -109,8 +109,15 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the caller is not the auction house
     //  [X] it reverts
-    // [X] when the lot has already been settled
-    //  [X] it reverts
+    // [X] given the onSettle callback has already been called
+    //  [X] when onSettle is called
+    //   [X] it reverts
+    //  [X] when onCancel is called
+    //   [X] it reverts
+    //  [X] when onCurate is called
+    //   [X] it reverts
+    //  [X] when onCreate is called
+    //   [X] it reverts
     // [X] when the lot has already been cancelled
     //  [X] it reverts
     // [X] when insufficient proceeds are sent to the callback
@@ -174,7 +181,69 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         );
     }
 
-    function test_lotAlreadySettled_reverts()
+    function test_auctionCompleted_onCreate_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Perform callback
+        _onSettle();
+
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        // Perform callback again
+        _onCreate();
+    }
+
+    function test_auctionCompleted_onCurate_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Perform callback
+        _onSettle();
+
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Perform callback again
+        _onCurate(0);
+    }
+
+    function test_auctionCompleted_onCancel_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenOnCreate
+        givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
+    {
+        // Perform callback
+        _onSettle();
+
+        // Expect revert
+        bytes memory err =
+            abi.encodeWithSelector(BaselineAxisLaunch.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        // Perform callback again
+        _onCancel();
+    }
+
+    function test_auctionCompleted_onSettle_reverts()
         public
         givenBPoolIsCreated
         givenCallbackIsCreated

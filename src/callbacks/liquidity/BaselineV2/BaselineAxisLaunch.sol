@@ -255,6 +255,20 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
         requests[5] = BaselinePermissions(bpool, BPOOL.setTransferLock.selector);
     }
 
+    // ========== MODIFIERS ========== //
+
+    /// @notice Validates that the lot id matches the stored lot id
+    modifier onlyValidLot(uint96 lotId_) {
+        if (lotId_ != lotId) revert Callback_InvalidParams();
+        _;
+    }
+
+    /// @notice Validates that the auction is not already settled or cancelled
+    modifier onlyActiveLot() {
+        if (auctionComplete) revert Callback_AlreadyComplete();
+        _;
+    }
+
     // ========== CALLBACK FUNCTIONS ========== //
 
     // CALLBACK PERMISSIONS
@@ -569,13 +583,12 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
     ///                 - `lotId_` is not the same as the stored `lotId`
     ///                 - The auction is already complete
     ///                 - Sufficient quantity of `bAsset` have not been sent to the callback
-    function _onCancel(uint96 lotId_, uint256 refund_, bool, bytes calldata) internal override {
-        // Validate the lot ID
-        if (lotId_ != lotId) revert Callback_InvalidParams();
-
-        // Validate that the lot is not already settled or cancelled
-        if (auctionComplete) revert Callback_AlreadyComplete();
-
+    function _onCancel(
+        uint96 lotId_,
+        uint256 refund_,
+        bool,
+        bytes calldata
+    ) internal override onlyValidLot(lotId_) onlyActiveLot {
         // Burn any refunded tokens (all auctions are prefunded)
         // Verify that the callback received the correct amount of bAsset tokens
         if (bAsset.balanceOf(address(this)) < refund_) revert Callback_MissingFunds();
@@ -606,10 +619,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
         uint256 curatorFee_,
         bool,
         bytes calldata
-    ) internal override {
-        // Validate the lot ID
-        if (lotId_ != lotId) revert Callback_InvalidParams();
-
+    ) internal override onlyValidLot(lotId_) onlyActiveLot {
         // Mint tokens for curator fee if it's not zero
         if (curatorFee_ > 0) {
             // Allow transfers if currently disabled
@@ -677,13 +687,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
         uint256 proceeds_,
         uint256 refund_,
         bytes calldata
-    ) internal virtual override {
-        // Validate the lot ID
-        if (lotId_ != lotId) revert Callback_InvalidParams();
-
-        // Validate that the auction is not already complete
-        if (auctionComplete) revert Callback_AlreadyComplete();
-
+    ) internal virtual override onlyValidLot(lotId_) onlyActiveLot {
         // Validate that the callback received the correct amount of proceeds
         // As this is a single-use contract, reserve balance is likely 0 prior, but extra funds will not affect it
         if (proceeds_ > RESERVE.balanceOf(address(this))) revert Callback_MissingFunds();
