@@ -218,6 +218,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
     function configureDependencies()
         external
         override
+        onlyKernel
         returns (BaselineKeycode[] memory dependencies)
     {
         BaselineKeycode bpool = toBaselineKeycode("BPOOL");
@@ -242,6 +243,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
         external
         view
         override
+        onlyKernel
         returns (BaselinePermissions[] memory requests)
     {
         BaselineKeycode bpool = toBaselineKeycode("BPOOL");
