@@ -64,19 +64,25 @@ contract BaselineOnSettleSlideTest is BaselineAxisLaunchTest {
         console2.log("pool tick after settlement", poolTick);
 
         // Transfer base tokens from AuctionHouse to here (so we don't mess with solvency)
-        // This represents ALL circulating base tokens
-        vm.prank(_AUCTION_HOUSE);
-        _baseToken.transfer(address(this), 8e18);
+        _transferBaseToken(address(this), 8e18);
+
+        // This only works if:
+        // - there are circulating base tokens
+        // - the transfer lock is disabled
 
         // Swap base tokens to reduce the pool price
+        _disableTransferLock();
         _baseToken.pool().swap(_SELLER, true, 8e18, TickMath.MIN_SQRT_RATIO + 1, "");
+        _enableTransferLock();
 
         // Check the tick
         (, poolTick,,,,,) = _baseToken.pool().slot0();
         console2.log("pool tick after swap", poolTick);
 
         // Attempt to slide
+        _disableTransferLock();
         _marketMaking.slide();
+        _enableTransferLock();
 
         // Check the tick
         (, poolTick,,,,,) = _baseToken.pool().slot0();

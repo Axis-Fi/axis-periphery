@@ -82,12 +82,8 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
-
         // Perform onSettle callback
         _onSettle();
 
@@ -124,8 +120,7 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
     {
         // Transfer capacity from auction house back to the callback
         // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _LOT_CAPACITY);
+        _transferBaseToken(_dtlAddress, _LOT_CAPACITY);
 
         // Perform callback
         _onCancel();
@@ -140,7 +135,7 @@ contract BaselineOnCancelTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback balance");
         assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract balance");
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 }

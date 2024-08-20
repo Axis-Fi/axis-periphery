@@ -487,8 +487,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         _assertTicks(10_987);
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_floorRangeGap_belowBounds_reverts(
@@ -733,8 +733,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         _assertTicks(fixedPriceTick);
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_floorReservesPercent_low()
@@ -1212,8 +1212,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         _assertTicks(fixedPriceTick);
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_givenProtocolFee_high_reverts()
@@ -1257,8 +1257,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         _assertTicks(fixedPriceTick);
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_givenReferrerFee_high_reverts()
@@ -1303,8 +1303,8 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         _assertTicks(fixedPriceTick);
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_givenProtocolFee_givenReferrerFee_high_reverts()

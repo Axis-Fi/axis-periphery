@@ -66,12 +66,8 @@ contract BaselineAllowlistSetMerkleRootTest is BaselineAllowlistTest {
         givenAllowlistParams(_MERKLE_ROOT)
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
-        // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, _REFUND_AMOUNT);
-
         // Perform onSettle callback
         _onSettle();
 

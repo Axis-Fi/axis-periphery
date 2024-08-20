@@ -473,12 +473,34 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _transferBaseTokenRefund(uint256 amount_) internal {
-        console2.log("Transferring base token refund to DTL: ", amount_);
+    function _disableTransferLock() internal {
+        vm.prank(_OWNER);
+        _bPoolMinter.setTransferLock(false);
+    }
+
+    function _enableTransferLock() internal {
+        vm.prank(_OWNER);
+        _bPoolMinter.setTransferLock(true);
+    }
+
+    function _transferBaseToken(address to_, uint256 amount_) internal {
+        // Unlock transfers
+        // This mimics the manual call that the seller needs to do before cancelling/settling
+        _disableTransferLock();
+
         // Transfer refund from auction house to the callback
         // We transfer instead of minting to not affect the supply
         vm.prank(address(_auctionHouse));
-        _baseToken.transfer(_dtlAddress, amount_);
+        _baseToken.transfer(to_, amount_);
+
+        // Lock transfers
+        _enableTransferLock();
+    }
+
+    function _transferBaseTokenRefund(uint256 amount_) internal {
+        console2.log("Transferring base token refund to DTL: ", amount_);
+
+        _transferBaseToken(_dtlAddress, amount_);
     }
 
     modifier givenBaseTokenRefundIsTransferred(uint256 amount_) {
@@ -617,22 +639,13 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         vm.prank(user_);
         _baseToken.approve(address(_bPoolMinter), totalCollateralized_);
 
-        // Unlock transfers
-        bool transfersLocked = _baseToken.locked();
-        if (transfersLocked) {
-            vm.prank(_OWNER);
-            _bPoolMinter.setTransferLock(false);
-        }
+        _disableTransferLock();
 
         // Borrow
         vm.prank(user_);
         _bPoolMinter.allocateCreditAccount(user_, totalCollateralized_, 365);
 
-        // Re-lock transfers if locked previously
-        if (transfersLocked) {
-            vm.prank(_OWNER);
-            _bPoolMinter.setTransferLock(true);
-        }
+        _enableTransferLock();
     }
 
     modifier givenCollateralized(address user_, uint256 totalCollateralized_) {

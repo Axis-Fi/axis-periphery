@@ -332,8 +332,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertAuctionComplete();
         _assertPoolReserves();
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_curatorFee_low()
@@ -955,8 +955,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertAuctionComplete();
         _assertPoolReserves();
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_givenReferrerFee()
@@ -978,8 +978,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertAuctionComplete();
         _assertPoolReserves();
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_givenProtocolFee_givenReferrerFee()
@@ -1002,7 +1002,7 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         _assertAuctionComplete();
         _assertPoolReserves();
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 }

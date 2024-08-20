@@ -62,7 +62,9 @@ contract BaselineOnSettleSlideTest is BaselineAxisLaunchTest {
         _quoteToken.mint(address(this), 150e18);
 
         // Swap quote tokens to reduce the pool price
+        _disableTransferLock();
         _baseToken.pool().swap(_SELLER, false, 150e18, TickMath.MAX_SQRT_RATIO - 1, "");
+        _enableTransferLock();
 
         // Check the tick
         (, poolTick,,,,,) = _baseToken.pool().slot0();
@@ -70,7 +72,11 @@ contract BaselineOnSettleSlideTest is BaselineAxisLaunchTest {
 
         // Attempt to sweep
         assertEq(_marketMaking.canSweep(), true, "canSweep");
+
+        // Do the sweep
+        _disableTransferLock();
         _marketMaking.sweep();
+        _enableTransferLock();
 
         // Report the range ticks
         (floorL, floorU) = _baseToken.getTicks(Range.FLOOR);

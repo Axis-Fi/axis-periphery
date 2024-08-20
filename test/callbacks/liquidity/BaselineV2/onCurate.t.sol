@@ -65,8 +65,8 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
             "base token: auction house"
         );
 
-        // Transfer lock should be disabled
-        assertEq(_baseToken.locked(), false, "transfer lock");
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_curatorFeeZero()
@@ -85,5 +85,8 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         assertEq(
             _baseToken.balanceOf(address(_auctionHouse)), balanceBefore, "base token: auction house"
         );
+
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 }
