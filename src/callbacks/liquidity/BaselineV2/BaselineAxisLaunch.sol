@@ -808,9 +808,6 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
 
         //// Step 5: Verify Solvency ////
         {
-            uint256 totalSupply = bAsset.totalSupply();
-            uint256 totalCollatSupply = CREDT.totalCollateralized();
-
             Position memory floor = BPOOL.getPosition(Range.FLOOR);
             Position memory anchor = BPOOL.getPosition(Range.ANCHOR);
             Position memory discovery = BPOOL.getPosition(Range.DISCOVERY);
@@ -822,8 +819,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
 
             uint256 totalCapacity =
                 debtCapacity + floor.capacity + anchor.capacity + discovery.capacity;
+            // Includes collateralised supply
             uint256 totalSpotSupply =
-                totalSupply - floor.bAssets - anchor.bAssets - discovery.bAssets - totalCollatSupply;
+                bAsset.totalSupply() - floor.bAssets - anchor.bAssets - discovery.bAssets;
 
             // verify the liquidity can support the intended supply
             // we do not check for a surplus at this point to avoid a DoS attack vector
@@ -831,7 +829,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy {
             // be one from this initialization at this point.
             // any surplus reserves added to the pool by a 3rd party before
             // the system is initialized will be snipable and effectively donated to the snipers
-            uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply + totalCollatSupply);
+            uint256 capacityRatio = totalCapacity.divWad(totalSpotSupply);
             if (capacityRatio < 100e16) {
                 revert Callback_InvalidCapacityRatio(capacityRatio);
             }
