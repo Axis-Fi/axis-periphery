@@ -134,6 +134,8 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
     //  [X] the solvency check passes
     // [X] given there are credit account allocations
     //  [X] it includes the allocations in the solvency check
+    // [ ] given there is loop vault debt
+    //  [ ] it includes the debt in the solvency check
     // [X] given the allocation of proceeds to the pool is not 100%
     //  [X] it allocates the proceeds correctly
     // [X] given the anchor range width is fuzzed
