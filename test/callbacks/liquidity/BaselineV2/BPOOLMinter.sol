@@ -18,6 +18,7 @@ contract BPOOLMinter is Policy, Owned {
     function configureDependencies() external override returns (Keycode[] memory dependencies) {
         dependencies = new Keycode[](2);
         dependencies[0] = toKeycode("BPOOL");
+        dependencies[1] = toKeycode("CREDT");
 
         BPOOL = BPOOLv1(getModuleAddress(toKeycode("BPOOL")));
         CREDT = CREDTv1(getModuleAddress(toKeycode("CREDT")));
