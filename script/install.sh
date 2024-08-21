@@ -19,7 +19,7 @@ echo "*** Restoring submodule commits"
 
 echo ""
 echo "baseline"
-cd lib/baseline-v2/ && git checkout 60bed78b7bee28016321ddd8c590df6c61bae6e9  && cd ../..
+cd lib/baseline-v2/ && git checkout 8950018baec27d6497fba409cb361a596535447d  && cd ../..
 
 echo ""
 echo "*** Applying patch to Baseline submodule"

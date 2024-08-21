@@ -33,8 +33,10 @@ import {BaselineAxisLaunch} from
 import {Kernel as BaselineKernel, Actions as BaselineKernelActions} from "@baseline/Kernel.sol";
 import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
 import {CREDTv1} from "@baseline/modules/CREDT.v1.sol";
-import {BPOOLMinter} from "./BPOOLMinter.sol";
+import {LOOPSv1} from "@baseline/modules/LOOPS.v1.sol";
 import {MarketMaking} from "@baseline/policies/MarketMaking.sol";
+import {BPOOLMinter} from "./BPOOLMinter.sol";
+import {MockBlast} from "./MockBlast.sol";
 
 // solhint-disable max-states-count
 
@@ -98,8 +100,11 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     BaselineKernel internal _baselineKernel;
     BPOOLv1 internal _baseToken;
     CREDTv1 internal _creditModule;
+    LOOPSv1 internal _loopsModule;
     MarketMaking internal _marketMaking;
     BPOOLMinter internal _bPoolMinter;
+    MockBlast internal _blast;
+    address internal _blastGovernor;
 
     // Inputs
     IFixedPriceBatch.AuctionDataParams internal _fpbParams = IFixedPriceBatch.AuctionDataParams({
@@ -170,9 +175,14 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _tickSpacing = _uniV3Factory.feeAmountTickSpacing(_feeTier);
         console2.log("Tick spacing: ", _tickSpacing);
 
+        _blast = new MockBlast();
+
         // Set up Baseline
-        _creditModule = new CREDTv1(_baselineKernel);
-        _marketMaking = new MarketMaking(_baselineKernel, 25, 1000, 3e18, address(0));
+        _creditModule = new CREDTv1(_baselineKernel, address(_blast), _blastGovernor);
+        _loopsModule = new LOOPSv1(_baselineKernel, 1e18);
+        _marketMaking = new MarketMaking(
+            _baselineKernel, 25, 1000, 3e18, address(0), address(_blast), _blastGovernor
+        );
         // Base token is created in the givenBPoolIsCreated modifier
         _bPoolMinter = new BPOOLMinter(_baselineKernel);
 
@@ -230,7 +240,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
                 address(_uniV3Factory),
                 _BASELINE_QUOTE_TOKEN,
                 _feeTier,
-                _poolInitialTick
+                _poolInitialTick,
+                address(_blast),
+                _blastGovernor
             ),
             address(this)
         );
@@ -245,7 +257,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
             address(_uniV3Factory),
             _BASELINE_QUOTE_TOKEN,
             _feeTier,
-            _poolInitialTick
+            _poolInitialTick,
+            address(_blast),
+            _blastGovernor
         );
 
         // Assert that the token ordering is correct
@@ -262,6 +276,10 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         // Install the CREDT module
         vm.prank(_OWNER);
         _baselineKernel.executeAction(BaselineKernelActions.InstallModule, address(_creditModule));
+
+        // Install the LOOPS module
+        vm.prank(_OWNER);
+        _baselineKernel.executeAction(BaselineKernelActions.InstallModule, address(_loopsModule));
 
         // Activate MarketMaking
         vm.prank(_OWNER);
