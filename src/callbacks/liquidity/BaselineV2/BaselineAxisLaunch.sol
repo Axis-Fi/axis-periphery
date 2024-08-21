@@ -25,6 +25,7 @@ import {
 } from "./lib/Kernel.sol";
 import {Position, Range, IBPOOLv1, IUniswapV3Pool} from "./lib/IBPOOL.sol";
 import {ICREDTv1} from "./lib/ICREDT.sol";
+import {ILOOPSv1} from "./lib/ILOOPS.sol";
 
 // Other libraries
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
@@ -137,14 +138,15 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
     // ========== STATE VARIABLES ========== //
 
+    // TickMath constants
+    int24 internal constant _MAX_TICK = 887_272;
+    int24 internal constant _MIN_TICK = -887_272;
+
     // Baseline Modules
     // solhint-disable var-name-mixedcase
     IBPOOLv1 public BPOOL;
     ICREDTv1 public CREDT;
-
-    // TickMath constants
-    int24 internal constant _MAX_TICK = 887_272;
-    int24 internal constant _MIN_TICK = -887_272;
+    ILOOPSv1 public LOOPS;
 
     // Pool variables
     ERC20 public immutable RESERVE;
@@ -227,16 +229,19 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     {
         BaselineKeycode bpool = toBaselineKeycode("BPOOL");
         BaselineKeycode credt = toBaselineKeycode("CREDT");
+        BaselineKeycode loops = toBaselineKeycode("LOOPS");
 
         // Populate the dependencies array
-        dependencies = new BaselineKeycode[](2);
+        dependencies = new BaselineKeycode[](3);
         dependencies[0] = bpool;
         dependencies[1] = credt;
+        dependencies[2] = loops;
 
         // Set local values
         BPOOL = IBPOOLv1(getModuleAddress(bpool));
         bAsset = ERC20(address(BPOOL));
         CREDT = ICREDTv1(getModuleAddress(credt));
+        LOOPS = ILOOPSv1(getModuleAddress(loops));
 
         // Require that the BPOOL's reserve token be the same as the callback's reserve token
         if (address(BPOOL.reserve()) != address(RESERVE)) revert Callback_BPOOLReserveMismatch();
@@ -540,9 +545,11 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
                 );
 
                 // Calculate the debt capacity at the floor range
-                uint256 currentCredit = CREDT.totalCreditIssued();
-                uint256 debtCapacity =
-                    BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
+                uint256 debtCapacity = BPOOL.getCapacityForReserves(
+                    floor.sqrtPriceL,
+                    floor.sqrtPriceU,
+                    CREDT.totalCreditIssued() + LOOPS.totalDebt()
+                );
 
                 // Calculate the total initial capacity of the pool
                 initialCapacity = debtCapacity + floorCapacity + anchorCapacity;
@@ -835,9 +842,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             Position memory discovery = BPOOL.getPosition(Range.DISCOVERY);
 
             // Calculate the debt capacity at the floor range
-            uint256 currentCredit = CREDT.totalCreditIssued();
-            uint256 debtCapacity =
-                BPOOL.getCapacityForReserves(floor.sqrtPriceL, floor.sqrtPriceU, currentCredit);
+            uint256 debtCapacity = BPOOL.getCapacityForReserves(
+                floor.sqrtPriceL, floor.sqrtPriceU, CREDT.totalCreditIssued() + LOOPS.totalDebt()
+            );
 
             uint256 totalCapacity =
                 debtCapacity + floor.capacity + anchor.capacity + discovery.capacity;
