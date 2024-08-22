@@ -3,17 +3,17 @@ pragma solidity 0.8.19;
 
 // Axis dependencies
 import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
-import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
-import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
-import {IAuctionHouse} from "@axis-core-1.0.0/interfaces/IAuctionHouse.sol";
+import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
+import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
+import {IAuctionHouse} from "@axis-core-1.0.1/interfaces/IAuctionHouse.sol";
 import {
     Keycode as AxisKeycode,
     keycodeFromVeecode,
     fromKeycode as fromAxisKeycode
-} from "@axis-core-1.0.0/modules/Keycode.sol";
-import {Module as AxisModule} from "@axis-core-1.0.0/modules/Modules.sol";
-import {IFixedPriceBatch} from "@axis-core-1.0.0/interfaces/modules/auctions/IFixedPriceBatch.sol";
-import {Transfer} from "@axis-core-1.0.0/lib/Transfer.sol";
+} from "@axis-core-1.0.1/modules/Keycode.sol";
+import {Module as AxisModule} from "@axis-core-1.0.1/modules/Modules.sol";
+import {IFixedPriceBatch} from "@axis-core-1.0.1/interfaces/modules/auctions/IFixedPriceBatch.sol";
+import {Transfer} from "@axis-core-1.0.1/lib/Transfer.sol";
 
 // Baseline dependencies
 import {

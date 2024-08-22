@@ -11,9 +11,9 @@ import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
 import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.sol";
 
 // AuctionHouse
-import {ILinearVesting} from "@axis-core-1.0.0/interfaces/modules/derivatives/ILinearVesting.sol";
+import {ILinearVesting} from "@axis-core-1.0.1/interfaces/modules/derivatives/ILinearVesting.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
