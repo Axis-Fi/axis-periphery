@@ -537,6 +537,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying MerkleAllowlist (Atomic)");
+
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -578,6 +581,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying MerkleAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -619,6 +625,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying TokenAllowlist (Atomic)");
+
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -660,6 +669,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying TokenAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -786,24 +798,26 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
     }
 
     function deployBatchBaselineAxisLaunch(
-        bytes memory args_
-    ) public returns (address, string memory) {
-        // Decode arguments
-        (address baselineKernel, address baselineOwner, address reserveToken) =
-            abi.decode(args_, (address, address, address));
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
+        console2.log("");
+        console2.log("Deploying BaselineAxisLaunch (Batch)");
+
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
+        console2.log("    baselineKernel:", baselineKernel);
+        address baselineOwner = _getSequenceAddress(sequenceName_, "args.baselineOwner");
+        console2.log("    baselineOwner:", baselineOwner);
+        address reserveToken = _getSequenceAddress(sequenceName_, "args.reserveToken");
+        console2.log("    reserveToken:", reserveToken);
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
 
         // Validate arguments
         require(baselineKernel != address(0), "baselineKernel not set");
         require(baselineOwner != address(0), "baselineOwner not set");
         require(reserveToken != address(0), "reserveToken not set");
-
-        console2.log("");
-        console2.log("Deploying BaselineAxisLaunch (Batch)");
-        console2.log("    Kernel", baselineKernel);
-        console2.log("    Owner", baselineOwner);
-        console2.log("    ReserveToken", reserveToken);
-
-        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
 
         // Get the salt
         // This supports an arbitrary salt key, which can be set in the deployment sequence
@@ -825,7 +839,7 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
             batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
         );
         console2.log("");
-        console2.log("    BaselineAxisLaunch (Batch) deployed at:", address(batchCallback));
+        console2.log("    deployed at:", address(batchCallback));
 
         // If the deployer is the executor,
         // install the module as a policy in the Baseline kernel
@@ -841,13 +855,16 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
             console2.log("    Policy activation skipped");
         }
 
-        return (address(batchCallback), _PREFIX_CALLBACKS);
+        return (address(batchCallback), _PREFIX_CALLBACKS, deploymentKey);
     }
 
     function deployBatchBaselineAllocatedAllowlist(string memory sequenceName_)
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying BaselineAllocatedAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
@@ -907,6 +924,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying BaselineAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
@@ -966,6 +986,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying BaselineCappedAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
@@ -1025,6 +1048,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying BaselineTokenAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address baselineKernel = _getSequenceAddress(sequenceName_, "args.baselineKernel");
