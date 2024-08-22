@@ -18,7 +18,7 @@ abstract contract WithEnvironment is Script {
 
         // Load environment file
         env = vm.readFile("./script/env.json");
-        envAxisCore = vm.readFile("dependencies/axis-core-1.0.0/script/env.json");
+        envAxisCore = vm.readFile("dependencies/axis-core-1.0.1/script/env.json");
     }
 
     /// @notice Get address from environment file

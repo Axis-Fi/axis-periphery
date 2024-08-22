@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {BaselineAllocatedAllowlistTest} from "./BaselineAllocatedAllowlistTest.sol";
 
-import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 import {BALwithAllocatedAllowlist} from
     "../../../../../src/callbacks/liquidity/BaselineV2/BALwithAllocatedAllowlist.sol";
 
@@ -15,6 +15,8 @@ contract BaselineAllocatedAllowlistOnCreateTest is BaselineAllocatedAllowlistTes
     // ========== TESTS ========== //
 
     // [X] when the allowlist parameters are in an incorrect format
+    //  [X] it reverts
+    // [X] when the seller is not the owner
     //  [X] it reverts
     // [X] it decodes and stores the merkle root
 
@@ -33,6 +35,21 @@ contract BaselineAllocatedAllowlistOnCreateTest is BaselineAllocatedAllowlistTes
 
         // Call the callback
         _onCreate();
+    }
+
+    function test_sellerNotOwner_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenAuctionIsCreated
+        givenAllowlistParams(_MERKLE_ROOT)
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
+        vm.expectRevert(err);
+
+        // Call the callback
+        _onCreate(_OWNER);
     }
 
     function test_success()

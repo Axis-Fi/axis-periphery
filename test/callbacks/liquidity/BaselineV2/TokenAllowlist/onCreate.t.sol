@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {BaselineTokenAllowlistTest} from "./BaselineTokenAllowlistTest.sol";
 
-import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 import {
     BALwithTokenAllowlist,
     ITokenBalance
@@ -13,6 +13,8 @@ contract BaselineTokenAllowlistOnCreateTest is BaselineTokenAllowlistTest {
     // ========== TESTS ========== //
 
     // [X] when the allowlist parameters are in an incorrect format
+    //  [X] it reverts
+    // [X] when the seller is not the owner
     //  [X] it reverts
     // [X] if the token is not a contract
     //  [X] it reverts
@@ -36,6 +38,22 @@ contract BaselineTokenAllowlistOnCreateTest is BaselineTokenAllowlistTest {
 
         // Call the callback
         _onCreate();
+    }
+
+    function test_sellerNotOwner_reverts()
+        public
+        givenBPoolIsCreated
+        givenCallbackIsCreated
+        givenTokenIsCreated
+        givenAuctionIsCreated
+        givenAllowlistParams(address(_token), _TOKEN_THRESHOLD)
+    {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
+        vm.expectRevert(err);
+
+        // Call the callback
+        _onCreate(_OWNER);
     }
 
     function test_tokenNotContract_reverts()

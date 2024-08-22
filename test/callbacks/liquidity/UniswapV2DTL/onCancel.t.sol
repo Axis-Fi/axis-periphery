@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {UniswapV2DirectToLiquidityTest} from "./UniswapV2DTLTest.sol";
 
-import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 
 contract UniswapV2DirectToLiquidityOnCancelTest is UniswapV2DirectToLiquidityTest {
@@ -11,13 +11,17 @@ contract UniswapV2DirectToLiquidityOnCancelTest is UniswapV2DirectToLiquidityTes
 
     // ============ Modifiers ============ //
 
-    function _performCallback(uint96 lotId_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCancel(lotId_, _REFUND_AMOUNT, false, abi.encode(""));
-    }
-
     // ============ Tests ============ //
 
+    // [X] given the onCancel callback has already been called
+    //  [X] when onSettle is called
+    //   [X] it reverts
+    //  [X] when onCancel is called
+    //   [X] it reverts
+    //  [X] when onCurate is called
+    //   [X] it reverts
+    //  [X] when onCreate is called
+    //   [X] it reverts
     // [X] when the lot has not been registered
     //  [X] it reverts
     // [X] when multiple lots are created
@@ -30,12 +34,12 @@ contract UniswapV2DirectToLiquidityOnCancelTest is UniswapV2DirectToLiquidityTes
         vm.expectRevert(err);
 
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel();
     }
 
     function test_success() public givenCallbackIsCreated givenOnCreate {
         // Call the function
-        _performCallback(_lotId);
+        _performOnCancel();
 
         // Check the values
         BaseDirectToLiquidity.DTLConfiguration memory configuration = _getDTLConfiguration(_lotId);
@@ -52,7 +56,7 @@ contract UniswapV2DirectToLiquidityOnCancelTest is UniswapV2DirectToLiquidityTes
 
         // Create a second lot and cancel it
         uint96 lotIdTwo = _createLot(_NOT_SELLER);
-        _performCallback(lotIdTwo);
+        _performOnCancel(lotIdTwo, _REFUND_AMOUNT);
 
         // Check the values
         BaseDirectToLiquidity.DTLConfiguration memory configurationOne =
@@ -67,5 +71,56 @@ contract UniswapV2DirectToLiquidityOnCancelTest is UniswapV2DirectToLiquidityTes
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token balance");
         assertEq(_baseToken.balanceOf(_SELLER), 0, "seller base token balance");
         assertEq(_baseToken.balanceOf(_NOT_SELLER), 0, "not seller base token balance");
+    }
+
+    function test_auctionCancelled_onCreate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel();
+
+        // Expect revert
+        // BaseCallback determines if the lot has already been registered
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        _performOnCreate();
+    }
+
+    function test_auctionCancelled_onCurate_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCurate(0);
+    }
+
+    function test_auctionCancelled_onCancel_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnCancel();
+    }
+
+    function test_auctionCancelled_onSettle_reverts() public givenCallbackIsCreated givenOnCreate {
+        // Call the function
+        _performOnCancel();
+
+        // Expect revert
+        // BaseDirectToLiquidity determines if the lot has already been completed
+        bytes memory err =
+            abi.encodeWithSelector(BaseDirectToLiquidity.Callback_AlreadyComplete.selector);
+        vm.expectRevert(err);
+
+        _performOnSettle();
     }
 }

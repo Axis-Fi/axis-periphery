@@ -8,12 +8,12 @@ import {WithSalts} from "../salts/WithSalts.s.sol";
 import {WithDeploySequence} from "./WithDeploySequence.s.sol";
 
 // axis-core
-import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.0/modules/Keycode.sol";
-import {Module} from "@axis-core-1.0.0/modules/Modules.sol";
-import {AtomicAuctionHouse} from "@axis-core-1.0.0/AtomicAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
-import {IFeeManager} from "@axis-core-1.0.0/interfaces/IFeeManager.sol";
-import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
+import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.1/modules/Keycode.sol";
+import {Module} from "@axis-core-1.0.1/modules/Modules.sol";
+import {AtomicAuctionHouse} from "@axis-core-1.0.1/AtomicAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
+import {IFeeManager} from "@axis-core-1.0.1/interfaces/IFeeManager.sol";
+import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
 
 // Uniswap
 import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";
@@ -26,6 +26,7 @@ import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkle
 import {MerkleAllowlist} from "../../src/callbacks/allowlists/MerkleAllowlist.sol";
 import {TokenAllowlist} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
 import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
+import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 import {BALwithAllowlist} from "../../src/callbacks/liquidity/BaselineV2/BALwithAllowlist.sol";
 import {BALwithAllocatedAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithAllocatedAllowlist.sol";
@@ -266,6 +267,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying UniswapV2DirectToLiquidity (Atomic)");
+
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         address uniswapV2Factory =
@@ -308,6 +312,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying UniswapV2DirectToLiquidity (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address uniswapV2Factory =
@@ -350,6 +357,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying UniswapV3DirectToLiquidity (Atomic)");
+
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         address uniswapV3Factory = _getEnvAddressOrOverride(
@@ -393,6 +403,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying UniswapV3DirectToLiquidity (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         address uniswapV3Factory = _getEnvAddressOrOverride(
@@ -436,6 +449,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying CappedMerkleAllowlist (Atomic)");
+
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -477,6 +493,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying CappedMerkleAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -682,6 +701,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying AllocatedMerkleAllowlist (Atomic)");
+
         // Get configuration variables
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -723,6 +745,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         public
         returns (address, string memory, string memory)
     {
+        console2.log("");
+        console2.log("Deploying AllocatedMerkleAllowlist (Batch)");
+
         // Get configuration variables
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
@@ -758,6 +783,65 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("    deployed at:", address(cbBatchAllocatedMerkleAllowlist));
 
         return (address(cbBatchAllocatedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
+    }
+
+    function deployBatchBaselineAxisLaunch(
+        bytes memory args_
+    ) public returns (address, string memory) {
+        // Decode arguments
+        (address baselineKernel, address baselineOwner, address reserveToken) =
+            abi.decode(args_, (address, address, address));
+
+        // Validate arguments
+        require(baselineKernel != address(0), "baselineKernel not set");
+        require(baselineOwner != address(0), "baselineOwner not set");
+        require(reserveToken != address(0), "reserveToken not set");
+
+        console2.log("");
+        console2.log("Deploying BaselineAxisLaunch (Batch)");
+        console2.log("    Kernel", baselineKernel);
+        console2.log("    Owner", baselineOwner);
+        console2.log("    ReserveToken", reserveToken);
+
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+
+        // Get the salt
+        // This supports an arbitrary salt key, which can be set in the deployment sequence
+        // This is required as each callback is single-use
+        bytes32 salt_ = _getSalt(
+            "BaselineAxisLaunch",
+            type(BaselineAxisLaunch).creationCode,
+            abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
+        );
+
+        // Revert if the salt is not set
+        require(salt_ != bytes32(0), "Salt not set");
+
+        // Deploy the module
+        console2.log("    salt:", vm.toString(salt_));
+
+        vm.broadcast();
+        BaselineAxisLaunch batchCallback = new BaselineAxisLaunch{salt: salt_}(
+            batchAuctionHouse, baselineKernel, reserveToken, baselineOwner
+        );
+        console2.log("");
+        console2.log("    BaselineAxisLaunch (Batch) deployed at:", address(batchCallback));
+
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchCallback)
+            );
+
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
+
+        return (address(batchCallback), _PREFIX_CALLBACKS);
     }
 
     function deployBatchBaselineAllocatedAllowlist(string memory sequenceName_)
@@ -802,13 +886,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
@@ -855,13 +945,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
@@ -908,13 +1004,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
@@ -961,13 +1063,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
