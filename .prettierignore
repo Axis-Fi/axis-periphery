@@ -1,0 +1,16 @@
+# Don't rewrite pnpm lockfile
+pnpm-lock.yaml
+
+# Ignore artifacts:
+build
+coverage
+
+# also includes what is in .gitignore
+
+lib/**/*
+dependencies/**/*
+
+test/lib/uniswap-v2/**/*
+test/lib/uniswap-v3/**/*
+
+src/callbacks/liquidity/BaselineV2/lib/**/*

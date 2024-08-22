@@ -2,22 +2,21 @@
 pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
-import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-1.0.0-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-1.0.1-test/lib/permit2/Permit2User.sol";
 
-import {AtomicAuctionHouse} from "@axis-core-1.0.0/AtomicAuctionHouse.sol";
+import {AtomicAuctionHouse} from "@axis-core-1.0.1/AtomicAuctionHouse.sol";
 
-import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 
 import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
 
 import {WithSalts} from "../lib/WithSalts.sol";
+import {TestConstants} from "../Constants.sol";
 
-contract CappedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts {
+contract CappedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for CappedMerkleAllowlist;
 
-    address internal constant _OWNER = address(0x1);
-    address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
     address internal constant _BUYER_TWO = address(0x5);

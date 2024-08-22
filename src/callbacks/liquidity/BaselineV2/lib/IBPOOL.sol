@@ -55,7 +55,9 @@ interface IBPOOLv1 {
         uint128 _liquidity
     ) external returns (uint256 bAssetsAdded_, uint256 reservesAdded_, uint128 liquidityFinal_);
 
-    function removeAllFrom(Range _range)
+    function removeAllFrom(
+        Range _range
+    )
         external
         returns (
             uint256 bAssetsRemoved_,
@@ -73,7 +75,11 @@ interface IBPOOLv1 {
     /// @dev    No need to discount collateralizedBAssets because it's in a separate contract now.
     function burnAllBAssetsInContract() external;
 
+    function setTransferLock(bool _locked) external;
+
     // ========= PUBLIC READ FUNCTIONS ========= //
+
+    function locked() external view returns (bool);
 
     /// @notice Returns the price at the lower tick of the floor position
     function getBaselineValue() external view returns (uint256);

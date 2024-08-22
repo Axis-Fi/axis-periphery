@@ -3,15 +3,10 @@ pragma solidity 0.8.19;
 
 import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
-import {BaseCallback} from "@axis-core-1.0.0/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 
 contract BaselineOnCurateTest is BaselineAxisLaunchTest {
     // ============ Modifiers ============ //
-
-    function _performCallback(uint256 curatorFee_) internal {
-        vm.prank(address(_auctionHouse));
-        _dtl.onCurate(_lotId, curatorFee_, true, abi.encode(""));
-    }
 
     // ============ Assertions ============ //
 
@@ -21,9 +16,9 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
     //  [X] it reverts
     // [X] when the caller is not the auction house
     //  [X] it reverts
-    // [X] when the curator fee is non-zero
-    //  [X] it reverts
-    // [X] it does nothing
+    // [X] when the curator fee is zero
+    //  [X] it does nothing
+    // [X] it mints the base token to the auction house
 
     function test_lotNotRegistered_reverts()
         public
@@ -36,7 +31,7 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         vm.expectRevert(err);
 
         // Call the callback
-        _performCallback(0);
+        _onCurate(0);
     }
 
     function test_notAuctionHouse_reverts()
@@ -54,21 +49,24 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         _dtl.onCurate(_lotId, 0, true, abi.encode(""));
     }
 
-    function test_curatorFeeNonZero_reverts(uint256 curatorFee_)
-        public
-        givenBPoolIsCreated
-        givenCallbackIsCreated
-        givenAuctionIsCreated
-        givenOnCreate
-    {
-        uint256 curatorFee = bound(curatorFee_, 1, type(uint256).max);
-
-        // Expect revert
-        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
-        vm.expectRevert(err);
+    function test_curatorFeeNonZero(
+        uint256 curatorFee_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated givenOnCreate {
+        uint256 curatorFee = bound(curatorFee_, 1, type(uint96).max);
+        uint256 balanceBefore = _baseToken.balanceOf(address(_auctionHouse));
 
         // Perform callback
-        _performCallback(curatorFee);
+        _onCurate(curatorFee);
+
+        // Assert that the base token was minted to the auction house
+        assertEq(
+            _baseToken.balanceOf(address(_auctionHouse)),
+            balanceBefore + curatorFee,
+            "base token: auction house"
+        );
+
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 
     function test_curatorFeeZero()
@@ -78,7 +76,17 @@ contract BaselineOnCurateTest is BaselineAxisLaunchTest {
         givenAuctionIsCreated
         givenOnCreate
     {
+        uint256 balanceBefore = _baseToken.balanceOf(address(_auctionHouse));
+
         // Perform callback
-        _performCallback(0);
+        _onCurate(0);
+
+        // Assert that the base token was minted to the auction house
+        assertEq(
+            _baseToken.balanceOf(address(_auctionHouse)), balanceBefore, "base token: auction house"
+        );
+
+        // Transfer lock should be enabled
+        assertEq(_baseToken.locked(), true, "transfer lock");
     }
 }

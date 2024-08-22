@@ -1,0 +1,8 @@
+{
+  "deployments.callbacks.BatchCappedMerkleAllowlist": "0x98B85ded86493cf5Fa058956447C5d19A1e1Fca8",
+  "deployments.callbacks.BatchMerkleAllowlist": "0x980EE91db19Dff91f95FFA9CB0825f2A028DF34A",
+  "deployments.callbacks.BatchTokenAllowlist": "0x980bFd44358F06562521aFD68DeE7160eaE66a88",
+  "deployments.callbacks.BatchAllocatedMerkleAllowlist": "0x98c4648021C12a5b44C8549f71A293532533c3b9",
+  "deployments.callbacks.BatchUniswapV2DirectToLiquidity": "0xE6731E192421CA4197EAFC682220D3189c64fde0",
+  "deployments.callbacks.BatchUniswapV3DirectToLiquidity": "0xE68D9DeCC2F3a273f31C5a68F3a5715785e5307F"
+}
