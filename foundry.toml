@@ -37,7 +37,7 @@ ignore = [
 
 [dependencies]
 forge-std = { version = "1.9.1" }
-axis-core = { version = "1.0.0" }
+axis-core = { version = "1.0.1" }
 "@openzeppelin-contracts" = { version = "4.9.2" }
 "@openzeppelin-contracts-upgradeable" = { version = "4.9.2" }
 "@uniswap-v2-core" = { version = "1.0.1" }
