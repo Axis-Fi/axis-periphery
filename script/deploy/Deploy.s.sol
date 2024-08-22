@@ -8,12 +8,12 @@ import {WithSalts} from "../salts/WithSalts.s.sol";
 import {WithDeploySequence} from "./WithDeploySequence.s.sol";
 
 // axis-core
-import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.0/modules/Keycode.sol";
-import {Module} from "@axis-core-1.0.0/modules/Modules.sol";
-import {AtomicAuctionHouse} from "@axis-core-1.0.0/AtomicAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
-import {IFeeManager} from "@axis-core-1.0.0/interfaces/IFeeManager.sol";
-import {Callbacks} from "@axis-core-1.0.0/lib/Callbacks.sol";
+import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.1/modules/Keycode.sol";
+import {Module} from "@axis-core-1.0.1/modules/Modules.sol";
+import {AtomicAuctionHouse} from "@axis-core-1.0.1/AtomicAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
+import {IFeeManager} from "@axis-core-1.0.1/interfaces/IFeeManager.sol";
+import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
 
 // Uniswap
 import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";
@@ -26,6 +26,7 @@ import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkle
 import {MerkleAllowlist} from "../../src/callbacks/allowlists/MerkleAllowlist.sol";
 import {TokenAllowlist} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
 import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
+import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 import {BALwithAllowlist} from "../../src/callbacks/liquidity/BaselineV2/BALwithAllowlist.sol";
 import {BALwithAllocatedAllowlist} from
     "../../src/callbacks/liquidity/BaselineV2/BALwithAllocatedAllowlist.sol";
@@ -802,13 +803,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
@@ -855,13 +862,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
@@ -908,13 +921,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
@@ -961,13 +980,19 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         console2.log("");
         console2.log("    deployed at:", address(batchAllowlist));
 
-        // Install the module as a policy in the Baseline kernel
-        vm.broadcast();
-        BaselineKernel(baselineKernel).executeAction(
-            BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
-        );
+        // If the deployer is the executor,
+        // install the module as a policy in the Baseline kernel
+        BaselineKernel kernel = BaselineKernel(baselineKernel);
+        if (kernel.executor() == msg.sender) {
+            vm.broadcast();
+            BaselineKernel(baselineKernel).executeAction(
+                BaselineKernelActions.ActivatePolicy, address(batchAllowlist)
+            );
 
-        console2.log("    Policy activated in Baseline Kernel");
+            console2.log("    Policy activated in Baseline Kernel");
+        } else {
+            console2.log("    Policy activation skipped");
+        }
 
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }

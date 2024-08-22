@@ -1,0 +1,139 @@
+diff --git a/src/modules/BPOOL.v1.sol b/src/modules/BPOOL.v1.sol
+index 82aa5d7..d889bae 100644
+--- a/src/modules/BPOOL.v1.sol
++++ b/src/modules/BPOOL.v1.sol
+@@ -1,17 +1,17 @@
+ // SPDX-License-Identifier: AGPL-3.0-only
+ pragma solidity ^0.8.0;
+ 
+-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
+-
+-import "src/Kernel.sol";
+-import {ERC20} from "solmate/tokens/ERC20.sol";
+-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+-import {TickMath} from "v3-core/libraries/TickMath.sol";
+-import {FixedPoint96} from "v3-core/libraries/FixedPoint96.sol";
+-import {IUniswapV3Pool} from "v3-core/interfaces/IUniswapV3Pool.sol";
+-import {IUniswapV3Factory} from "v3-core/interfaces/IUniswapV3Factory.sol"; 
+-import {LiquidityAmounts} from "v3-periphery/libraries/LiquidityAmounts.sol";
+-import {BlastClaimer} from "src/utils/BlastClaimer.sol";
++import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
++
++import {Kernel, Module, Keycode, toKeycode} from "../Kernel.sol";
++import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
++import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
++import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
++import {FixedPoint96} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FixedPoint96.sol";
++import {IUniswapV3Pool} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
++import {IUniswapV3Factory} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
++import {LiquidityAmounts} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/LiquidityAmounts.sol";
++import {BlastClaimer} from "../utils/BlastClaimer.sol";
+ 
+ 
+ // Liquidity range
+diff --git a/src/modules/CREDT.v1.sol b/src/modules/CREDT.v1.sol
+index 2afa1c3..e920452 100644
+--- a/src/modules/CREDT.v1.sol
++++ b/src/modules/CREDT.v1.sol
+@@ -1,11 +1,11 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity ^0.8.23;
++pragma solidity ^0.8.19;
+ 
+-import {ERC20} from "solmate/tokens/ERC20.sol";
++import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+ 
+-import "src/Kernel.sol";
+-import {TimeslotLib} from "src/utils/TimeslotLib.sol";
+-import {BlastClaimer} from "src/utils/BlastClaimer.sol";
++import {Kernel, Module, Keycode, toKeycode} from "../Kernel.sol";
++import {TimeslotLib} from "../utils/TimeslotLib.sol";
++import {BlastClaimer} from "../utils/BlastClaimer.sol";
+ 
+ /// @notice Individual credit account information per user
+ struct CreditAccount {
+diff --git a/src/modules/LOOPS.v1.sol b/src/modules/LOOPS.v1.sol
+index 0ee6fe1..966c622 100644
+--- a/src/modules/LOOPS.v1.sol
++++ b/src/modules/LOOPS.v1.sol
+@@ -1,22 +1,20 @@
+ // SPDX-License-Identifier: MIT
+-pragma solidity ^0.8.23;
++pragma solidity ^0.8.19;
+ 
+-import {console2} from "forge-std/console2.sol";
++import {console2} from "@forge-std-1.9.1/console2.sol";
+ 
+-import {Owned} from "solmate/auth/Owned.sol";
+-import {ERC20} from "solmate/tokens/ERC20.sol";
+-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
++import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
++import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
++import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
++import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
+ 
+-import {FixedPoint96} from "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
++import {FixedPoint96} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FixedPoint96.sol";
+ 
+ // Kernel dependencies
+-import "src/Kernel.sol";
+-import {BPOOLv1, Range, Position, IUniswapV3Pool} from "src/modules/BPOOL.v1.sol";
++import "../Kernel.sol";
++import {BPOOLv1, Range, Position, IUniswapV3Pool} from "../modules/BPOOL.v1.sol";
+ 
+-import {console2} from "forge-std/console2.sol";
+-
+-import {BlastClaimer} from "src/utils/BlastClaimer.sol";
++import {BlastClaimer} from "../utils/BlastClaimer.sol";
+ 
+ /// @title LOOPSv1
+ 
+@@ -142,7 +140,7 @@ contract LOOPSv1 is Module {
+ 
+         bAsset.transfer(msg.sender, collateralRedeemed_);
+     }
+-    
++
+     function chargeFunding() external permissioned {
+         _chargeFunding();
+     }
+diff --git a/src/policies/MarketMaking.sol b/src/policies/MarketMaking.sol
+index 4b9eb25..de74542 100644
+--- a/src/policies/MarketMaking.sol
++++ b/src/policies/MarketMaking.sol
+@@ -1,20 +1,20 @@
+ // SPDX-Identifier: AGPL-3.0-only
+ pragma solidity ^0.8.0;
+ 
+-import {Owned} from "solmate/auth/Owned.sol";
+-import {ERC20} from "solmate/tokens/ERC20.sol";
+-import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
+-import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
+-import {LiquidityAmounts} from "v3-periphery/libraries/LiquidityAmounts.sol";
+-
+-import {TickMath} from "v3-core/libraries/TickMath.sol";
+-import {FixedPoint96} from "v3-core/libraries/FixedPoint96.sol";
+-
+-import "src/Kernel.sol";
+-import {BPOOLv1, Range, Ticks, Position, IUniswapV3Pool} from "src/modules/BPOOL.v1.sol";
+-import {CREDTv1} from "src/modules/CREDT.v1.sol";
+-import {LOOPSv1} from "src/modules/LOOPS.v1.sol";
+-import {BlastClaimer} from "src/utils/BlastClaimer.sol";
++import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
++import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
++import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
++import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
++import {LiquidityAmounts} from "@uniswap-v3-periphery-1.4.2-solc-0.8/libraries/LiquidityAmounts.sol";
++
++import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
++import {FixedPoint96} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/FixedPoint96.sol";
++
++import "../Kernel.sol";
++import {BPOOLv1, Range, Ticks, Position, IUniswapV3Pool} from "../modules/BPOOL.v1.sol";
++import {CREDTv1} from "../modules/CREDT.v1.sol";
++import {LOOPSv1} from "../modules/LOOPS.v1.sol";
++import {BlastClaimer} from "../utils/BlastClaimer.sol";
+ 
+ import {console2} from "forge-std/console2.sol";
+ 

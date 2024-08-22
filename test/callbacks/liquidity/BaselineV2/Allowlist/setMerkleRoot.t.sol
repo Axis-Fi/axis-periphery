@@ -14,7 +14,7 @@ contract BaselineAllowlistSetMerkleRootTest is BaselineAllowlistTest {
         0x1234567890123456789012345678901234567890123456789012345678901234;
 
     function _setMerkleRoot() internal {
-        vm.prank(_OWNER);
+        vm.prank(_SELLER);
         BALwithAllowlist(address(_dtl)).setMerkleRoot(_NEW_MERKLE_ROOT);
     }
 
@@ -66,9 +66,11 @@ contract BaselineAllowlistSetMerkleRootTest is BaselineAllowlistTest {
         givenAllowlistParams(_MERKLE_ROOT)
         givenOnCreate
         givenAddressHasQuoteTokenBalance(_dtlAddress, _PROCEEDS_AMOUNT)
-        givenAddressHasBaseTokenBalance(_dtlAddress, _REFUND_AMOUNT)
-        givenOnSettle
+        givenBaseTokenRefundIsTransferred(_REFUND_AMOUNT)
     {
+        // Perform onSettle callback
+        _onSettle();
+
         // Expect revert
         bytes memory err = abi.encodeWithSelector(BALwithAllowlist.Callback_InvalidState.selector);
         vm.expectRevert(err);

@@ -3,6 +3,10 @@ cache/
 out/
 crates/**/target/
 
+# Invariant testing
+echidna/
+crytic-export/
+
 # Ignores development broadcast logs
 broadcast/
 

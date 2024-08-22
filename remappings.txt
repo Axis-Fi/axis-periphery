@@ -1,7 +1,7 @@
 @forge-std-1.9.1=dependencies/forge-std-1.9.1/src
-@axis-core-1.0.0=dependencies/axis-core-1.0.0/src
-@axis-core-1.0.0-script=dependencies/axis-core-1.0.0/script
-@axis-core-1.0.0-test=dependencies/axis-core-1.0.0/test
+@axis-core-1.0.1=dependencies/axis-core-1.0.1/src
+@axis-core-1.0.1-script=dependencies/axis-core-1.0.1/script
+@axis-core-1.0.1-test=dependencies/axis-core-1.0.1/test
 @solmate-6.7.0=dependencies/solmate-6.7.0/src
 @clones-with-immutable-args-1.1.1=dependencies/clones-with-immutable-args-1.1.1/src
 @openzeppelin-contracts-4.9.2=dependencies/@openzeppelin-contracts-4.9.2
@@ -9,9 +9,11 @@
 @uniswap-v2-core-1.0.1=dependencies/@uniswap-v2-core-1.0.1/contracts
 @uniswap-v2-periphery-1.0.1=dependencies/@uniswap-v2-periphery-1.0.1/contracts
 @uniswap-v3-core-1.0.1-solc-0.8-simulate=dependencies/@uniswap-v3-core-1.0.1-solc-0.8-simulate/contracts
+@uniswap-v3-periphery-1.4.2-solc-0.8=dependencies/@uniswap-v3-periphery-1.4.2-solc-0.8/contracts
 @g-uni-v1-core-0.9.9=dependencies/g-uni-v1-core-0.9.9/contracts
 @uniswap/v2-core/contracts=dependencies/@uniswap-v2-core-1.0.1/contracts
 @uniswap/v3-core/contracts=dependencies/@uniswap-v3-core-1.0.1-solc-0.8-simulate/contracts
 @openzeppelin/contracts=dependencies/@openzeppelin-contracts-4.9.2
 @openzeppelin/contracts-upgradeable=dependencies/@openzeppelin-contracts-upgradeable-4.9.2
 @solady-0.0.124=dependencies/solady-0.0.124/src
+@baseline=lib/baseline-v2/src
