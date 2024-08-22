@@ -6,7 +6,7 @@ fs_permissions = [
   {access = "read-write", path = "./bytecode/"},
   {access = "read", path = "./script/"},
   {access = "read-write", path = "./deployments/"},
-  {access = "read", path = "./dependencies/axis-core-1.0.0/script/env.json"},
+  {access = "read", path = "./dependencies/axis-core-1.0.1/script/env.json"},
 ]
 ffi = true
 solc_version = "0.8.19"
