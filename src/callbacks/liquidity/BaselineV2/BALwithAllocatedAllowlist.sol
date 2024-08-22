@@ -58,7 +58,7 @@ contract BALwithAllocatedAllowlist is BaselineAxisLaunch {
     /// @dev        This function reverts if:
     ///             - `allowlistData_` is not of the correct length
     ///
-    /// @param      allowlistData_ abi-encoded data: (bytes32) representing the merkle root
+    /// @param      allowlistData_  abi-encoded data: (bytes32) representing the merkle root
     function __onCreate(
         uint96,
         address,

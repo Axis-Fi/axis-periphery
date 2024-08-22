@@ -48,6 +48,12 @@ source = "git@github.com:Axis-Fi/uniswap-v2-periphery.git"
 checksum = "19be650786731dfe43cac3aac7a2d1f0731d18e2"
 
 [[dependencies]]
+name = "@uniswap-v3-periphery"
+version = "1.4.2-solc-0.8"
+source = "git@github.com:Uniswap/v3-periphery.git"
+checksum = "b325bb0905d922ae61fcc7df85ee802e8df5e96c"
+
+[[dependencies]]
 name = "solmate"
 version = "6.7.0"
 source = "git@github.com:transmissions11/solmate.git"

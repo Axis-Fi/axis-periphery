@@ -99,7 +99,9 @@ contract BaselineAllowlistOnBidTest is BaselineAllowlistTest {
         _dtl.onBid(_lotId, _BID_ID, address(0x55), 5e18, abi.encode(_proof));
     }
 
-    function test_success(uint256 bidAmount_)
+    function test_success(
+        uint256 bidAmount_
+    )
         public
         givenBPoolIsCreated
         givenCallbackIsCreated

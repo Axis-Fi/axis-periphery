@@ -267,7 +267,7 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     function generateBaselineAxisLaunch() public {
         // Get the salt
         bytes memory callbackArgs =
-            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         (string memory callbackBytecodePath, bytes32 callbackBytecodeHash) = _writeBytecode(
             "BaselineAxisLaunch", type(BaselineAxisLaunch).creationCode, callbackArgs
         );
@@ -277,7 +277,7 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     function generateBaselineAllocatedAllowlist() public {
         // Get the salt
         bytes memory callbackArgs =
-            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         (string memory callbackBytecodePath, bytes32 callbackBytecodeHash) = _writeBytecode(
             "BaselineAllocatedAllowlist", type(BALwithAllocatedAllowlist).creationCode, callbackArgs
         );
@@ -287,7 +287,7 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     function generateBaselineAllowlist() public {
         // Get the salt
         bytes memory callbackArgs =
-            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         (string memory callbackBytecodePath, bytes32 callbackBytecodeHash) =
             _writeBytecode("BaselineAllowlist", type(BALwithAllowlist).creationCode, callbackArgs);
         _setTestSalt(callbackBytecodePath, "EF", "BaselineAllowlist", callbackBytecodeHash);
@@ -296,7 +296,7 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     function generateBaselineCappedAllowlist() public {
         // Get the salt
         bytes memory callbackArgs =
-            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         (string memory callbackBytecodePath, bytes32 callbackBytecodeHash) = _writeBytecode(
             "BaselineCappedAllowlist", type(BALwithCappedAllowlist).creationCode, callbackArgs
         );
@@ -306,7 +306,7 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     function generateBaselineTokenAllowlist() public {
         // Get the salt
         bytes memory callbackArgs =
-            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _OWNER);
+            abi.encode(_AUCTION_HOUSE, _BASELINE_KERNEL, _BASELINE_QUOTE_TOKEN, _SELLER);
         (string memory callbackBytecodePath, bytes32 callbackBytecodeHash) = _writeBytecode(
             "BaselineTokenAllowlist", type(BALwithTokenAllowlist).creationCode, callbackArgs
         );

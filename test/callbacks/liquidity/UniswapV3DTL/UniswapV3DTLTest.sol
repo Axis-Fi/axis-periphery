@@ -30,10 +30,11 @@ import {WithSalts} from "../../../lib/WithSalts.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
 import {TestConstants} from "../../../Constants.sol";
 
+// solhint-disable max-states-count
+
 abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV3DirectToLiquidity;
 
-    address internal constant _SELLER = address(0x2);
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
     address internal constant _NOT_SELLER = address(0x20);
@@ -41,6 +42,9 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
     uint96 internal constant _LOT_CAPACITY = 10e18;
 
     uint48 internal constant _START = 1_000_000;
+    uint48 internal constant _DURATION = 1 days;
+    uint48 internal constant _AUCTION_START = _START + 1;
+    uint48 internal constant _AUCTION_CONCLUSION = _AUCTION_START + _DURATION;
 
     uint96 internal _lotId = 1;
 
@@ -55,15 +59,24 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
 
+    uint96 internal _proceeds;
+    uint96 internal _refund;
+    uint24 internal _maxSlippage = 1; // 0.01%
+
     // Inputs
     uint24 internal _poolFee = 500;
+    UniswapV3DirectToLiquidity.UniswapV3OnCreateParams internal _uniswapV3CreateParams =
+    UniswapV3DirectToLiquidity.UniswapV3OnCreateParams({
+        poolFee: _poolFee,
+        maxSlippage: 1 // 0.01%, to handle rounding errors
+    });
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
-        proceedsUtilisationPercent: 100e2,
+        poolPercent: 100e2,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
-        implParams: abi.encode(_poolFee)
+        implParams: abi.encode(_uniswapV3CreateParams)
     });
 
     function setUp() public {
@@ -167,7 +180,7 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _createLot(address seller_) internal returns (uint96 lotId) {
+    function _createLot(address seller_, bytes memory err_) internal returns (uint96 lotId) {
         // Mint and approve the capacity to the owner
         _baseToken.mint(seller_, _LOT_CAPACITY);
         vm.prank(seller_);
@@ -188,21 +201,46 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
         });
 
         IAuction.AuctionParams memory auctionParams = IAuction.AuctionParams({
-            start: uint48(block.timestamp) + 1,
-            duration: 1 days,
+            start: _AUCTION_START,
+            duration: _DURATION,
             capacityInQuote: false,
             capacity: _LOT_CAPACITY,
             implParams: abi.encode("")
         });
+
+        if (err_.length > 0) {
+            vm.expectRevert(err_);
+        }
 
         // Create a new lot
         vm.prank(seller_);
         return _auctionHouse.auction(routingParams, auctionParams, "");
     }
 
+    function _createLot(address seller_) internal returns (uint96 lotId) {
+        return _createLot(seller_, "");
+    }
+
     modifier givenOnCreate() {
         _lotId = _createLot(_SELLER);
         _;
+    }
+
+    function _performOnCreate(address seller_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCreate(
+            _lotId,
+            seller_,
+            address(_baseToken),
+            address(_quoteToken),
+            _LOT_CAPACITY,
+            false,
+            abi.encode(_dtlCreateParams)
+        );
+    }
+
+    function _performOnCreate() internal {
+        _performOnCreate(_SELLER);
     }
 
     function _performOnCurate(uint96 curatorPayout_) internal {
@@ -215,14 +253,50 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    modifier givenProceedsUtilisationPercent(uint24 percent_) {
-        _dtlCreateParams.proceedsUtilisationPercent = percent_;
+    function _performOnCancel(uint96 lotId_, uint256 refundAmount_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onCancel(lotId_, refundAmount_, false, abi.encode(""));
+    }
+
+    function _performOnCancel() internal {
+        _performOnCancel(_lotId, 0);
+    }
+
+    function _performOnSettle(uint96 lotId_) internal {
+        vm.prank(address(_auctionHouse));
+        _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
+    }
+
+    function _performOnSettle() internal {
+        _performOnSettle(_lotId);
+    }
+
+    function _setPoolPercent(uint24 percent_) internal {
+        _dtlCreateParams.poolPercent = percent_;
+    }
+
+    modifier givenPoolPercent(uint24 percent_) {
+        _setPoolPercent(percent_);
         _;
     }
 
     modifier givenPoolFee(uint24 fee_) {
-        _poolFee = fee_;
-        _dtlCreateParams.implParams = abi.encode(_poolFee);
+        _uniswapV3CreateParams.poolFee = fee_;
+
+        // Update the callback data
+        _dtlCreateParams.implParams = abi.encode(_uniswapV3CreateParams);
+        _;
+    }
+
+    function _setMaxSlippage(uint24 maxSlippage_) internal {
+        _uniswapV3CreateParams.maxSlippage = maxSlippage_;
+
+        // Update the callback data
+        _dtlCreateParams.implParams = abi.encode(_uniswapV3CreateParams);
+    }
+
+    modifier givenMaxSlippage(uint24 maxSlippage_) {
+        _setMaxSlippage(maxSlippage_);
         _;
     }
 
@@ -243,16 +317,14 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     // ========== FUNCTIONS ========== //
 
-    function _getDTLConfiguration(uint96 lotId_)
-        internal
-        view
-        returns (BaseDirectToLiquidity.DTLConfiguration memory)
-    {
+    function _getDTLConfiguration(
+        uint96 lotId_
+    ) internal view returns (BaseDirectToLiquidity.DTLConfiguration memory) {
         (
             address recipient_,
             uint256 lotCapacity_,
             uint256 lotCuratorPayout_,
-            uint24 proceedsUtilisationPercent_,
+            uint24 poolPercent_,
             uint48 vestingStart_,
             uint48 vestingExpiry_,
             LinearVesting linearVestingModule_,
@@ -264,7 +336,7 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
             recipient: recipient_,
             lotCapacity: lotCapacity_,
             lotCuratorPayout: lotCuratorPayout_,
-            proceedsUtilisationPercent: proceedsUtilisationPercent_,
+            poolPercent: poolPercent_,
             vestingStart: vestingStart_,
             vestingExpiry: vestingExpiry_,
             linearVestingModule: linearVestingModule_,
