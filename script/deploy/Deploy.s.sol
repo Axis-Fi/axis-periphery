@@ -263,10 +263,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
 
     // ========== DEPLOYMENTS ========== //
 
-    function deployAtomicUniswapV2DirectToLiquidity(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployAtomicUniswapV2DirectToLiquidity(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying UniswapV2DirectToLiquidity (Atomic)");
 
@@ -308,10 +307,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbAtomicUniswapV2Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchUniswapV2DirectToLiquidity(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchUniswapV2DirectToLiquidity(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying UniswapV2DirectToLiquidity (Batch)");
 
@@ -353,10 +351,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbBatchUniswapV2Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicUniswapV3DirectToLiquidity(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployAtomicUniswapV3DirectToLiquidity(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying UniswapV3DirectToLiquidity (Atomic)");
 
@@ -399,10 +396,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbAtomicUniswapV3Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchUniswapV3DirectToLiquidity(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchUniswapV3DirectToLiquidity(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying UniswapV3DirectToLiquidity (Batch)");
 
@@ -445,10 +441,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbBatchUniswapV3Dtl), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicCappedMerkleAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployAtomicCappedMerkleAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying CappedMerkleAllowlist (Atomic)");
 
@@ -489,10 +484,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbAtomicCappedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchCappedMerkleAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchCappedMerkleAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying CappedMerkleAllowlist (Batch)");
 
@@ -533,10 +527,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbBatchCappedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicMerkleAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployAtomicMerkleAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying MerkleAllowlist (Atomic)");
 
@@ -577,10 +570,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbAtomicMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchMerkleAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchMerkleAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying MerkleAllowlist (Batch)");
 
@@ -621,10 +613,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbBatchMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicTokenAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployAtomicTokenAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying TokenAllowlist (Atomic)");
 
@@ -665,10 +656,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbAtomicTokenAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchTokenAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchTokenAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying TokenAllowlist (Batch)");
 
@@ -709,10 +699,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbBatchTokenAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployAtomicAllocatedMerkleAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployAtomicAllocatedMerkleAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying AllocatedMerkleAllowlist (Atomic)");
 
@@ -753,10 +742,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(cbAtomicAllocatedMerkleAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchAllocatedMerkleAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchAllocatedMerkleAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying AllocatedMerkleAllowlist (Batch)");
 
@@ -858,10 +846,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(batchCallback), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineAllocatedAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchBaselineAllocatedAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying BaselineAllocatedAllowlist (Batch)");
 
@@ -920,10 +907,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchBaselineAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying BaselineAllowlist (Batch)");
 
@@ -982,10 +968,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineCappedAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchBaselineCappedAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying BaselineCappedAllowlist (Batch)");
 
@@ -1044,10 +1029,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         return (address(batchAllowlist), _PREFIX_CALLBACKS, deploymentKey);
     }
 
-    function deployBatchBaselineTokenAllowlist(string memory sequenceName_)
-        public
-        returns (address, string memory, string memory)
-    {
+    function deployBatchBaselineTokenAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
         console2.log("");
         console2.log("Deploying BaselineTokenAllowlist (Batch)");
 

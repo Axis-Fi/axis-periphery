@@ -82,7 +82,7 @@ allowFFI: true
 #directory to save the corpus; by default is disabled
 corpusDir: echidna
 # list of file formats to save coverage reports in; default is all possible formats
-coverageFormats: ["txt","html","lcov"]
+coverageFormats: ["txt", "html", "lcov"]
 # constants for corpus mutations (for experimentation only)
 # mutConsts: [1, 1, 1, 1]
 # maximum value to send to payable functions
