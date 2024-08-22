@@ -811,7 +811,7 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         // This supports an arbitrary salt key, which can be set in the deployment sequence
         // This is required as each callback is single-use
         bytes32 salt_ = _getSalt(
-            "BaselineAxisLaunch",
+            deploymentKey,
             type(BaselineAxisLaunch).creationCode,
             abi.encode(batchAuctionHouse, baselineKernel, reserveToken, baselineOwner)
         );
