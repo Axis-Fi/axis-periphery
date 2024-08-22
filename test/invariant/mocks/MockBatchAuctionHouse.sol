@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.19;
 
-import {BatchAuctionHouse} from "@axis-core-1.0.0/BatchAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
 
-import {Veecode} from "@axis-core-1.0.0/modules/Modules.sol";
+import {Veecode} from "@axis-core-1.0.1/modules/Modules.sol";
 
 contract MockBatchAuctionHouse is BatchAuctionHouse {
     constructor(
