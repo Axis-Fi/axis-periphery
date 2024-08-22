@@ -37,20 +37,20 @@ To generate a salt for a specific callback deployment, the following addresses a
 - Owner of the Baseline deployment (which will have the ability to withdraw reserves)
 - Reserve (quote) token
 
-These addresses should match the arguments in the deployment sequence file.
+These addresses are pulled from the deployment sequence file.
 
 The following script can then be run:
 
 ```bash
-./script/salts/dtl-baseline/baseline_allocated_allowlist_salts.sh --kernel <kernel> --owner <owner> --reserveToken <reserveToken>
+./script/salts/dtl-baseline/baseline_salts.sh --deployFile <filePath>
 ```
 
 ### Generating Salts for Uniswap Direct to Liquidity
 
-Assuming that the developer wants to deploy a Uniswap V3 direct to liquidity callback for atomic auctions, the following command would be run:
+The following command will generate salts for any Uniswap DTL callbacks in the specified deployment sequence file:
 
 ```bash
-./script/salts/dtl-uniswap/uniswap_dtl_salts.sh --type atomic --version 3
+./script/salts/dtl-uniswap/uniswap_dtl_salts.sh --deployFile <filePath>
 ```
 
 ### Generating Salts for Any Contract

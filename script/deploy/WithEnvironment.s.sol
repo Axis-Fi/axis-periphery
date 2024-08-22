@@ -27,7 +27,6 @@ abstract contract WithEnvironment is Script {
     /// @param  key_    The key to look up in the environment file
     /// @return address The address from the environment file, or the zero address
     function _envAddress(string memory key_) internal view returns (address) {
-        console2.log("    Checking in env.json");
         string memory fullKey = string.concat(".current.", chain, ".", key_);
         address addr;
         bool keyExists = vm.keyExists(env, fullKey);

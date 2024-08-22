@@ -1,8 +1,8 @@
 {
-"deployments.callbacks.BatchCappedMerkleAllowlist": "0x98a0826b19B412a159cedb38Bd38899930382972",
-"deployments.callbacks.BatchMerkleAllowlist": "0x98E56d6466fC7B2c88acb39e9e4C6E7671e28CBd",
-"deployments.callbacks.BatchTokenAllowlist": "0x98a16dF00DB1ea2bC4Cb05E8e2c06d43F56f8e62",
-"deployments.callbacks.BatchAllocatedMerkleAllowlist": "0x98b7402E399ff864a3277bd4c3e01Df8ef0234e8",
-"deployments.callbacks.BatchUniswapV2DirectToLiquidity": "0xE60a178a2f5e86BF77fB1D6814Ed47790B0993f0",
-"deployments.callbacks.BatchUniswapV3DirectToLiquidity": "0xE6bF04764268B46ddE10e9e8a13c3E7fF0a181d6"
+  "deployments.callbacks.BatchCappedMerkleAllowlist": "0x98a0826b19B412a159cedb38Bd38899930382972",
+  "deployments.callbacks.BatchMerkleAllowlist": "0x98E56d6466fC7B2c88acb39e9e4C6E7671e28CBd",
+  "deployments.callbacks.BatchTokenAllowlist": "0x98a16dF00DB1ea2bC4Cb05E8e2c06d43F56f8e62",
+  "deployments.callbacks.BatchAllocatedMerkleAllowlist": "0x98b7402E399ff864a3277bd4c3e01Df8ef0234e8",
+  "deployments.callbacks.BatchUniswapV2DirectToLiquidity": "0xE60a178a2f5e86BF77fB1D6814Ed47790B0993f0",
+  "deployments.callbacks.BatchUniswapV3DirectToLiquidity": "0xE6bF04764268B46ddE10e9e8a13c3E7fF0a181d6"
 }
