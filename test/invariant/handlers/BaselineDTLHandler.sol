@@ -19,13 +19,13 @@ import {IUniswapV3Pool} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
-import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {SqrtPriceMath} from "../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 import {BaselineAxisLaunch} from
-    "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
+    "../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {BaseDirectToLiquidity} from "../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-1.0.1-test/modules/Auction/MockBatchAuctionModule.sol";
