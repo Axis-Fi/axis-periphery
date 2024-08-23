@@ -490,11 +490,23 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _baselineToken.mint(account_, amount_);
     }
 
+    function _disableTransferLock() internal {
+        _bpoolMinter.setTransferLock(false);
+    }
+
+    function _enableTransferLock() internal {
+        _bpoolMinter.setTransferLock(true);
+    }
+
     function _transferBaselineTokenRefund(uint256 amount_) internal {
+        _disableTransferLock();
+
         // Transfer refund from auction house to the callback
         // We transfer instead of minting to not affect the supply
         vm.prank(address(_baselineAuctionHouse));
         _baselineToken.transfer(_dtlBaselineAddress, amount_);
+
+        _enableTransferLock();
     }
 
     function givenAddressHasBaseTokenAllowance(
