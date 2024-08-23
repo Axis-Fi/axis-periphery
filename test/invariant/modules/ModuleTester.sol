@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../../../../../src/callbacks/liquidity/BaselineV2/lib/Kernel.sol";
+import "../../../src/callbacks/liquidity/BaselineV2/lib/Kernel.sol";
 
 // Generate an UNACTIVATED test fixture policy for a module. Must be activated separately.
 library ModuleTester {

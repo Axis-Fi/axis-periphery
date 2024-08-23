@@ -27,20 +27,19 @@ import {UniswapV3Factory} from "../lib/uniswap-v3/UniswapV3Factory.sol";
 import {WETH9} from "./modules/WETH.sol";
 import {SwapRouter} from "./modules/uniswapv3-periphery/SwapRouter.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
-import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {SqrtPriceMath} from "../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
-import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
-import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
+import {BaseDirectToLiquidity} from "../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV2DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-1.0.1-test/modules/Auction/MockBatchAuctionModule.sol";
 
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.1/modules/Keycode.sol";
 
-import {BaselineAxisLaunch} from
-    "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 
 // Baseline
 import {Kernel, Actions, Module, toKeycode as toBaselineKeycode} from "@baseline/Kernel.sol";
