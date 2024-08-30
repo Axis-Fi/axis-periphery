@@ -83,6 +83,7 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             floorRangeGap: 0, //_FLOOR_RANGE_GAP,
             anchorTickU: 11_000, //_ANCHOR_TICK_U,
             anchorTickWidth: 10, //_ANCHOR_TICK_WIDTH,
+            poolTargetTick: 10_986, // Default tick for the auction
             allowlistParams: abi.encode("")
         });
 
@@ -439,7 +440,7 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             0,
             "AX-49: After BaselineDTL_onSettle floor bAssets should equal 0"
         );
-        equal(
+        gt(
             _getRangeBAssets(Range.ANCHOR),
             0,
             "AX-50: After BaselineDTL_onSettle anchor bAssets should be greater than 0"

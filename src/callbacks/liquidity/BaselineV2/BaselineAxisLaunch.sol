@@ -65,6 +65,13 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @notice The anchor tick upper is invalid
     error Callback_Params_InvalidAnchorTickUpper();
 
+    /// @notice The pool target tick is invalid
+    /// @dev    The pool target tick must be >= `anchorRangeLower` and <= `anchorRangeUpper`
+    ///
+    /// @param  anchorRangeLower    The lower tick of the anchor range
+    /// @param  anchorRangeUpper    The upper tick of the anchor range
+    error Callback_Params_InvalidPoolTargetTick(int24 anchorRangeLower, int24 anchorRangeUpper);
+
     /// @notice One of the ranges is out of bounds
     error Callback_Params_RangeOutOfBounds();
 
@@ -125,6 +132,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @param  floorRangeGap           The gap between the floor and anchor ranges, as a multiple of the pool tick spacing.
     /// @param  anchorTickU             The upper tick of the anchor range. Validated against the calculated upper bound of the anchor range. This is provided off-chain to prevent front-running.
     /// @param  anchorTickWidth         The width of the anchor tick range, as a multiple of the pool tick spacing.
+    /// @param  poolTargetTick          The target tick for the pool. This is provided off-chain to prevent front-running.
     /// @param  allowlistParams         Additional parameters for an allowlist, passed to `__onCreate()` for further processing
     struct CreateData {
         address recipient;
@@ -133,14 +141,26 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         int24 floorRangeGap;
         int24 anchorTickU;
         int24 anchorTickWidth;
+        int24 poolTargetTick;
         bytes allowlistParams;
     }
 
-    // ========== STATE VARIABLES ========== //
+    // ========== CONSTANTS ========== //
 
-    // TickMath constants
-    int24 internal constant _MAX_TICK = 887_272;
+    /// @notice The minimum tick value
     int24 internal constant _MIN_TICK = -887_272;
+
+    /// @notice The maximum tick value
+    int24 internal constant _MAX_TICK = 887_272;
+
+    /// @notice The value for 100%
+    // solhint-disable-next-line private-vars-leading-underscore
+    uint48 internal constant ONE_HUNDRED_PERCENT = 100e2;
+
+    /// @notice The tick spacing width of the discovery range
+    int24 internal constant _DISCOVERY_TICK_SPACING_WIDTH = 350;
+
+    // ========== STATE VARIABLES ========== //
 
     // Baseline Modules
     // solhint-disable var-name-mixedcase
@@ -175,11 +195,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     /// @dev    This value is set in the `onCreate()` callback.
     address public recipient;
 
-    // solhint-disable-next-line private-vars-leading-underscore
-    uint48 internal constant ONE_HUNDRED_PERCENT = 100e2;
-
-    /// @notice The tick spacing width of the discovery range
-    int24 internal constant _DISCOVERY_TICK_SPACING_WIDTH = 350;
+    /// @notice The target tick for the pool
+    /// @dev    This value is set in the `onCreate()` callback.
+    int24 public poolTargetTick;
 
     // ========== CONSTRUCTOR ========== //
 
@@ -312,14 +330,15 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     ///                 - `recipient` is the zero address
     ///                 - `lotId` is already set
     ///                 - The pool fee tier is not supported
+    ///                 - The auction format is not supported
+    ///                 - The auction is not prefunded
     ///                 - `CreateData.floorReservesPercent` is less than 10% or greater than 90%
     ///                 - `CreateData.poolPercent` is less than 10% or greater than 100%
     ///                 - `CreateData.floorRangeGap` is < 0
     ///                 - `CreateData.anchorTickWidth` is < 10 or > 50
-    ///                 - The auction format is not supported
-    ///                 - The auction is not prefunded
+    ///                 - `CreateData.anchorTickU` is not the same as the calculated value
+    ///                 - `CreateData.poolTargetTick` is not >= anchorRangeLower and < anchorRangeUpper
     ///                 - Any of the tick ranges would exceed the tick bounds
-    ///                 - The provided anchor range upper tick is not the same as the calculated value
     ///                 - The pool tick is less than the auction price (in terms of ticks)
     ///                 - The pool capacity is not sufficient to support the intended supply
     function _onCreate(
@@ -445,6 +464,17 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
 
             // Anchor range lower is the anchor tick width below the anchor range upper
             int24 anchorRangeLower = anchorRangeUpper - cbData.anchorTickWidth * tickSpacing;
+
+            // Validate that the pool target tick is within the anchor range
+            // The `_onSettle()` function will perform swaps (if necessary) to move the pool tick to the target tick in order to mitigate manipulation.
+            // The value must be in the anchor range and below the anchor upper tick (which is where the discovery range begins).
+            if (
+                cbData.poolTargetTick < anchorRangeLower
+                    || cbData.poolTargetTick >= anchorRangeUpper
+            ) {
+                revert Callback_Params_InvalidPoolTargetTick(anchorRangeLower, anchorRangeUpper);
+            }
+            poolTargetTick = cbData.poolTargetTick;
 
             // Set the anchor range
             BPOOL.setTicks(Range.ANCHOR, anchorRangeLower, anchorRangeUpper);
@@ -745,8 +775,8 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
             // Current price of the pool
             (uint160 currentSqrtPrice,,,,,,) = pool.slot0();
 
-            // Get the target sqrt price from the anchor position
-            uint160 targetSqrtPrice = BPOOL.getPosition(Range.ANCHOR).sqrtPriceU;
+            // Get the target sqrt price from the target tick
+            uint160 targetSqrtPrice = TickMath.getSqrtRatioAtTick(poolTargetTick);
 
             // We assume there are no circulating bAssets that could be provided as liquidity yet.
             // Therefore, there are three cases:

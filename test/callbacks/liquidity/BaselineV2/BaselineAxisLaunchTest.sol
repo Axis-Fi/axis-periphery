@@ -59,6 +59,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
     uint24 internal constant _POOL_PERCENT = 87e2; // 87%
     uint256 internal constant _FIXED_PRICE = 3e18;
     int24 internal constant _FIXED_PRICE_TICK_UPPER = 11_000; // 10986 rounded up
+    int24 internal constant _POOL_TARGET_TICK = 10_986; // 10986 being the default
     uint256 internal constant _INITIAL_POOL_PRICE = 3e18; // 3
     uint24 internal constant _FEE_TIER = 10_000;
     uint256 internal constant _BASE_SCALE = 1e18;
@@ -119,6 +120,7 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         floorRangeGap: _floorRangeGap,
         anchorTickU: _FIXED_PRICE_TICK_UPPER,
         anchorTickWidth: _ANCHOR_TICK_WIDTH,
+        poolTargetTick: _POOL_TARGET_TICK,
         allowlistParams: abi.encode("")
     });
 
@@ -668,6 +670,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
     modifier givenCollateralized(address user_, uint256 totalCollateralized_) {
         _setTotalCollateralized(user_, totalCollateralized_);
+        _;
+    }
+
+    function _setPoolTargetTick(int24 poolTargetTick_) internal {
+        _createData.poolTargetTick = poolTargetTick_;
+        console2.log("Pool target tick set to: ", poolTargetTick_);
+    }
+
+    modifier givenPoolTargetTick(int24 poolTargetTick_) {
+        _setPoolTargetTick(poolTargetTick_);
         _;
     }
 

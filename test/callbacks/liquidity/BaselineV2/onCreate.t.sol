@@ -249,6 +249,10 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
     //  [X] when the referrer fee would result in a solvency check failure
     //   [X] it reverts
     //  [X] it correctly performs the solvency check
+    // [X] when the pool target tick is below the anchor lower tick
+    //  [X] it reverts
+    // [X] when the pool target tick is above the anchor upper tick
+    //  [X] it reverts
     // [X] it transfers the base token to the auction house, updates circulating supply, sets the state variables, initializes the pool and sets the tick ranges
 
     function test_callbackDataIncorrect_reverts()
@@ -510,6 +514,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenPoolInitialTick(TickMath.MIN_TICK + 200 * _ANCHOR_TICK_WIDTH) // This will result in the floor range to be below the MIN_TICK, which should cause a revert
         givenAnchorUpperTick(-885_200)
+        givenPoolTargetTick(-885_300)
         givenFloorRangeGap(1)
         givenBPoolIsCreated
         givenCallbackIsCreated
@@ -710,6 +715,54 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         _assertTicks(fixedPriceTick);
     }
 
+    function test_poolTargetTick_belowAnchorLowerTick_reverts(
+        int24 poolTargetTick_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
+        // Bound the pool target tick
+        int24 poolTargetTick = int24(bound(poolTargetTick_, type(int24).min, 8999)); // Below anchor lower tick of 9000
+        _setPoolTargetTick(poolTargetTick);
+
+        // Expect a revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_InvalidPoolTargetTick.selector, 9000, 11_000
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolTargetTick_aboveAnchorUpperTick_reverts(
+        int24 poolTargetTick_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
+        // Bound the pool target tick
+        int24 poolTargetTick = int24(bound(poolTargetTick_, 11_000, type(int24).max));
+        _setPoolTargetTick(poolTargetTick);
+
+        // Expect a revert
+        bytes memory err = abi.encodeWithSelector(
+            BaselineAxisLaunch.Callback_Params_InvalidPoolTargetTick.selector, 9000, 11_000
+        );
+        vm.expectRevert(err);
+
+        // Perform the call
+        _onCreate();
+    }
+
+    function test_poolTargetTick_fuzz(
+        int24 poolTargetTick_
+    ) public givenBPoolIsCreated givenCallbackIsCreated givenAuctionIsCreated {
+        // Bound the pool target tick
+        int24 poolTargetTick = int24(bound(poolTargetTick_, 9000, 10_999));
+        _setPoolTargetTick(poolTargetTick);
+
+        // Perform the call
+        _onCreate();
+
+        // Assert pool target tick is set
+        assertEq(_dtl.poolTargetTick(), poolTargetTick, "pool target tick");
+    }
+
     function test_success()
         public
         givenBPoolIsCreated
@@ -724,6 +777,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
 
         // Lot ID is set
         assertEq(_dtl.lotId(), _lotId, "lot ID");
+
+        // Pool target tick is set
+        assertEq(_dtl.poolTargetTick(), _POOL_TARGET_TICK, "pool target tick");
 
         // Check circulating supply
         assertEq(_baseToken.totalSupply(), _LOT_CAPACITY, "circulating supply");
@@ -920,6 +976,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenFixedPrice(1e32) // Seems to cause a revert above this when calculating the tick
         givenAnchorUpperTick(322_400)
+        givenPoolTargetTick(322_300)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -950,6 +1007,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenFixedPrice(1e6)
         givenAnchorUpperTick(-276_200)
+        givenPoolTargetTick(-276_300)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -1034,6 +1092,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBaseTokenDecimals(19)
         givenAnchorUpperTick(-12_000)
+        givenPoolTargetTick(-12_100)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -1062,6 +1121,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenBaseTokenDecimals(17)
         givenAnchorUpperTick(34_200)
+        givenPoolTargetTick(34_100)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -1091,6 +1151,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         givenBPoolFeeTier(10_000)
         givenFixedPrice(1e18)
         givenAnchorUpperTick(200) // Rounded up
+        givenPoolTargetTick(199) // Below anchor upper tick
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -1116,6 +1177,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenPoolInitialTick(TickMath.MAX_TICK - 1) // This will result in the upper tick of the anchor range to be above the MAX_TICK, which should cause a revert
         givenAnchorUpperTick(887_400)
+        givenPoolTargetTick(887_300)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -1134,6 +1196,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenPoolInitialTick(TickMath.MIN_TICK + 1) // This will result in the lower tick of the anchor range to be below the MIN_TICK, which should cause a revert
         givenAnchorUpperTick(-887_200)
+        givenPoolTargetTick(-887_300)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -1152,6 +1215,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenPoolInitialTick(TickMath.MAX_TICK - _tickSpacing + 1) // This will result in the upper tick of the discovery range to be above the MAX_TICK, which should cause a revert
         givenAnchorUpperTick(887_200)
+        givenPoolTargetTick(887_100)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
@@ -1174,6 +1238,7 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         public
         givenPoolInitialTick(TickMath.MIN_TICK) // This will result in the lower tick of the floor range to be below the MIN_TICK, which should cause a revert
         givenAnchorUpperTick(-887_200)
+        givenPoolTargetTick(-887_300)
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated
