@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Add additional `poolTargetTick` parameter to Baseline callbacks.
+
 ## 1.0.0
 
 - Introduces direct-to-liquidity callbacks. Multi-use, permissionless versions are available for UniswapV2 and UniswapV3 pools. Permissioned launches are available for Baseline pools on Blast.

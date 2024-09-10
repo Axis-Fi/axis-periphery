@@ -287,7 +287,9 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
         _onBid(_lotId, _BUYER, 1, _BUYER_ALLOCATED_AMOUNT);
     }
 
-    function test_onBid(uint256 amount_) public givenBatchOnCreate {
+    function test_onBid(
+        uint256 amount_
+    ) public givenBatchOnCreate {
         uint256 amount = bound(amount_, 1, _BUYER_ALLOCATED_AMOUNT);
 
         _onBid(_lotId, _BUYER, amount, _BUYER_ALLOCATED_AMOUNT);

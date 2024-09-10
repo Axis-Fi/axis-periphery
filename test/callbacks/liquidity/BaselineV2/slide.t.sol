@@ -32,6 +32,7 @@ contract BaselineOnSettleSlideTest is BaselineAxisLaunchTest {
         public
         givenFixedPrice(1e18)
         givenAnchorUpperTick(200)
+        givenPoolTargetTick(199) // Below anchor upper tick
         givenBPoolIsCreated
         givenCallbackIsCreated
         givenAuctionIsCreated

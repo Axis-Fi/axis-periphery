@@ -10,7 +10,9 @@ contract BaselineTokenAllowlistOnBidTest is BaselineTokenAllowlistTest {
 
     // ========== MODIFIER ========== //
 
-    function _onBid(uint256 bidAmount_) internal {
+    function _onBid(
+        uint256 bidAmount_
+    ) internal {
         // Call the callback
         vm.prank(address(_auctionHouse));
         _dtl.onBid(_lotId, _BID_ID, _BUYER, bidAmount_, abi.encode(""));

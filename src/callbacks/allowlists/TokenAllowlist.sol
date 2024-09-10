@@ -7,7 +7,9 @@ import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
 /// @notice Generic interface for tokens that implement a balanceOf function (includes ERC-20 and ERC-721)
 interface ITokenBalance {
     /// @notice Get the user's token balance
-    function balanceOf(address user_) external view returns (uint256);
+    function balanceOf(
+        address user_
+    ) external view returns (uint256);
 }
 
 /// @title  TokenAllowlist Callback Contract

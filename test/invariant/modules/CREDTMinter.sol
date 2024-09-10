@@ -9,7 +9,9 @@ import {CREDTv1} from "@baseline/modules/CREDT.v1.sol";
 contract CREDTMinter is Policy, Owned {
     CREDTv1 public CREDT;
 
-    constructor(Kernel kernel_) Policy(kernel_) Owned(kernel_.executor()) {}
+    constructor(
+        Kernel kernel_
+    ) Policy(kernel_) Owned(kernel_.executor()) {}
 
     function configureDependencies() external override returns (Keycode[] memory dependencies) {
         dependencies = new Keycode[](1);

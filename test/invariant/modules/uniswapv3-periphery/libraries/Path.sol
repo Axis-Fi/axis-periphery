@@ -22,14 +22,18 @@ library Path {
     /// @notice Returns true iff the path contains two or more pools
     /// @param path The encoded swap path
     /// @return True if path contains two or more pools, otherwise false
-    function hasMultiplePools(bytes memory path) internal pure returns (bool) {
+    function hasMultiplePools(
+        bytes memory path
+    ) internal pure returns (bool) {
         return path.length >= MULTIPLE_POOLS_MIN_LENGTH;
     }
 
     /// @notice Returns the number of pools in the path
     /// @param path The encoded swap path
     /// @return The number of pools in the path
-    function numPools(bytes memory path) internal pure returns (uint256) {
+    function numPools(
+        bytes memory path
+    ) internal pure returns (uint256) {
         // Ignore the first token address. From then on every fee and token offset indicates a pool.
         return ((path.length - ADDR_SIZE) / NEXT_OFFSET);
     }
@@ -50,14 +54,18 @@ library Path {
     /// @notice Gets the segment corresponding to the first pool in the path
     /// @param path The bytes encoded swap path
     /// @return The segment containing all data necessary to target the first pool in the path
-    function getFirstPool(bytes memory path) internal pure returns (bytes memory) {
+    function getFirstPool(
+        bytes memory path
+    ) internal pure returns (bytes memory) {
         return path.slice(0, POP_OFFSET);
     }
 
     /// @notice Skips a token + fee element from the buffer and returns the remainder
     /// @param path The swap path
     /// @return The remaining token + fee elements in the path
-    function skipToken(bytes memory path) internal pure returns (bytes memory) {
+    function skipToken(
+        bytes memory path
+    ) internal pure returns (bytes memory) {
         return path.slice(NEXT_OFFSET, path.length - NEXT_OFFSET);
     }
 }

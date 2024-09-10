@@ -11,7 +11,9 @@ contract UniswapV2DirectToLiquidityOnCurateTest is UniswapV2DirectToLiquidityTes
 
     // ============ Modifiers ============ //
 
-    function _performCallback(uint96 lotId_) internal {
+    function _performCallback(
+        uint96 lotId_
+    ) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(lotId_, _PAYOUT_AMOUNT, false, abi.encode(""));
     }

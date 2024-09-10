@@ -9,7 +9,9 @@ import {BPOOLv1} from "@baseline/modules/BPOOL.v1.sol";
 contract BPOOLMinter is Policy, Owned {
     BPOOLv1 public BPOOL;
 
-    constructor(Kernel kernel_) Policy(kernel_) Owned(kernel_.executor()) {}
+    constructor(
+        Kernel kernel_
+    ) Policy(kernel_) Owned(kernel_.executor()) {}
 
     function configureDependencies() external override returns (Keycode[] memory dependencies) {
         dependencies = new Keycode[](1);
@@ -28,7 +30,9 @@ contract BPOOLMinter is Policy, Owned {
         BPOOL.mint(to_, amount_);
     }
 
-    function setTransferLock(bool lock_) external onlyOwner {
+    function setTransferLock(
+        bool lock_
+    ) external onlyOwner {
         BPOOL.setTransferLock(lock_);
     }
 }
