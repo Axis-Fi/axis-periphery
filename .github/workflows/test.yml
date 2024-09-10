@@ -36,6 +36,10 @@ jobs:
         with:
           version: nightly
 
+      # Providing the SSH key to the checkout action does not work with our config.
+      # It likely is because of the install script wiping the lib/ directory.
+      # For this reason, we disable submodule checkouts above, set up the SSH agent
+      # with the provided key, and then run the install script.
       - name: Setup SSH key
         uses: webfactory/ssh-agent@v0.9.0
         with:
