@@ -371,8 +371,7 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
         if (case_ == 1) {
             // Case 1: Swapped in 1 wei of quote tokens
             // We don't need to do anything here
-        }
-        else if (case_ == 2) {
+        } else if (case_ == 2) {
             // Case 2: We sold up to half of the base tokens into the pool to move the price down
             // Transfer the requested token1 amount to the pool
             if (token0 == baseToken) {

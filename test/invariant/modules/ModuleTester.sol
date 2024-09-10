@@ -40,7 +40,9 @@ library ModuleTester {
     }
 
     // Generate a test fixture policy with NO permissions
-    function generateDummyFixture(Module module_) internal returns (address) {
+    function generateDummyFixture(
+        Module module_
+    ) internal returns (address) {
         Permissions[] memory requests = new Permissions[](0);
         return generateFixture(module_, requests);
     }
@@ -78,7 +80,9 @@ contract ModuleTestFixture is Policy {
         }
     }
 
-    function call(bytes memory data) external {
+    function call(
+        bytes memory data
+    ) external {
         (bool success,) = address(_module).call(data);
         require(success, "ModuleTestFixture: call failed");
     }

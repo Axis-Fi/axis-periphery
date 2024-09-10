@@ -6,7 +6,9 @@ import {BaselineAxisLaunch} from "./BaselineAxisLaunch.sol";
 /// @notice Generic interface for tokens that implement a balanceOf function (includes ERC-20 and ERC-721)
 interface ITokenBalance {
     /// @notice Get the user's token balance
-    function balanceOf(address user_) external view returns (uint256);
+    function balanceOf(
+        address user_
+    ) external view returns (uint256);
 }
 
 /// @notice TokenAllowlist version of the Baseline Axis Launch callback.
@@ -120,7 +122,9 @@ contract BALwithTokenAllowlist is BaselineAxisLaunch {
 
     // ========== INTERNAL FUNCTIONS ========== //
 
-    function _canParticipate(address buyer_) internal view {
+    function _canParticipate(
+        address buyer_
+    ) internal view {
         // Check if the buyer's balance is above the threshold
         if (tokenCheck.token.balanceOf(buyer_) < tokenCheck.threshold) {
             revert Callback_NotAuthorized();

@@ -233,7 +233,9 @@ contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestCon
         _onBid(_lotId, _BUYER, 1);
     }
 
-    function test_onBid(uint256 amount_) public givenBatchOnCreate {
+    function test_onBid(
+        uint256 amount_
+    ) public givenBatchOnCreate {
         uint256 amount = bound(amount_, 1, _BUYER_LIMIT);
 
         _onBid(_lotId, _BUYER, amount);

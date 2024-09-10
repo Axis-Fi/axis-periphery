@@ -300,17 +300,23 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
                                     HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function _scaleBaseTokenAmount(uint256 amount_) internal view returns (uint256) {
+    function _scaleBaseTokenAmount(
+        uint256 amount_
+    ) internal view returns (uint256) {
         return FixedPointMathLib.mulDivDown(amount_, 10 ** _baseTokenDecimals, _BASE_SCALE);
     }
 
-    function _getRangeBAssets(Range range_) internal returns (uint256) {
+    function _getRangeBAssets(
+        Range range_
+    ) internal returns (uint256) {
         Position memory position = _baselineToken.getPosition(range_);
 
         return position.bAssets;
     }
 
-    function _getRangeReserves(Range range_) internal returns (uint256) {
+    function _getRangeReserves(
+        Range range_
+    ) internal returns (uint256) {
         Position memory position = _baselineToken.getPosition(range_);
 
         return position.reserves;

@@ -13,7 +13,9 @@ contract BPOOLMinter is Policy, Owned {
     CREDTv1 public CREDT;
     // solhint-enable var-name-mixedcase
 
-    constructor(Kernel kernel_) Policy(kernel_) Owned(kernel_.executor()) {}
+    constructor(
+        Kernel kernel_
+    ) Policy(kernel_) Owned(kernel_.executor()) {}
 
     function configureDependencies() external override returns (Keycode[] memory dependencies) {
         dependencies = new Keycode[](2);
@@ -35,7 +37,9 @@ contract BPOOLMinter is Policy, Owned {
         BPOOL.mint(to_, amount_);
     }
 
-    function setTransferLock(bool lock_) external onlyOwner {
+    function setTransferLock(
+        bool lock_
+    ) external onlyOwner {
         BPOOL.setTransferLock(lock_);
     }
 

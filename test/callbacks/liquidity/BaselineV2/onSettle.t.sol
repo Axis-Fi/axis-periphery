@@ -45,7 +45,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         );
     }
 
-    function _assertBaseTokenBalances(uint256 curatorFee_) internal view {
+    function _assertBaseTokenBalances(
+        uint256 curatorFee_
+    ) internal view {
         assertEq(_baseToken.balanceOf(_dtlAddress), 0, "base token: callback");
         assertEq(_baseToken.balanceOf(address(_baseToken)), 0, "base token: contract");
 
@@ -62,7 +64,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         assertEq(_baseToken.balanceOf(_SELLER), 0, "base token: seller");
     }
 
-    function _assertCirculatingSupply(uint256 curatorFee_) internal view {
+    function _assertCirculatingSupply(
+        uint256 curatorFee_
+    ) internal view {
         uint256 totalSupply = _baseToken.totalSupply();
 
         assertApproxEqAbs(
@@ -782,7 +786,9 @@ contract BaselineOnSettleTest is BaselineAxisLaunchTest {
         return;
     }
 
-    function _swap(uint160 sqrtPrice_) internal {
+    function _swap(
+        uint160 sqrtPrice_
+    ) internal {
         IUniswapV3Pool pool = _baseToken.pool();
 
         pool.swap(address(this), true, 1, sqrtPrice_, "");

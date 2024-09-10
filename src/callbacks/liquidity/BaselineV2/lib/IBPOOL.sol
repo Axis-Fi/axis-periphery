@@ -39,9 +39,13 @@ interface IBPOOLv1 {
     function reserve() external view returns (ERC20);
     function pool() external view returns (IUniswapV3Pool);
 
-    function getTicks(Range range_) external view returns (int24 tickLower, int24 tickUpper);
+    function getTicks(
+        Range range_
+    ) external view returns (int24 tickLower, int24 tickUpper);
 
-    function getLiquidity(Range range_) external view returns (uint128);
+    function getLiquidity(
+        Range range_
+    ) external view returns (uint128);
 
     // ========= PERMISSIONED WRITE FUNCTIONS ========= //
 
@@ -75,7 +79,9 @@ interface IBPOOLv1 {
     /// @dev    No need to discount collateralizedBAssets because it's in a separate contract now.
     function burnAllBAssetsInContract() external;
 
-    function setTransferLock(bool _locked) external;
+    function setTransferLock(
+        bool _locked
+    ) external;
 
     // ========= PUBLIC READ FUNCTIONS ========= //
 
@@ -89,7 +95,9 @@ interface IBPOOLv1 {
     function getActiveTS() external view returns (int24 activeTS_);
 
     /// @notice  Wrapper for liquidity data struct
-    function getPosition(Range _range) external view returns (Position memory position_);
+    function getPosition(
+        Range _range
+    ) external view returns (Position memory position_);
 
     function getBalancesForLiquidity(
         uint160 _sqrtPriceL,

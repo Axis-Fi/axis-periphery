@@ -294,7 +294,9 @@ contract AllocatedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, Tes
         _onPurchase(_lotId, _BUYER, 1, _BUYER_ALLOCATED_AMOUNT);
     }
 
-    function test_onPurchase(uint256 amount_) public givenAtomicOnCreate {
+    function test_onPurchase(
+        uint256 amount_
+    ) public givenAtomicOnCreate {
         uint256 amount = bound(amount_, 1, _BUYER_ALLOCATED_AMOUNT);
 
         _onPurchase(_lotId, _BUYER, amount, _BUYER_ALLOCATED_AMOUNT);

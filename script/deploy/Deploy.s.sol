@@ -200,7 +200,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         if (saveDeployment) _saveDeployment(chain_);
     }
 
-    function _saveDeployment(string memory chain_) internal {
+    function _saveDeployment(
+        string memory chain_
+    ) internal {
         // Create the deployments folder if it doesn't exist
         if (!vm.isDir("./deployments")) {
             console2.log("Creating deployments directory");
@@ -1143,7 +1145,9 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
     ///
     /// @param  key_    Key to look for
     /// @return address Returns the address
-    function _getAddressNotZero(string memory key_) internal view returns (address) {
+    function _getAddressNotZero(
+        string memory key_
+    ) internal view returns (address) {
         // Get from the deployed addresses first
         address deployedAddress = deployedTo[key_];
 

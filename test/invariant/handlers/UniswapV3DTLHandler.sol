@@ -436,7 +436,9 @@ abstract contract UniswapV3DTLHandler is BeforeAfter, Assertions {
         );
     }
 
-    function _assertPoolState(uint160 sqrtPriceX96_) internal {
+    function _assertPoolState(
+        uint160 sqrtPriceX96_
+    ) internal {
         // Get the pool
         address pool = _getPool();
 

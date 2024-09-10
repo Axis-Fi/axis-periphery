@@ -287,7 +287,9 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
     // ========== MODIFIERS ========== //
 
     /// @notice Validates that the lot id matches the stored lot id
-    modifier onlyValidLot(uint96 lotId_) {
+    modifier onlyValidLot(
+        uint96 lotId_
+    ) {
         if (lotId_ != lotId) revert Callback_InvalidParams();
         _;
     }
@@ -953,8 +955,7 @@ contract BaselineAxisLaunch is BaseCallback, Policy, Owned {
         } else if (case_ == 2) {
             // Case 2: Swapped in 1 wei of reserve tokens
             // We don't need to do anything here
-        }
-        else {
+        } else {
             revert Callback_Swap_InvalidCase();
         }
     }

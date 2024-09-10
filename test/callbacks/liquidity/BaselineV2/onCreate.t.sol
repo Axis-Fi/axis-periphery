@@ -124,7 +124,9 @@ contract BaselineOnCreateTest is BaselineAxisLaunchTest {
         return activeTick;
     }
 
-    function _assertTicks(int24 fixedPriceTick_) internal view {
+    function _assertTicks(
+        int24 fixedPriceTick_
+    ) internal view {
         // Get the tick from the pool
         int24 activeTick = _getPoolActiveTick();
 

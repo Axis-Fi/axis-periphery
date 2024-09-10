@@ -324,15 +324,21 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _kernel.executeAction(Actions.ActivatePolicy, _dtlBaselineAddress);
     }
 
-    function randomAddress(uint256 seed) internal view returns (address) {
+    function randomAddress(
+        uint256 seed
+    ) internal view returns (address) {
         return users[bound(seed, 0, users.length - 1)];
     }
 
-    function randomLotIdV2(uint256 seed) internal view returns (uint96) {
+    function randomLotIdV2(
+        uint256 seed
+    ) internal view returns (uint96) {
         return lotIdsV2[bound(seed, 0, lotIdsV2.length - 1)];
     }
 
-    function randomLotIdV3(uint256 seed) internal view returns (uint96) {
+    function randomLotIdV3(
+        uint256 seed
+    ) internal view returns (uint96) {
         return lotIdsV3[bound(seed, 0, lotIdsV3.length - 1)];
     }
 
@@ -461,7 +467,9 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         revert("No salt found");
     }
 
-    function toString(address _addr) internal pure returns (string memory) {
+    function toString(
+        address _addr
+    ) internal pure returns (string memory) {
         bytes32 value = bytes32(uint256(uint160(_addr)));
         bytes memory alphabet = "0123456789abcdef";
 
@@ -497,7 +505,9 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _bpoolMinter.setTransferLock(true);
     }
 
-    function _transferBaselineTokenRefund(uint256 amount_) internal {
+    function _transferBaselineTokenRefund(
+        uint256 amount_
+    ) internal {
         _disableTransferLock();
 
         // Transfer refund from auction house to the callback
@@ -517,7 +527,9 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _baseToken.approve(spender_, type(uint256).max);
     }
 
-    function toHexString(bytes32 input) internal pure returns (string memory) {
+    function toHexString(
+        bytes32 input
+    ) internal pure returns (string memory) {
         bytes16 symbols = "0123456789abcdef";
         bytes memory hex_buffer = new bytes(64 + 2);
         hex_buffer[0] = "0";

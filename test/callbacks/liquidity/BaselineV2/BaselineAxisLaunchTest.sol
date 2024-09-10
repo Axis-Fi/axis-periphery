@@ -194,12 +194,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
 
     // ========== MODIFIERS ========== //
 
-    function _setPoolInitialTickFromTick(int24 tick_) internal {
+    function _setPoolInitialTickFromTick(
+        int24 tick_
+    ) internal {
         _poolInitialTick = tick_;
         console2.log("Pool initial tick (using tick) set to: ", _poolInitialTick);
     }
 
-    function _setPoolInitialTickFromPrice(uint256 price_) internal {
+    function _setPoolInitialTickFromPrice(
+        uint256 price_
+    ) internal {
         _poolInitialTick = _getTickFromPrice(price_, _baseTokenDecimals, _isBaseTokenAddressLower);
         console2.log("Pool initial tick (using specified price) set to: ", _poolInitialTick);
     }
@@ -211,18 +215,24 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         console2.log("Pool initial tick (using auction price) set to: ", _poolInitialTick);
     }
 
-    modifier givenPoolInitialTick(int24 poolInitialTick_) {
+    modifier givenPoolInitialTick(
+        int24 poolInitialTick_
+    ) {
         _setPoolInitialTickFromTick(poolInitialTick_);
         _;
     }
 
-    function _setFloorRangeGap(int24 tickSpacingWidth_) internal {
+    function _setFloorRangeGap(
+        int24 tickSpacingWidth_
+    ) internal {
         _floorRangeGap = tickSpacingWidth_;
         console2.log("Floor range gap set to: ", _floorRangeGap);
         _createData.floorRangeGap = _floorRangeGap;
     }
 
-    modifier givenFloorRangeGap(int24 tickSpacingWidth_) {
+    modifier givenFloorRangeGap(
+        int24 tickSpacingWidth_
+    ) {
         _setFloorRangeGap(tickSpacingWidth_);
         _;
     }
@@ -356,7 +366,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _onCreate(address seller_) internal {
+    function _onCreate(
+        address seller_
+    ) internal {
         console2.log("");
         console2.log("Calling onCreate callback");
         vm.prank(address(_auctionHouse));
@@ -392,7 +404,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _onSettle(bytes memory err_) internal {
+    function _onSettle(
+        bytes memory err_
+    ) internal {
         console2.log("");
         console2.log("Calling onSettle callback");
 
@@ -423,19 +437,25 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _onCurate(uint256 curatorFee_) internal {
+    function _onCurate(
+        uint256 curatorFee_
+    ) internal {
         console2.log("");
         console2.log("Calling onCurate callback");
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorFee_, true, abi.encode(""));
     }
 
-    modifier givenOnCurate(uint256 curatorFee_) {
+    modifier givenOnCurate(
+        uint256 curatorFee_
+    ) {
         _onCurate(curatorFee_);
         _;
     }
 
-    modifier givenBPoolFeeTier(uint24 feeTier_) {
+    modifier givenBPoolFeeTier(
+        uint24 feeTier_
+    ) {
         _feeTier = feeTier_;
         _tickSpacing = _uniV3Factory.feeAmountTickSpacing(_feeTier);
         _;
@@ -448,14 +468,18 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    modifier givenBaseTokenDecimals(uint8 decimals_) {
+    modifier givenBaseTokenDecimals(
+        uint8 decimals_
+    ) {
         _baseTokenDecimals = decimals_;
 
         _setPoolInitialTickFromAuctionPrice();
         _;
     }
 
-    modifier givenFixedPrice(uint256 fixedPrice_) {
+    modifier givenFixedPrice(
+        uint256 fixedPrice_
+    ) {
         _fpbParams.price = fixedPrice_;
         console2.log("Fixed price set to: ", fixedPrice_);
 
@@ -463,22 +487,30 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    modifier givenAnchorUpperTick(int24 anchorTickU_) {
+    modifier givenAnchorUpperTick(
+        int24 anchorTickU_
+    ) {
         _createData.anchorTickU = anchorTickU_;
         console2.log("Anchor tick U set to: ", anchorTickU_);
         _;
     }
 
-    function _setAnchorTickWidth(int24 anchorTickWidth_) internal {
+    function _setAnchorTickWidth(
+        int24 anchorTickWidth_
+    ) internal {
         _createData.anchorTickWidth = anchorTickWidth_;
     }
 
-    modifier givenAnchorTickWidth(int24 anchorTickWidth_) {
+    modifier givenAnchorTickWidth(
+        int24 anchorTickWidth_
+    ) {
         _setAnchorTickWidth(anchorTickWidth_);
         _;
     }
 
-    function _scaleBaseTokenAmount(uint256 amount_) internal view returns (uint256) {
+    function _scaleBaseTokenAmount(
+        uint256 amount_
+    ) internal view returns (uint256) {
         return FixedPointMathLib.mulDivDown(amount_, 10 ** _baseTokenDecimals, _BASE_SCALE);
     }
 
@@ -517,13 +549,17 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _enableTransferLock();
     }
 
-    function _transferBaseTokenRefund(uint256 amount_) internal {
+    function _transferBaseTokenRefund(
+        uint256 amount_
+    ) internal {
         console2.log("Transferring base token refund to DTL: ", amount_);
 
         _transferBaseToken(_dtlAddress, amount_);
     }
 
-    modifier givenBaseTokenRefundIsTransferred(uint256 amount_) {
+    modifier givenBaseTokenRefundIsTransferred(
+        uint256 amount_
+    ) {
         _transferBaseTokenRefund(amount_);
         _;
     }
@@ -547,13 +583,17 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         return TickMath.getTickAtSqrtRatio(sqrtPriceX96);
     }
 
-    function _getRangeReserves(Range range_) internal view returns (uint256) {
+    function _getRangeReserves(
+        Range range_
+    ) internal view returns (uint256) {
         Position memory position = _baseToken.getPosition(range_);
 
         return position.reserves;
     }
 
-    function _getRangeBAssets(Range range_) internal view returns (uint256) {
+    function _getRangeBAssets(
+        Range range_
+    ) internal view returns (uint256) {
         Position memory position = _baseToken.getPosition(range_);
 
         return position.bAssets;
@@ -564,25 +604,35 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _bPoolMinter.mint(account_, amount_);
     }
 
-    function _setPoolPercent(uint24 poolPercent_) internal {
+    function _setPoolPercent(
+        uint24 poolPercent_
+    ) internal {
         _createData.poolPercent = poolPercent_;
     }
 
-    modifier givenPoolPercent(uint24 poolPercent_) {
+    modifier givenPoolPercent(
+        uint24 poolPercent_
+    ) {
         _setPoolPercent(poolPercent_);
         _;
     }
 
-    function _setFloorReservesPercent(uint24 floorReservesPercent_) internal {
+    function _setFloorReservesPercent(
+        uint24 floorReservesPercent_
+    ) internal {
         _createData.floorReservesPercent = floorReservesPercent_;
     }
 
-    modifier givenFloorReservesPercent(uint24 floorReservesPercent_) {
+    modifier givenFloorReservesPercent(
+        uint24 floorReservesPercent_
+    ) {
         _setFloorReservesPercent(floorReservesPercent_);
         _;
     }
 
-    function _roundToTickSpacingUp(int24 activeTick_) internal view returns (int24) {
+    function _roundToTickSpacingUp(
+        int24 activeTick_
+    ) internal view returns (int24) {
         // Rounds down
         int24 roundedTick = (activeTick_ / _tickSpacing) * _tickSpacing;
 
@@ -606,7 +656,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         );
     }
 
-    function _setCuratorFeePercent(uint48 curatorFeePercent_) internal {
+    function _setCuratorFeePercent(
+        uint48 curatorFeePercent_
+    ) internal {
         _curatorFeePercent = curatorFeePercent_;
 
         // Update mock
@@ -616,12 +668,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _curatorFee = _LOT_CAPACITY * _curatorFeePercent / 100e2;
     }
 
-    modifier givenCuratorFeePercent(uint48 curatorFeePercent_) {
+    modifier givenCuratorFeePercent(
+        uint48 curatorFeePercent_
+    ) {
         _setCuratorFeePercent(curatorFeePercent_);
         _;
     }
 
-    function _setProtocolFeePercent(uint48 protocolFeePercent_) internal {
+    function _setProtocolFeePercent(
+        uint48 protocolFeePercent_
+    ) internal {
         _protocolFeePercent = protocolFeePercent_;
 
         // Update mock
@@ -631,12 +687,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _protocolFee = _proceeds * _protocolFeePercent / 100e2;
     }
 
-    modifier givenProtocolFeePercent(uint48 protocolFeePercent_) {
+    modifier givenProtocolFeePercent(
+        uint48 protocolFeePercent_
+    ) {
         _setProtocolFeePercent(protocolFeePercent_);
         _;
     }
 
-    function _setReferrerFeePercent(uint48 referrerFeePercent_) internal {
+    function _setReferrerFeePercent(
+        uint48 referrerFeePercent_
+    ) internal {
         _referrerFeePercent = referrerFeePercent_;
 
         // Update mock
@@ -646,7 +706,9 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _referrerFee = _proceeds * _referrerFeePercent / 100e2;
     }
 
-    modifier givenReferrerFeePercent(uint48 referrerFeePercent_) {
+    modifier givenReferrerFeePercent(
+        uint48 referrerFeePercent_
+    ) {
         _setReferrerFeePercent(referrerFeePercent_);
         _;
     }
@@ -673,12 +735,16 @@ abstract contract BaselineAxisLaunchTest is Test, Permit2User, WithSalts, TestCo
         _;
     }
 
-    function _setPoolTargetTick(int24 poolTargetTick_) internal {
+    function _setPoolTargetTick(
+        int24 poolTargetTick_
+    ) internal {
         _createData.poolTargetTick = poolTargetTick_;
         console2.log("Pool target tick set to: ", poolTargetTick_);
     }
 
-    modifier givenPoolTargetTick(int24 poolTargetTick_) {
+    modifier givenPoolTargetTick(
+        int24 poolTargetTick_
+    ) {
         _setPoolTargetTick(poolTargetTick_);
         _;
     }
