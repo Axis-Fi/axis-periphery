@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit immediately on error
+set -e
+
 echo ""
 echo "*** Removing submodules"
 rm -rf lib/
@@ -19,7 +22,7 @@ echo "*** Restoring submodule commits"
 
 echo ""
 echo "baseline"
-cd lib/baseline-v2/ && git checkout 8950018baec27d6497fba409cb361a596535447d  && cd ../..
+cd lib/baseline-v2/ && git checkout 8950018baec27d6497fba409cb361a596535447d && cd ../..
 
 echo ""
 echo "*** Applying patch to Baseline submodule"
