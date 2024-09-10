@@ -35,6 +35,9 @@ ignore = [
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
+[soldeer]
+remappings_generate = false # Disable replacing existing/custom remappings
+
 [dependencies]
 forge-std = { version = "1.9.1" }
 axis-core = { version = "1.0.1" }
