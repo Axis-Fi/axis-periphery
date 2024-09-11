@@ -33,7 +33,9 @@ abstract contract V2PoolHandler is BeforeAfter, Assertions {
         pool.sync();
     }
 
-    function V2PoolHandler_skim(uint256 userIndexSeed) public {
+    function V2PoolHandler_skim(
+        uint256 userIndexSeed
+    ) public {
         address to = randomAddress(userIndexSeed);
         address pairAddress = _uniV2Factory.getPair(address(_baseToken), address(_quoteToken));
         if (pairAddress == address(0)) return;

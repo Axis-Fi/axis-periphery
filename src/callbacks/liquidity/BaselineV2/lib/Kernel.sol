@@ -36,19 +36,27 @@ type Keycode is bytes5;
 error TargetNotAContract(address target_);
 error InvalidKeycode(Keycode keycode_);
 
-function toKeycode(bytes5 keycode_) pure returns (Keycode) {
+function toKeycode(
+    bytes5 keycode_
+) pure returns (Keycode) {
     return Keycode.wrap(keycode_);
 }
 
-function fromKeycode(Keycode keycode_) pure returns (bytes5) {
+function fromKeycode(
+    Keycode keycode_
+) pure returns (bytes5) {
     return Keycode.unwrap(keycode_);
 }
 
-function ensureContract(address target_) view {
+function ensureContract(
+    address target_
+) view {
     if (target_.code.length == 0) revert TargetNotAContract(target_);
 }
 
-function ensureValidKeycode(Keycode keycode_) pure {
+function ensureValidKeycode(
+    Keycode keycode_
+) pure {
     bytes5 unwrapped = Keycode.unwrap(keycode_);
     for (uint256 i = 0; i < 5;) {
         bytes1 char = unwrapped[i];
@@ -69,7 +77,9 @@ abstract contract KernelAdapter {
 
     Kernel public kernel;
 
-    constructor(Kernel kernel_) {
+    constructor(
+        Kernel kernel_
+    ) {
         kernel = kernel_;
     }
 
@@ -80,7 +90,9 @@ abstract contract KernelAdapter {
     }
 
     /// @notice Function used by kernel when migrating to a new kernel.
-    function changeKernel(Kernel newKernel_) external onlyKernel {
+    function changeKernel(
+        Kernel newKernel_
+    ) external onlyKernel {
         kernel = newKernel_;
     }
 }
@@ -91,7 +103,9 @@ abstract contract KernelAdapter {
 abstract contract Module is KernelAdapter {
     error Module_PolicyNotPermitted(address policy_);
 
-    constructor(Kernel kernel_) KernelAdapter(kernel_) {}
+    constructor(
+        Kernel kernel_
+    ) KernelAdapter(kernel_) {}
 
     /// @notice Modifier to restrict which policies have access to module functions.
     modifier permissioned() {
@@ -123,7 +137,9 @@ abstract contract Policy is KernelAdapter {
     error Policy_ModuleDoesNotExist(Keycode keycode_);
     error Policy_WrongModuleVersion(bytes expected_);
 
-    constructor(Kernel kernel_) KernelAdapter(kernel_) {}
+    constructor(
+        Kernel kernel_
+    ) KernelAdapter(kernel_) {}
 
     /// @notice Easily accessible indicator for if a policy is activated or not.
     function isActive() external view returns (bool) {
@@ -131,7 +147,9 @@ abstract contract Policy is KernelAdapter {
     }
 
     /// @notice Function to grab module address from a given keycode.
-    function getModuleAddress(Keycode keycode_) internal view returns (address) {
+    function getModuleAddress(
+        Keycode keycode_
+    ) internal view returns (address) {
         address moduleForKeycode = address(kernel.getModuleForKeycode(keycode_));
         if (moduleForKeycode == address(0)) revert Policy_ModuleDoesNotExist(keycode_);
         return moduleForKeycode;
@@ -213,7 +231,9 @@ contract Kernel {
         _;
     }
 
-    function isPolicyActive(Policy policy_) public view returns (bool) {
+    function isPolicyActive(
+        Policy policy_
+    ) public view returns (bool) {
         return activePolicies.length > 0 && activePolicies[getPolicyIndex[policy_]] == policy_;
     }
 
@@ -243,7 +263,9 @@ contract Kernel {
         emit ActionExecuted(action_, target_);
     }
 
-    function _installModule(Module newModule_) internal {
+    function _installModule(
+        Module newModule_
+    ) internal {
         Keycode keycode = newModule_.KEYCODE();
 
         if (address(getModuleForKeycode[keycode]) != address(0)) {
@@ -257,7 +279,9 @@ contract Kernel {
         newModule_.INIT();
     }
 
-    function _upgradeModule(Module newModule_) internal {
+    function _upgradeModule(
+        Module newModule_
+    ) internal {
         Keycode keycode = newModule_.KEYCODE();
         Module oldModule = getModuleForKeycode[keycode];
 
@@ -274,7 +298,9 @@ contract Kernel {
         _reconfigurePolicies(keycode);
     }
 
-    function _activatePolicy(Policy policy_) internal {
+    function _activatePolicy(
+        Policy policy_
+    ) internal {
         if (isPolicyActive(policy_)) revert Kernel_PolicyAlreadyActivated(address(policy_));
 
         // Add policy to list of active policies
@@ -301,7 +327,9 @@ contract Kernel {
         _setPolicyPermissions(policy_, requests, true);
     }
 
-    function _deactivatePolicy(Policy policy_) internal {
+    function _deactivatePolicy(
+        Policy policy_
+    ) internal {
         if (!isPolicyActive(policy_)) revert Kernel_PolicyNotActivated(address(policy_));
 
         // Revoke permissions
@@ -324,7 +352,9 @@ contract Kernel {
     /// @notice All functionality will move to the new kernel. WARNING: ACTION WILL BRICK THIS KERNEL.
     /// @dev    New kernel must add in all of the modules and policies via executeAction.
     /// @dev    NOTE: Data does not get cleared from this kernel.
-    function _migrateKernel(Kernel newKernel_) internal {
+    function _migrateKernel(
+        Kernel newKernel_
+    ) internal {
         uint256 keycodeLen = allKeycodes.length;
         for (uint256 i; i < keycodeLen;) {
             Module module = Module(getModuleForKeycode[allKeycodes[i]]);
@@ -346,7 +376,9 @@ contract Kernel {
         }
     }
 
-    function _reconfigurePolicies(Keycode keycode_) internal {
+    function _reconfigurePolicies(
+        Keycode keycode_
+    ) internal {
         Policy[] memory dependents = moduleDependents[keycode_];
         uint256 depLength = dependents.length;
 
@@ -377,7 +409,9 @@ contract Kernel {
         }
     }
 
-    function _pruneFromDependents(Policy policy_) internal {
+    function _pruneFromDependents(
+        Policy policy_
+    ) internal {
         Keycode[] memory dependencies = policy_.configureDependencies();
         uint256 depcLength = dependencies.length;
 

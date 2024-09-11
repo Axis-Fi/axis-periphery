@@ -26,7 +26,9 @@ contract BaselineCappedAllowlistOnBidTest is BaselineCappedAllowlistTest {
 
     // ========== MODIFIER ========== //
 
-    modifier givenMerkleProof(bytes32 merkleProof_) {
+    modifier givenMerkleProof(
+        bytes32 merkleProof_
+    ) {
         bytes32[] memory proof = new bytes32[](1);
         proof[0] = merkleProof_;
 
@@ -34,7 +36,9 @@ contract BaselineCappedAllowlistOnBidTest is BaselineCappedAllowlistTest {
         _;
     }
 
-    function _onBid(uint256 bidAmount_) internal {
+    function _onBid(
+        uint256 bidAmount_
+    ) internal {
         // Call the callback
         vm.prank(address(_auctionHouse));
         _dtl.onBid(_lotId, _BID_ID, _BUYER, bidAmount_, abi.encode(_proof));

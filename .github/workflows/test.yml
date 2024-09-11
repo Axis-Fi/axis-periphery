@@ -17,9 +17,11 @@ jobs:
     name: Foundry project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Git Checkout
+        uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
+          persist-credentials: false
 
       - name: Install Node.js
         uses: actions/setup-node@v2
@@ -33,6 +35,15 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+
+      # Providing the SSH key to the checkout action does not work with our config.
+      # It likely is because of the install script wiping the lib/ directory.
+      # For this reason, we disable submodule checkouts above, set up the SSH agent
+      # with the provided key, and then run the install script.
+      - name: Setup SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Install Dependencies
         run: |

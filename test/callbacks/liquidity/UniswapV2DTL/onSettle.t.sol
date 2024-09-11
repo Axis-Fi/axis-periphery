@@ -250,7 +250,9 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _;
     }
 
-    modifier givenUnboundedPoolPercent(uint24 percent_) {
+    modifier givenUnboundedPoolPercent(
+        uint24 percent_
+    ) {
         // Bound the percent
         uint24 percent = uint24(bound(percent_, 10e2, 100e2));
 
@@ -259,7 +261,9 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _;
     }
 
-    modifier givenUnboundedOnCurate(uint96 curationPayout_) {
+    modifier givenUnboundedOnCurate(
+        uint96 curationPayout_
+    ) {
         // Bound the value
         _curatorPayout = uint96(bound(curationPayout_, 1e17, _lotCapacity));
 
@@ -268,7 +272,9 @@ contract UniswapV2DirectToLiquidityOnSettleTest is UniswapV2DirectToLiquidityTes
         _;
     }
 
-    modifier whenRefundIsBounded(uint96 refund_) {
+    modifier whenRefundIsBounded(
+        uint96 refund_
+    ) {
         // Bound the refund
         _refund = uint96(bound(refund_, 1e17, 5e18));
         _;

@@ -19,13 +19,13 @@ import {IUniswapV3Pool} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
-import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {SqrtPriceMath} from "../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 import {BaselineAxisLaunch} from
-    "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
+    "../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {BaseDirectToLiquidity} from "../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-1.0.1-test/modules/Auction/MockBatchAuctionModule.sol";
@@ -83,6 +83,7 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             floorRangeGap: 0, //_FLOOR_RANGE_GAP,
             anchorTickU: 11_000, //_ANCHOR_TICK_U,
             anchorTickWidth: 10, //_ANCHOR_TICK_WIDTH,
+            poolTargetTick: 10_986, // Default tick for the auction
             allowlistParams: abi.encode("")
         });
 
@@ -299,17 +300,23 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
                                     HELPERS
     //////////////////////////////////////////////////////////////////////////*/
 
-    function _scaleBaseTokenAmount(uint256 amount_) internal view returns (uint256) {
+    function _scaleBaseTokenAmount(
+        uint256 amount_
+    ) internal view returns (uint256) {
         return FixedPointMathLib.mulDivDown(amount_, 10 ** _baseTokenDecimals, _BASE_SCALE);
     }
 
-    function _getRangeBAssets(Range range_) internal returns (uint256) {
+    function _getRangeBAssets(
+        Range range_
+    ) internal returns (uint256) {
         Position memory position = _baselineToken.getPosition(range_);
 
         return position.bAssets;
     }
 
-    function _getRangeReserves(Range range_) internal returns (uint256) {
+    function _getRangeReserves(
+        Range range_
+    ) internal returns (uint256) {
         Position memory position = _baselineToken.getPosition(range_);
 
         return position.reserves;
@@ -439,7 +446,7 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
             0,
             "AX-49: After BaselineDTL_onSettle floor bAssets should equal 0"
         );
-        equal(
+        gt(
             _getRangeBAssets(Range.ANCHOR),
             0,
             "AX-50: After BaselineDTL_onSettle anchor bAssets should be greater than 0"

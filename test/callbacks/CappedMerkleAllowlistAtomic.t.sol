@@ -233,7 +233,9 @@ contract CappedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestCo
         _onPurchase(_lotId, _BUYER, 1);
     }
 
-    function test_onPurchase(uint256 amount_) public givenAtomicOnCreate {
+    function test_onPurchase(
+        uint256 amount_
+    ) public givenAtomicOnCreate {
         uint256 amount = bound(amount_, 1, _BUYER_LIMIT);
 
         _onPurchase(_lotId, _BUYER, amount);

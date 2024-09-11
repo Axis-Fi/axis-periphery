@@ -26,7 +26,9 @@ abstract contract WithDeploySequence is Script, WithEnvironment {
 
     // === Higher-level script functions === //
 
-    function _getDeploymentKey(string memory sequenceName_) internal view returns (string memory) {
+    function _getDeploymentKey(
+        string memory sequenceName_
+    ) internal view returns (string memory) {
         return string.concat(
             sequenceName_, _getSequenceStringOrFallback(sequenceName_, "deploymentKeySuffix", "")
         );

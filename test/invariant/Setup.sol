@@ -27,20 +27,19 @@ import {UniswapV3Factory} from "../lib/uniswap-v3/UniswapV3Factory.sol";
 import {WETH9} from "./modules/WETH.sol";
 import {SwapRouter} from "./modules/uniswapv3-periphery/SwapRouter.sol";
 import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
-import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {SqrtPriceMath} from "../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
-import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
-import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
+import {BaseDirectToLiquidity} from "../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV2DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-1.0.1-test/modules/Auction/MockBatchAuctionModule.sol";
 
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.1/modules/Keycode.sol";
 
-import {BaselineAxisLaunch} from
-    "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 
 // Baseline
 import {Kernel, Actions, Module, toKeycode as toBaselineKeycode} from "@baseline/Kernel.sol";
@@ -325,15 +324,21 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _kernel.executeAction(Actions.ActivatePolicy, _dtlBaselineAddress);
     }
 
-    function randomAddress(uint256 seed) internal view returns (address) {
+    function randomAddress(
+        uint256 seed
+    ) internal view returns (address) {
         return users[bound(seed, 0, users.length - 1)];
     }
 
-    function randomLotIdV2(uint256 seed) internal view returns (uint96) {
+    function randomLotIdV2(
+        uint256 seed
+    ) internal view returns (uint96) {
         return lotIdsV2[bound(seed, 0, lotIdsV2.length - 1)];
     }
 
-    function randomLotIdV3(uint256 seed) internal view returns (uint96) {
+    function randomLotIdV3(
+        uint256 seed
+    ) internal view returns (uint96) {
         return lotIdsV3[bound(seed, 0, lotIdsV3.length - 1)];
     }
 
@@ -462,7 +467,9 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         revert("No salt found");
     }
 
-    function toString(address _addr) internal pure returns (string memory) {
+    function toString(
+        address _addr
+    ) internal pure returns (string memory) {
         bytes32 value = bytes32(uint256(uint160(_addr)));
         bytes memory alphabet = "0123456789abcdef";
 
@@ -490,11 +497,25 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _baselineToken.mint(account_, amount_);
     }
 
-    function _transferBaselineTokenRefund(uint256 amount_) internal {
+    function _disableTransferLock() internal {
+        _bpoolMinter.setTransferLock(false);
+    }
+
+    function _enableTransferLock() internal {
+        _bpoolMinter.setTransferLock(true);
+    }
+
+    function _transferBaselineTokenRefund(
+        uint256 amount_
+    ) internal {
+        _disableTransferLock();
+
         // Transfer refund from auction house to the callback
         // We transfer instead of minting to not affect the supply
         vm.prank(address(_baselineAuctionHouse));
         _baselineToken.transfer(_dtlBaselineAddress, amount_);
+
+        _enableTransferLock();
     }
 
     function givenAddressHasBaseTokenAllowance(
@@ -506,7 +527,9 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _baseToken.approve(spender_, type(uint256).max);
     }
 
-    function toHexString(bytes32 input) internal pure returns (string memory) {
+    function toHexString(
+        bytes32 input
+    ) internal pure returns (string memory) {
         bytes16 symbols = "0123456789abcdef";
         bytes memory hex_buffer = new bytes(64 + 2);
         hex_buffer[0] = "0";

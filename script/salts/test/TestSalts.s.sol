@@ -40,7 +40,9 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     string internal constant _ALLOCATED_MERKLE_ALLOWLIST = "AllocatedMerkleAllowlist";
     string internal constant _TOKEN_ALLOWLIST = "TokenAllowlist";
 
-    function _setUp(string calldata chain_) internal {
+    function _setUp(
+        string calldata chain_
+    ) internal {
         _loadEnv(chain_);
         _createBytecodeDirectory();
     }

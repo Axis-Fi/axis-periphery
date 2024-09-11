@@ -4,7 +4,9 @@ pragma solidity >=0.8.0;
 library TimeslotLib {
     /// @notice uint256 is the unix timestamp at the end of the day
     /// @param timestamp_ Unix timestamp
-    function getTimeslot(uint256 timestamp_) internal pure returns (uint256) {
+    function getTimeslot(
+        uint256 timestamp_
+    ) internal pure returns (uint256) {
         return timestamp_ - (timestamp_ % 1 days) + 1 days - 1;
     }
 

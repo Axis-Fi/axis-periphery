@@ -30,7 +30,9 @@ interface ICREDTv1 {
     }
 
     /// @notice List of aggregate credits and collateral that must be defaulte when a timeslot is reached
-    function defaultList(uint256) external view returns (uint256 credit, uint256 collateral);
+    function defaultList(
+        uint256
+    ) external view returns (uint256 credit, uint256 collateral);
 
     /// @notice Last timeslot that was defaulted, acts as queue iterator
     function lastDefaultedTimeslot() external view returns (uint256);

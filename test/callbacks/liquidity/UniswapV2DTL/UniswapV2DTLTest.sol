@@ -169,22 +169,30 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _setMaxSlippage(uint24 maxSlippage_) internal {
+    function _setMaxSlippage(
+        uint24 maxSlippage_
+    ) internal {
         _uniswapV2CreateParams.maxSlippage = maxSlippage_;
         _dtlCreateParams.implParams = abi.encode(_uniswapV2CreateParams);
     }
 
-    modifier givenMaxSlippage(uint24 maxSlippage_) {
+    modifier givenMaxSlippage(
+        uint24 maxSlippage_
+    ) {
         _setMaxSlippage(maxSlippage_);
         _;
     }
 
-    modifier givenQuoteTokenDecimals(uint8 decimals_) {
+    modifier givenQuoteTokenDecimals(
+        uint8 decimals_
+    ) {
         _quoteToken = new MockERC20("Quote Token", "QT", decimals_);
         _;
     }
 
-    modifier givenBaseTokenDecimals(uint8 decimals_) {
+    modifier givenBaseTokenDecimals(
+        uint8 decimals_
+    ) {
         _baseToken = new MockERC20("Base Token", "BT", decimals_);
 
         // Scale the capacity
@@ -229,7 +237,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         return _auctionHouse.auction(routingParams, auctionParams, "");
     }
 
-    function _createLot(address seller_) internal returns (uint96 lotId) {
+    function _createLot(
+        address seller_
+    ) internal returns (uint96 lotId) {
         return _createLot(seller_, "");
     }
 
@@ -238,7 +248,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _performOnCreate(address seller_) internal {
+    function _performOnCreate(
+        address seller_
+    ) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCreate(
             _lotId,
@@ -255,12 +267,16 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnCreate(_SELLER);
     }
 
-    function _performOnCurate(uint96 curatorPayout_) internal {
+    function _performOnCurate(
+        uint96 curatorPayout_
+    ) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorPayout_, false, abi.encode(""));
     }
 
-    modifier givenOnCurate(uint96 curatorPayout_) {
+    modifier givenOnCurate(
+        uint96 curatorPayout_
+    ) {
         _performOnCurate(curatorPayout_);
         _;
     }
@@ -274,7 +290,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnCancel(_lotId, 0);
     }
 
-    function _performOnSettle(uint96 lotId_) internal {
+    function _performOnSettle(
+        uint96 lotId_
+    ) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
     }
@@ -283,21 +301,29 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnSettle(_lotId);
     }
 
-    function _setPoolPercent(uint24 percent_) internal {
+    function _setPoolPercent(
+        uint24 percent_
+    ) internal {
         _dtlCreateParams.poolPercent = percent_;
     }
 
-    modifier givenPoolPercent(uint24 percent_) {
+    modifier givenPoolPercent(
+        uint24 percent_
+    ) {
         _setPoolPercent(percent_);
         _;
     }
 
-    modifier givenVestingStart(uint48 start_) {
+    modifier givenVestingStart(
+        uint48 start_
+    ) {
         _dtlCreateParams.vestingStart = start_;
         _;
     }
 
-    modifier givenVestingExpiry(uint48 end_) {
+    modifier givenVestingExpiry(
+        uint48 end_
+    ) {
         _dtlCreateParams.vestingExpiry = end_;
         _;
     }

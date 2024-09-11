@@ -38,7 +38,9 @@ contract BaselineAllowlistTest is BaselineAxisLaunchTest {
         _;
     }
 
-    modifier givenAllowlistParams(bytes32 merkleRoot_) {
+    modifier givenAllowlistParams(
+        bytes32 merkleRoot_
+    ) {
         _createData.allowlistParams = abi.encode(merkleRoot_);
         _;
     }

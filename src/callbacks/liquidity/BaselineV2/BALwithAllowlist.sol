@@ -136,7 +136,9 @@ contract BALwithAllowlist is BaselineAxisLaunch {
     ///         - The auction has been completed
     ///
     /// @param  merkleRoot_ The new merkle root
-    function setMerkleRoot(bytes32 merkleRoot_) external onlyOwner {
+    function setMerkleRoot(
+        bytes32 merkleRoot_
+    ) external onlyOwner {
         // Revert if onCreate has not been called
         if (lotId == type(uint96).max) {
             revert Callback_InvalidState();
