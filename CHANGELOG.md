@@ -2,7 +2,8 @@
 
 ## 1.0.1
 
-- Add additional `poolTargetTick` parameter to Baseline callbacks.
+- Baseline: Add additional `poolTargetTick` parameter to callbacks.
+- Baseline: Adjust maximum floorReservesPercent to 99%.
 
 ## 1.0.0
 
