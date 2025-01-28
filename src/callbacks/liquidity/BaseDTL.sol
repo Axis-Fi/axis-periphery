@@ -232,7 +232,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     ///             - The lot has already been completed
     ///
     /// @param      lotId_          The lot ID
-    function _onCancel(uint96 lotId_, uint256, bool, bytes calldata) internal override {
+    function _onCancel(uint96 lotId_, uint256, bool, bytes calldata) internal virtual override {
         // Check that the lot is active
         if (!lotConfiguration[lotId_].active) {
             revert Callback_AlreadyComplete();
@@ -258,7 +258,7 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         uint256 curatorPayout_,
         bool,
         bytes calldata
-    ) internal override {
+    ) internal virtual override {
         // Check that the lot is active
         if (!lotConfiguration[lotId_].active) {
             revert Callback_AlreadyComplete();
@@ -278,14 +278,14 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
         uint256,
         bool,
         bytes calldata
-    ) internal pure override {
+    ) internal virtual override {
         // Not implemented
         revert Callback_NotImplemented();
     }
 
     /// @notice     Callback for a bid
     /// @dev        Not implemented
-    function _onBid(uint96, uint64, address, uint256, bytes calldata) internal pure override {
+    function _onBid(uint96, uint64, address, uint256, bytes calldata) internal virtual override {
         // Not implemented
         revert Callback_NotImplemented();
     }
