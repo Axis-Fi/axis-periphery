@@ -116,6 +116,9 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
         bytes calldata callbackData_
     ) internal override {
         // Validate that the merkle root has been set
+        if (lotMerkleRoot[lotId_] == bytes32(0)) {
+            revert Callback_InvalidState();
+        }
 
         // Validate that the buyer is allowed to participate
         uint256 allocatedAmount = _canParticipate(lotId_, buyer_, callbackData_);
