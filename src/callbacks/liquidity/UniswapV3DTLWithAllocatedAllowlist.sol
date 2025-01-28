@@ -6,6 +6,7 @@ import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 
 import {UniswapV3DirectToLiquidity} from "./UniswapV3DTL.sol";
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
+import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
 
 /// @notice Allocated allowlist version of the Uniswap V3 Direct To Liquidity callback.
 /// @notice This version allows for each address in the Merkle tree to have a per-address amount of quote tokens they can spend.
@@ -47,15 +48,32 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
     // onBid: true
     // onSettle: true
     // receiveQuoteTokens: true
-    // sendBaseTokens: true
-    // Contract prefix should be: 11101111 = 0xEF
+    // sendBaseTokens: false
+    // Contract prefix should be: 11101110 = 0xEE
 
     constructor(
         address auctionHouse_,
         address uniV3Factory_,
         address gUniFactory_,
         address owner_
-    ) UniswapV3DirectToLiquidity(auctionHouse_, uniV3Factory_, gUniFactory_) Owned(owner_) {}
+    )
+        UniswapV3DirectToLiquidity(
+            auctionHouse_,
+            uniV3Factory_,
+            gUniFactory_,
+            Callbacks.Permissions({
+                onCreate: true,
+                onCancel: true,
+                onCurate: true,
+                onPurchase: false,
+                onBid: true,
+                onSettle: true,
+                receiveQuoteTokens: true,
+                sendBaseTokens: false
+            })
+        )
+        Owned(owner_)
+    {}
 
     // ========== CALLBACKS ========== //
 
@@ -78,7 +96,9 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
         lotSeller[lotId_] = seller_;
 
         // Pass to the UniswapV3DTL implementation
-        super.__onCreate(lotId_, seller_, baseToken_, quoteToken_, capacity_, prefund_, callbackData_);
+        super.__onCreate(
+            lotId_, seller_, baseToken_, quoteToken_, capacity_, prefund_, callbackData_
+        );
     }
 
     /// @inheritdoc BaseDirectToLiquidity
@@ -158,7 +178,7 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
     ///         - The auction has been completed
     ///
     /// @param  merkleRoot_ The new merkle root
-    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external onlyOwner {
+    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external {
         DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
 
         // Validate that onCreate has been called for this lot
@@ -174,11 +194,6 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
         // Validate that the caller is the seller
         if (msg.sender != lotSeller[lotId_]) {
             revert Callback_NotAuthorized();
-        }
-
-        // Validate that the merkle root is of the correct length
-        if (merkleRoot_.length != 32) {
-            revert Callback_InvalidParams();
         }
 
         lotMerkleRoot[lotId_] = merkleRoot_;
