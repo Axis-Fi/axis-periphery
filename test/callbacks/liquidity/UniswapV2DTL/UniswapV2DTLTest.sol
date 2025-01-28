@@ -128,9 +128,21 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     }
 
     modifier givenCallbackIsCreated() {
+        Callbacks.Permissions memory permissions = Callbacks.Permissions({
+            onCreate: true,
+            onCancel: true,
+            onCurate: true,
+            onPurchase: false,
+            onBid: false,
+            onSettle: true,
+            receiveQuoteTokens: true,
+            sendBaseTokens: false
+        });
+
         // Get the salt
-        bytes memory args =
-            abi.encode(address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router));
+        bytes memory args = abi.encode(
+            address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router), permissions
+        );
         bytes32 salt = _getTestSalt(
             "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args
         );
@@ -139,19 +151,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
         _dtl = new UniswapV2DirectToLiquidity{salt: salt}(
-            address(_auctionHouse),
-            address(_uniV2Factory),
-            address(_uniV2Router),
-            Callbacks.Permissions({
-                onCreate: true,
-                onCancel: true,
-                onCurate: true,
-                onPurchase: false,
-                onBid: false,
-                onSettle: true,
-                receiveQuoteTokens: true,
-                sendBaseTokens: false
-            })
+            address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router), permissions
         );
         vm.stopBroadcast();
 
