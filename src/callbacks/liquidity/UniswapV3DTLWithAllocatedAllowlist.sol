@@ -93,7 +93,7 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
         address buyer_,
         uint256 amount_,
         bytes calldata callbackData_
-    ) internal pure override {
+    ) internal override {
         // Validate that the buyer is allowed to participate
         uint256 allocatedAmount = _canParticipate(lotId_, buyer_, callbackData_);
 
