@@ -193,7 +193,21 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     }
 
     function generateUniswapV2DirectToLiquidity() public {
-        bytes memory args = abi.encode(_AUCTION_HOUSE, _UNISWAP_V2_FACTORY, _UNISWAP_V2_ROUTER);
+        bytes memory args = abi.encode(
+            _AUCTION_HOUSE,
+            _UNISWAP_V2_FACTORY,
+            _UNISWAP_V2_ROUTER,
+            Callbacks.Permissions({
+                onCreate: true,
+                onCancel: true,
+                onCurate: true,
+                onPurchase: false,
+                onBid: false,
+                onSettle: true,
+                receiveQuoteTokens: true,
+                sendBaseTokens: false
+            })
+        );
         bytes memory contractCode = type(UniswapV2DirectToLiquidity).creationCode;
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode("UniswapV2DirectToLiquidity", contractCode, args);
@@ -201,7 +215,21 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     }
 
     function generateUniswapV3DirectToLiquidity() public {
-        bytes memory args = abi.encode(_AUCTION_HOUSE, _UNISWAP_V3_FACTORY, _GUNI_FACTORY);
+        bytes memory args = abi.encode(
+            _AUCTION_HOUSE,
+            _UNISWAP_V3_FACTORY,
+            _GUNI_FACTORY,
+            Callbacks.Permissions({
+                onCreate: true,
+                onCancel: true,
+                onCurate: true,
+                onPurchase: false,
+                onBid: false,
+                onSettle: true,
+                receiveQuoteTokens: true,
+                sendBaseTokens: false
+            })
+        );
         bytes memory contractCode = type(UniswapV3DirectToLiquidity).creationCode;
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode("UniswapV3DirectToLiquidity", contractCode, args);

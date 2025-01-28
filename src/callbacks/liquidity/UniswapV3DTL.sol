@@ -19,6 +19,7 @@ import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
 
 // Callbacks
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
+import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
 
 /// @title      UniswapV3DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V3 pool
@@ -69,11 +70,22 @@ contract UniswapV3DirectToLiquidity is BaseDirectToLiquidity {
 
     // ========== CONSTRUCTOR ========== //
 
+    // Default permissions:
+    // onCreate: true
+    // onCancel: true
+    // onCurate: true
+    // onPurchase: false
+    // onBid: false
+    // onSettle: true
+    // receiveQuoteTokens: true
+    // sendBaseTokens: false
+
     constructor(
         address auctionHouse_,
         address uniV3Factory_,
-        address gUniFactory_
-    ) BaseDirectToLiquidity(auctionHouse_) {
+        address gUniFactory_,
+        Callbacks.Permissions memory permissions_
+    ) BaseDirectToLiquidity(auctionHouse_, permissions_) {
         if (uniV3Factory_ == address(0)) {
             revert Callback_Params_InvalidAddress();
         }

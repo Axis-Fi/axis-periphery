@@ -94,22 +94,9 @@ abstract contract BaseDirectToLiquidity is BaseCallback {
     // ========== CONSTRUCTOR ========== //
 
     constructor(
-        address auctionHouse_
-    )
-        BaseCallback(
-            auctionHouse_,
-            Callbacks.Permissions({
-                onCreate: true,
-                onCancel: true,
-                onCurate: true,
-                onPurchase: false,
-                onBid: false,
-                onSettle: true,
-                receiveQuoteTokens: true,
-                sendBaseTokens: false
-            })
-        )
-    {}
+        address auctionHouse_,
+        Callbacks.Permissions memory permissions_
+    ) BaseCallback(auctionHouse_, permissions_) {}
 
     // ========== CALLBACK FUNCTIONS ========== //
 

@@ -286,11 +286,22 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
             "UniswapV2Router.factory() does not match given Uniswap V2 factory address"
         );
 
+        Callbacks.Permissions memory permissions = Callbacks.Permissions({
+            onCreate: true,
+            onCancel: true,
+            onCurate: true,
+            onPurchase: false,
+            onBid: false,
+            onSettle: true,
+            receiveQuoteTokens: true,
+            sendBaseTokens: false
+        });
+
         // Get the salt
         bytes32 salt_ = _getSalt(
             sequenceName_,
             type(UniswapV2DirectToLiquidity).creationCode,
-            abi.encode(atomicAuctionHouse, uniswapV2Factory, uniswapV2Router)
+            abi.encode(atomicAuctionHouse, uniswapV2Factory, uniswapV2Router, permissions)
         );
 
         // Revert if the salt is not set
@@ -302,7 +313,7 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         vm.broadcast();
         UniswapV2DirectToLiquidity cbAtomicUniswapV2Dtl = new UniswapV2DirectToLiquidity{
             salt: salt_
-        }(atomicAuctionHouse, uniswapV2Factory, uniswapV2Router);
+        }(atomicAuctionHouse, uniswapV2Factory, uniswapV2Router, permissions);
         console2.log("");
         console2.log("    deployed at:", address(cbAtomicUniswapV2Dtl));
 
@@ -330,11 +341,22 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
             "UniswapV2Router.factory() does not match given Uniswap V2 factory address"
         );
 
+        Callbacks.Permissions memory permissions = Callbacks.Permissions({
+            onCreate: true,
+            onCancel: true,
+            onCurate: true,
+            onPurchase: false,
+            onBid: false,
+            onSettle: true,
+            receiveQuoteTokens: true,
+            sendBaseTokens: false
+        });
+
         // Get the salt
         bytes32 salt_ = _getSalt(
             deploymentKey,
             type(UniswapV2DirectToLiquidity).creationCode,
-            abi.encode(batchAuctionHouse, uniswapV2Factory, uniswapV2Router)
+            abi.encode(batchAuctionHouse, uniswapV2Factory, uniswapV2Router, permissions)
         );
 
         // Revert if the salt is not set
@@ -345,7 +367,7 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
 
         vm.broadcast();
         UniswapV2DirectToLiquidity cbBatchUniswapV2Dtl = new UniswapV2DirectToLiquidity{salt: salt_}(
-            batchAuctionHouse, uniswapV2Factory, uniswapV2Router
+            batchAuctionHouse, uniswapV2Factory, uniswapV2Router, permissions
         );
         console2.log("");
         console2.log("    deployed at:", address(cbBatchUniswapV2Dtl));
@@ -375,11 +397,22 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
             "GUniFactory.factory() does not match given Uniswap V3 factory address"
         );
 
+        Callbacks.Permissions memory permissions = Callbacks.Permissions({
+            onCreate: true,
+            onCancel: true,
+            onCurate: true,
+            onPurchase: false,
+            onBid: false,
+            onSettle: true,
+            receiveQuoteTokens: true,
+            sendBaseTokens: false
+        });
+
         // Get the salt
         bytes32 salt_ = _getSalt(
             deploymentKey,
             type(UniswapV3DirectToLiquidity).creationCode,
-            abi.encode(atomicAuctionHouse, uniswapV3Factory, gUniFactory)
+            abi.encode(atomicAuctionHouse, uniswapV3Factory, gUniFactory, permissions)
         );
 
         // Revert if the salt is not set
@@ -391,7 +424,7 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         vm.broadcast();
         UniswapV3DirectToLiquidity cbAtomicUniswapV3Dtl = new UniswapV3DirectToLiquidity{
             salt: salt_
-        }(atomicAuctionHouse, uniswapV3Factory, gUniFactory);
+        }(atomicAuctionHouse, uniswapV3Factory, gUniFactory, permissions);
         console2.log("");
         console2.log("    deployed at:", address(cbAtomicUniswapV3Dtl));
 
@@ -420,11 +453,22 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
             "GUniFactory.factory() does not match given Uniswap V3 factory address"
         );
 
+        Callbacks.Permissions memory permissions = Callbacks.Permissions({
+            onCreate: true,
+            onCancel: true,
+            onCurate: true,
+            onPurchase: false,
+            onBid: false,
+            onSettle: true,
+            receiveQuoteTokens: true,
+            sendBaseTokens: false
+        });
+
         // Get the salt
         bytes32 salt_ = _getSalt(
             deploymentKey,
             type(UniswapV3DirectToLiquidity).creationCode,
-            abi.encode(batchAuctionHouse, uniswapV3Factory, gUniFactory)
+            abi.encode(batchAuctionHouse, uniswapV3Factory, gUniFactory, permissions)
         );
 
         // Revert if the salt is not set
@@ -435,7 +479,7 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
 
         vm.broadcast();
         UniswapV3DirectToLiquidity cbBatchUniswapV3Dtl = new UniswapV3DirectToLiquidity{salt: salt_}(
-            batchAuctionHouse, uniswapV3Factory, gUniFactory
+            batchAuctionHouse, uniswapV3Factory, gUniFactory, permissions
         );
         console2.log("");
         console2.log("    deployed at:", address(cbBatchUniswapV3Dtl));

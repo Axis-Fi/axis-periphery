@@ -13,6 +13,7 @@ import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswa
 
 // Callbacks
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
+import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
 
 /// @title      UniswapV2DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V2 pool
@@ -54,8 +55,9 @@ contract UniswapV2DirectToLiquidity is BaseDirectToLiquidity {
     constructor(
         address auctionHouse_,
         address uniswapV2Factory_,
-        address uniswapV2Router_
-    ) BaseDirectToLiquidity(auctionHouse_) {
+        address uniswapV2Router_,
+        Callbacks.Permissions memory permissions_
+    ) BaseDirectToLiquidity(auctionHouse_, permissions_) {
         if (uniswapV2Factory_ == address(0)) {
             revert Callback_Params_InvalidAddress();
         }

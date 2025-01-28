@@ -139,7 +139,19 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
         _dtl = new UniswapV2DirectToLiquidity{salt: salt}(
-            address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router)
+            address(_auctionHouse),
+            address(_uniV2Factory),
+            address(_uniV2Router),
+            Callbacks.Permissions({
+                onCreate: true,
+                onCancel: true,
+                onCurate: true,
+                onPurchase: false,
+                onBid: false,
+                onSettle: true,
+                receiveQuoteTokens: true,
+                sendBaseTokens: false
+            })
         );
         vm.stopBroadcast();
 
