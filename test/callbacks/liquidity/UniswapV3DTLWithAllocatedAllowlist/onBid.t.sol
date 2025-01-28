@@ -75,7 +75,13 @@ contract UniswapV3DTLWithAllocatedAllowlistOnBidTest is
     //  [X] it reverts
     // [X] it updates the spent amount with the bid amount
 
-    function test_merkleRootNotSet_reverts() public givenCallbackIsCreated givenOnCreate {
+    function test_merkleRootNotSet_reverts()
+        public
+        givenCallbackIsCreated
+        givenOnCreate
+        givenMerkleProof(_BUYER_MERKLE_PROOF)
+        givenMerkleAllocatedAmount(5e18)
+    {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
             UniswapV3DTLWithAllocatedAllowlist.Callback_InvalidState.selector
