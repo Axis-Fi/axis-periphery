@@ -169,16 +169,16 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
     // ========== ADMIN FUNCTIONS ========== //
 
     /// @notice Sets the merkle root for the allowlist
-    ///         This function can be called by the owner to update the merkle root after `onCreate()`.
+    ///         This function can be called by the seller to update the merkle root after `onCreate()`.
     /// @dev    This function performs the following:
     ///         - Performs validation
     ///         - Sets the merkle root
     ///         - Emits a MerkleRootSet event
     ///
     ///         This function reverts if:
-    ///         - The caller is not the owner
     ///         - The auction has not been registered
     ///         - The auction has been completed
+    ///         - The caller is not the seller
     ///
     /// @param  merkleRoot_ The new merkle root
     function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external {
