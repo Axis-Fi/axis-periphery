@@ -101,6 +101,9 @@
   "Test_UniswapV2Router": {
     "0x874532e739feebacbbe36f8c61fa97ab6ab1e6f7316e48763abf915e4af90c02": "0x5e9f7ca3ee281335c8a4fe4a4f33b950a5359d6a95fdc81892d9103ffd689659"
   },
+  "Test_UniswapV3DTLWithAllocatedAllowlist": {
+    "0x2bdf3a604a31018a9d9c078b0ca102d8e010e76bd778ef15be00a064d92e8311": "0x2705df88bd7528b526bc650a636a81c4fb61999c46817355118c3bfd51b72f6b"
+  },
   "Test_UniswapV3DirectToLiquidity": {
     "0x7e6b454bebf4f4d7a29947c79da35cca0128dca192e222a53cd430d9d377c65d": "0x30a263ee7e40137d3022c6283eec6d799a26e584f55de45be9a5b48823633c4d"
   },

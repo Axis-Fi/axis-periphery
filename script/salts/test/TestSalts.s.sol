@@ -34,6 +34,8 @@ import {BALwithCappedAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithCappedAllowlist.sol";
 import {BALwithTokenAllowlist} from
     "../../../src/callbacks/liquidity/BaselineV2/BALwithTokenAllowlist.sol";
+import {UniswapV3DTLWithAllocatedAllowlist} from
+    "../../../src/callbacks/liquidity/UniswapV3DTLWithAllocatedAllowlist.sol";
 
 contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConstants {
     string internal constant _CAPPED_MERKLE_ALLOWLIST = "CappedMerkleAllowlist";
@@ -234,6 +236,14 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode("UniswapV3DirectToLiquidity", contractCode, args);
         _setTestSalt(bytecodePath, "E6", "UniswapV3DirectToLiquidity", bytecodeHash);
+    }
+
+    function generateUniswapV3DTLWithAllocatedAllowlist() public {
+        bytes memory args = abi.encode(_AUCTION_HOUSE, _UNISWAP_V3_FACTORY, _GUNI_FACTORY, _OWNER);
+        bytes memory contractCode = type(UniswapV3DTLWithAllocatedAllowlist).creationCode;
+        (string memory bytecodePath, bytes32 bytecodeHash) =
+            _writeBytecode("UniswapV3DTLWithAllocatedAllowlist", contractCode, args);
+        _setTestSalt(bytecodePath, "EE", "UniswapV3DTLWithAllocatedAllowlist", bytecodeHash);
     }
 
     function generateGUniFactory() public {
