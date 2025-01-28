@@ -26,6 +26,9 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
 
     // ========== STATE VARIABLES ========== //
 
+    /// @notice The seller address for each lot
+    mapping(uint96 => address) public lotSeller;
+
     /// @notice The root of the merkle tree that represents the allowlist
     /// @dev    The merkle tree should adhere to the format specified in the OpenZeppelin MerkleProof library at https://github.com/OpenZeppelin/merkle-tree
     ///         In particular, leaf values (such as `(address)` or `(address,uint256)`) should be double-hashed.
@@ -57,6 +60,11 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
     // ========== CALLBACKS ========== //
 
     /// @inheritdoc BaseDirectToLiquidity
+    /// @dev        This function performs the following:
+    ///             - Stores the seller address
+    ///             - Passes the remaining parameters to the UniswapV3DTL implementation
+    ///
+    ///             Due to the way that the callback data is structured, the merkle root cannot be passed in as part of the callback data. Instead, the seller must call `setMerkleRoot()` after `onCreate()` to set the merkle root.
     function __onCreate(
         uint96 lotId_,
         address seller_,
@@ -66,34 +74,29 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
         bool prefund_,
         bytes calldata callbackData_
     ) internal virtual override {
-        // Validate the UniswapV3 parameters
-        super.__onCreate(
-            lotId_, seller_, baseToken_, quoteToken_, capacity_, prefund_, callbackData_
-        );
+        // Store the seller address
+        lotSeller[lotId_] = seller_;
 
-        // Check that the parameters are of the correct length
-        if (callbackData_.length != 32) {
-            revert Callback_InvalidParams();
-        }
-
-        // Decode the merkle root from the callback data
-        bytes32 merkleRootParams = abi.decode(callbackData_, (bytes32));
-
-        // Set the merkle root and buyer limit
-        lotMerkleRoot[lotId_] = merkleRootParams;
-        emit MerkleRootSet(lotId_, merkleRootParams);
+        // Pass to the UniswapV3DTL implementation
+        super.__onCreate(lotId_, seller_, baseToken_, quoteToken_, capacity_, prefund_, callbackData_);
     }
 
     /// @inheritdoc BaseDirectToLiquidity
+    /// @dev        This function will revert if:
+    ///             - The callback data is invalid
+    ///             - The bid amount exceeds the allocated amount for the buyer
+    ///             - The merkle root for the auction has not been set by the seller
     ///
     /// @param      callbackData_   abi-encoded data: (bytes32[], uint256) representing the merkle proof and allocated amount
     function _onBid(
         uint96 lotId_,
-        uint64 bidId_,
+        uint64,
         address buyer_,
         uint256 amount_,
         bytes calldata callbackData_
     ) internal override {
+        // Validate that the merkle root has been set
+
         // Validate that the buyer is allowed to participate
         uint256 allocatedAmount = _canParticipate(lotId_, buyer_, callbackData_);
 
@@ -156,14 +159,26 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
     ///
     /// @param  merkleRoot_ The new merkle root
     function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external onlyOwner {
-        // Revert if onCreate has not been called
-        if (lotId_ == type(uint96).max) {
+        DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
+
+        // Validate that onCreate has been called for this lot
+        if (lotConfig.recipient == address(0)) {
             revert Callback_InvalidState();
         }
 
-        // Revert if the auction has been completed already
-        if (!lotConfiguration[lotId_].active) {
+        // Validate that the auction is active
+        if (lotConfig.active == false) {
             revert Callback_AlreadyComplete();
+        }
+
+        // Validate that the caller is the seller
+        if (msg.sender != lotSeller[lotId_]) {
+            revert Callback_NotAuthorized();
+        }
+
+        // Validate that the merkle root is of the correct length
+        if (merkleRoot_.length != 32) {
+            revert Callback_InvalidParams();
         }
 
         lotMerkleRoot[lotId_] = merkleRoot_;
