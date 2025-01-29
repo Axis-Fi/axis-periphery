@@ -78,7 +78,7 @@ contract UniswapDTLSalts is Script, WithDeploySequence, WithSalts {
             ) {
                 address auctionHouse = _envAddressNotZero("deployments.BatchAuctionHouse");
 
-                _generateV3(sequenceName, auctionHouse, deploymentKey);
+                _generateV3WithAllocatedAllowlist(sequenceName, auctionHouse, deploymentKey);
             }
             // Something else
             else {
