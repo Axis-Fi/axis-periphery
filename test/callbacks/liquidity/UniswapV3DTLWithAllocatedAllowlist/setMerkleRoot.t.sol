@@ -7,6 +7,8 @@ import {UniswapV3DTLWithAllocatedAllowlist} from
     "src/callbacks/liquidity/UniswapV3DTLWithAllocatedAllowlist.sol";
 import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "src/callbacks/liquidity/BaseDTL.sol";
+import {IUniswapV3DTLWithAllocatedAllowlist} from
+    "src/callbacks/liquidity/IUniswapV3DTLWithAllocatedAllowlist.sol";
 
 contract UniswapV3DTLWithAllocatedAllowlistSetMerkleRootTest is
     UniswapV3DirectToLiquidityWithAllocatedAllowlistTest
@@ -24,7 +26,7 @@ contract UniswapV3DTLWithAllocatedAllowlistSetMerkleRootTest is
     function test_auctionNotRegistered_reverts() public givenCallbackIsCreated {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            UniswapV3DTLWithAllocatedAllowlist.Callback_InvalidState.selector
+            IUniswapV3DTLWithAllocatedAllowlist.Callback_InvalidState.selector
         );
         vm.expectRevert(err);
 

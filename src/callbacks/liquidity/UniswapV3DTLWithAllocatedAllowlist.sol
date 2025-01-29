@@ -7,24 +7,16 @@ import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 import {UniswapV3DirectToLiquidity} from "./UniswapV3DTL.sol";
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
 import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
+import {IUniswapV3DTLWithAllocatedAllowlist} from "./IUniswapV3DTLWithAllocatedAllowlist.sol";
 
 /// @notice Allocated allowlist version of the Uniswap V3 Direct To Liquidity callback.
 /// @notice This version allows for each address in the Merkle tree to have a per-address amount of quote tokens they can spend.
 /// @dev    The merkle tree is expected to have both an address and an amount of quote tokens they can spend in each leaf.
-contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned {
-    // ========== ERRORS ========== //
-
-    /// @notice Error message when the bid amount exceeds the limit assigned to a buyer
-    error Callback_ExceedsLimit();
-
-    /// @notice Error message when the callback state does not support the action
-    error Callback_InvalidState();
-
-    // ========== EVENTS ========== //
-
-    /// @notice Emitted when the merkle root is set
-    event MerkleRootSet(uint96 lotId, bytes32 merkleRoot);
-
+contract UniswapV3DTLWithAllocatedAllowlist is
+    IUniswapV3DTLWithAllocatedAllowlist,
+    UniswapV3DirectToLiquidity,
+    Owned
+{
     // ========== STATE VARIABLES ========== //
 
     /// @notice The seller address for each lot
@@ -168,8 +160,7 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
 
     // ========== ADMIN FUNCTIONS ========== //
 
-    /// @notice Sets the merkle root for the allowlist
-    ///         This function can be called by the seller to update the merkle root after `onCreate()`.
+    /// @inheritdoc IUniswapV3DTLWithAllocatedAllowlist
     /// @dev    This function performs the following:
     ///         - Performs validation
     ///         - Sets the merkle root
@@ -179,9 +170,7 @@ contract UniswapV3DTLWithAllocatedAllowlist is UniswapV3DirectToLiquidity, Owned
     ///         - The auction has not been registered
     ///         - The auction has been completed
     ///         - The caller is not the seller
-    ///
-    /// @param  merkleRoot_ The new merkle root
-    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external {
+    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external override {
         DTLConfiguration memory lotConfig = lotConfiguration[lotId_];
 
         // Validate that onCreate has been called for this lot

@@ -7,6 +7,8 @@ import {UniswapV3DirectToLiquidityWithAllocatedAllowlistTest} from
 import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
 import {UniswapV3DTLWithAllocatedAllowlist} from
     "../../../../src/callbacks/liquidity/UniswapV3DTLWithAllocatedAllowlist.sol";
+import {IUniswapV3DTLWithAllocatedAllowlist} from
+    "../../../../src/callbacks/liquidity/IUniswapV3DTLWithAllocatedAllowlist.sol";
 
 contract UniswapV3DTLWithAllocatedAllowlistOnBidTest is
     UniswapV3DirectToLiquidityWithAllocatedAllowlistTest
@@ -84,7 +86,7 @@ contract UniswapV3DTLWithAllocatedAllowlistOnBidTest is
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            UniswapV3DTLWithAllocatedAllowlist.Callback_InvalidState.selector
+            IUniswapV3DTLWithAllocatedAllowlist.Callback_InvalidState.selector
         );
         vm.expectRevert(err);
 
@@ -152,7 +154,7 @@ contract UniswapV3DTLWithAllocatedAllowlistOnBidTest is
 
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            UniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
+            IUniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
         );
         vm.expectRevert(err);
 
@@ -170,7 +172,7 @@ contract UniswapV3DTLWithAllocatedAllowlistOnBidTest is
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            UniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
+            IUniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
         );
         vm.expectRevert(err);
 
@@ -189,7 +191,7 @@ contract UniswapV3DTLWithAllocatedAllowlistOnBidTest is
     {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            UniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
+            IUniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
         );
         vm.expectRevert(err);
 
@@ -229,7 +231,7 @@ contract UniswapV3DTLWithAllocatedAllowlistOnBidTest is
 
         // Expect revert
         bytes memory err = abi.encodeWithSelector(
-            UniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
+            IUniswapV3DTLWithAllocatedAllowlist.Callback_ExceedsLimit.selector
         );
         vm.expectRevert(err);
 
