@@ -239,7 +239,7 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
     }
 
     function generateUniswapV3DTLWithAllocatedAllowlist() public {
-        bytes memory args = abi.encode(_AUCTION_HOUSE, _UNISWAP_V3_FACTORY, _GUNI_FACTORY, _OWNER);
+        bytes memory args = abi.encode(_AUCTION_HOUSE, _UNISWAP_V3_FACTORY, _GUNI_FACTORY);
         bytes memory contractCode = type(UniswapV3DTLWithAllocatedAllowlist).creationCode;
         (string memory bytecodePath, bytes32 bytecodeHash) =
             _writeBytecode("UniswapV3DTLWithAllocatedAllowlist", contractCode, args);

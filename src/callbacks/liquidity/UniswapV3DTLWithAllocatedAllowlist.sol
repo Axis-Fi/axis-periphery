@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/MerkleProof.sol";
-import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
 
 import {UniswapV3DirectToLiquidity} from "./UniswapV3DTL.sol";
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
@@ -14,8 +13,7 @@ import {IUniswapV3DTLWithAllocatedAllowlist} from "./IUniswapV3DTLWithAllocatedA
 /// @dev    The merkle tree is expected to have both an address and an amount of quote tokens they can spend in each leaf.
 contract UniswapV3DTLWithAllocatedAllowlist is
     IUniswapV3DTLWithAllocatedAllowlist,
-    UniswapV3DirectToLiquidity,
-    Owned
+    UniswapV3DirectToLiquidity
 {
     // ========== STATE VARIABLES ========== //
 
@@ -46,8 +44,7 @@ contract UniswapV3DTLWithAllocatedAllowlist is
     constructor(
         address auctionHouse_,
         address uniV3Factory_,
-        address gUniFactory_,
-        address owner_
+        address gUniFactory_
     )
         UniswapV3DirectToLiquidity(
             auctionHouse_,
@@ -64,7 +61,6 @@ contract UniswapV3DTLWithAllocatedAllowlist is
                 sendBaseTokens: false
             })
         )
-        Owned(owner_)
     {}
 
     // ========== CALLBACKS ========== //

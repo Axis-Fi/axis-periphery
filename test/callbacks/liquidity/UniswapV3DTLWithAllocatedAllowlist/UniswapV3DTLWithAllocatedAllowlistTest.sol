@@ -159,9 +159,8 @@ abstract contract UniswapV3DirectToLiquidityWithAllocatedAllowlistTest is
 
     modifier givenCallbackIsCreated() {
         // Get the salt
-        bytes memory args = abi.encode(
-            address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory), _OWNER
-        );
+        bytes memory args =
+            abi.encode(address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory));
         bytes32 salt = _getTestSalt(
             "UniswapV3DTLWithAllocatedAllowlist",
             type(UniswapV3DTLWithAllocatedAllowlist).creationCode,
@@ -172,7 +171,7 @@ abstract contract UniswapV3DirectToLiquidityWithAllocatedAllowlistTest is
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
         _dtl = new UniswapV3DTLWithAllocatedAllowlist{salt: salt}(
-            address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory), _OWNER
+            address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory)
         );
         vm.stopBroadcast();
 
