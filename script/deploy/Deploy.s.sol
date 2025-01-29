@@ -22,6 +22,8 @@ import {GUniFactory} from "@g-uni-v1-core-0.9.9/GUniFactory.sol";
 // Callbacks
 import {UniswapV2DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV2DTL.sol";
 import {UniswapV3DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV3DTL.sol";
+import {UniswapV3DTLWithAllocatedAllowlist} from
+    "../../src/callbacks/liquidity/UniswapV3DTLWithAllocatedAllowlist.sol";
 import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
 import {MerkleAllowlist} from "../../src/callbacks/allowlists/MerkleAllowlist.sol";
 import {TokenAllowlist} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
@@ -481,6 +483,51 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         UniswapV3DirectToLiquidity cbBatchUniswapV3Dtl = new UniswapV3DirectToLiquidity{salt: salt_}(
             batchAuctionHouse, uniswapV3Factory, gUniFactory, permissions
         );
+        console2.log("");
+        console2.log("    deployed at:", address(cbBatchUniswapV3Dtl));
+
+        return (address(cbBatchUniswapV3Dtl), _PREFIX_CALLBACKS, deploymentKey);
+    }
+
+    function deployBatchUniswapV3DirectToLiquidityWithAllocatedAllowlist(
+        string memory sequenceName_
+    ) public returns (address, string memory, string memory) {
+        console2.log("");
+        console2.log("Deploying UniswapV3DirectToLiquidityWithAllocatedAllowlist (Batch)");
+
+        // Get configuration variables
+        address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
+        address uniswapV3Factory = _getEnvAddressOrOverride(
+            "constants.uniswapV3.factory", sequenceName_, "args.uniswapV3Factory"
+        );
+        address gUniFactory =
+            _getEnvAddressOrOverride("constants.gUni.factory", sequenceName_, "args.gUniFactory");
+        string memory deploymentKey = _getDeploymentKey(sequenceName_);
+        console2.log("    deploymentKey:", deploymentKey);
+
+        // Check that the GUni factory and Uniswap V3 factory are consistent
+        require(
+            GUniFactory(gUniFactory).factory() == uniswapV3Factory,
+            "GUniFactory.factory() does not match given Uniswap V3 factory address"
+        );
+
+        // Get the salt
+        bytes32 salt_ = _getSalt(
+            deploymentKey,
+            type(UniswapV3DTLWithAllocatedAllowlist).creationCode,
+            abi.encode(batchAuctionHouse, uniswapV3Factory, gUniFactory)
+        );
+
+        // Revert if the salt is not set
+        require(salt_ != bytes32(0), "Salt not set");
+
+        // Deploy the module
+        console2.log("    salt:", vm.toString(salt_));
+
+        vm.broadcast();
+        UniswapV3DTLWithAllocatedAllowlist cbBatchUniswapV3Dtl = new UniswapV3DTLWithAllocatedAllowlist{
+            salt: salt_
+        }(batchAuctionHouse, uniswapV3Factory, gUniFactory);
         console2.log("");
         console2.log("    deployed at:", address(cbBatchUniswapV3Dtl));
 
