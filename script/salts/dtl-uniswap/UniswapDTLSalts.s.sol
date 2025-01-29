@@ -149,6 +149,6 @@ contract UniswapDTLSalts is Script, WithDeploySequence, WithSalts {
             contractCode,
             abi.encode(auctionHouse_, envUniswapV3Factory, envGUniFactory)
         );
-        _setSalt(bytecodePath, _ADDRESS_PREFIX, deploymentKey_, bytecodeHash);
+        _setSalt(bytecodePath, "EE", deploymentKey_, bytecodeHash);
     }
 }
