@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
 
-import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
+import {Owned} from "@solmate-6.8.0/auth/Owned.sol";
 
 import {Kernel, Keycode, toKeycode, Policy, Permissions} from "@baseline/Kernel.sol";
 import {BPOOLv1} from "@baseline/modules/BPOOL.v1.sol";

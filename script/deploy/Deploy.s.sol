@@ -8,12 +8,12 @@ import {WithSalts} from "../salts/WithSalts.s.sol";
 import {WithDeploySequence} from "./WithDeploySequence.s.sol";
 
 // axis-core
-import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.1/modules/Keycode.sol";
-import {Module} from "@axis-core-1.0.1/modules/Modules.sol";
-import {AtomicAuctionHouse} from "@axis-core-1.0.1/AtomicAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
-import {IFeeManager} from "@axis-core-1.0.1/interfaces/IFeeManager.sol";
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
+import {Keycode, keycodeFromVeecode} from "@axis-core-1.0.4/modules/Keycode.sol";
+import {Module} from "@axis-core-1.0.4/modules/Modules.sol";
+import {AtomicAuctionHouse} from "@axis-core-1.0.4/AtomicAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.4/BatchAuctionHouse.sol";
+import {IFeeManager} from "@axis-core-1.0.4/interfaces/IFeeManager.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 
 // Uniswap
 import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";

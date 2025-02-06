@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import {BeforeAfter} from "../helpers/BeforeAfter.sol";
 import {Assertions} from "../helpers/Assertions.sol";
 
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-1.0.1-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-1.0.4-test/lib/permit2/Permit2User.sol";
 
-import {IAuction} from "@axis-core-1.0.1/interfaces/modules/IAuction.sol";
-import {IAuctionHouse} from "@axis-core-1.0.1/interfaces/IAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
-import {ILinearVesting} from "@axis-core-1.0.1/interfaces/modules/derivatives/ILinearVesting.sol";
+import {IAuction} from "@axis-core-1.0.4/interfaces/modules/IAuction.sol";
+import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.4/BatchAuctionHouse.sol";
+import {ILinearVesting} from "@axis-core-1.0.4/interfaces/modules/derivatives/ILinearVesting.sol";
 
 import {GUniFactory} from "@g-uni-v1-core-0.9.9/GUniFactory.sol";
 import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
@@ -22,18 +22,18 @@ import {IUniswapV3Factory} from
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
 import {BaseDirectToLiquidity} from "../../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
-import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
+import {LinearVesting} from "@axis-core-1.0.4/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
-    "@axis-core-1.0.1-test/modules/Auction/MockBatchAuctionModule.sol";
+    "@axis-core-1.0.4-test/modules/Auction/MockBatchAuctionModule.sol";
 
-import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.1/modules/Keycode.sol";
+import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.sol";
 
-import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
-import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
-import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
+import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
+import {ERC20} from "@solmate-6.8.0/tokens/ERC20.sol";
+import {FixedPointMathLib} from "@solmate-6.8.0/utils/FixedPointMathLib.sol";
 
 abstract contract UniswapV3DTLHandler is BeforeAfter, Assertions {
     /*//////////////////////////////////////////////////////////////////////////

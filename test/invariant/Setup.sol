@@ -2,15 +2,15 @@
 pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-1.0.1-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-1.0.4-test/lib/permit2/Permit2User.sol";
 
-import {IAuction} from "@axis-core-1.0.1/interfaces/modules/IAuction.sol";
-import {IAuctionHouse} from "@axis-core-1.0.1/interfaces/IAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
-import {EncryptedMarginalPrice} from "@axis-core-1.0.1/modules/auctions/batch/EMP.sol";
-import {IFixedPriceBatch} from "@axis-core-1.0.1/interfaces/modules/auctions/IFixedPriceBatch.sol";
-import {FixedPriceBatch} from "@axis-core-1.0.1/modules/auctions/batch/FPB.sol";
+import {IAuction} from "@axis-core-1.0.4/interfaces/modules/IAuction.sol";
+import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.4/BatchAuctionHouse.sol";
+import {EncryptedMarginalPrice} from "@axis-core-1.0.4/modules/auctions/batch/EMP.sol";
+import {IFixedPriceBatch} from "@axis-core-1.0.4/interfaces/modules/auctions/IFixedPriceBatch.sol";
+import {FixedPriceBatch} from "@axis-core-1.0.4/modules/auctions/batch/FPB.sol";
 
 import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
 import {UniswapV2FactoryClone} from "../lib/uniswap-v2/UniswapV2FactoryClone.sol";
@@ -26,18 +26,18 @@ import {IUniswapV3Factory} from
 import {UniswapV3Factory} from "../lib/uniswap-v3/UniswapV3Factory.sol";
 import {WETH9} from "./modules/WETH.sol";
 import {SwapRouter} from "./modules/uniswapv3-periphery/SwapRouter.sol";
-import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "@solmate-6.8.0/utils/FixedPointMathLib.sol";
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
 import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
-import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
+import {LinearVesting} from "@axis-core-1.0.4/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
-    "@axis-core-1.0.1-test/modules/Auction/MockBatchAuctionModule.sol";
+    "@axis-core-1.0.4-test/modules/Auction/MockBatchAuctionModule.sol";
 
-import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.1/modules/Keycode.sol";
+import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.sol";
 
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
@@ -45,7 +45,7 @@ import {BaselineAxisLaunch} from
 // Baseline
 import {Kernel, Actions, Module, toKeycode as toBaselineKeycode} from "@baseline/Kernel.sol";
 
-import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
 import {BPOOLMinter} from "./modules/BPOOLMinter.sol";
 import {CREDTMinter} from "./modules/CREDTMinter.sol";

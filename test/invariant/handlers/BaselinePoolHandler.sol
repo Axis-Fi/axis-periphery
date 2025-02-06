@@ -8,7 +8,7 @@ import {IUniswapV3Pool} from
     "../../../lib/baseline-v2/lib/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {ISwapRouter} from "../modules/uniswapv3-periphery/interfaces/ISwapRouter.sol";
 
-import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
 abstract contract BaselinePoolHandler is BeforeAfter, Assertions {
     function BaselinePoolHandler_donate(uint256 tokenIndexSeed, uint256 amount) public {

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.19;
 
 // Libraries
-import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
-import {SafeTransferLib} from "@solmate-6.7.0/utils/SafeTransferLib.sol";
+import {ERC20} from "@solmate-6.8.0/tokens/ERC20.sol";
+import {SafeTransferLib} from "@solmate-6.8.0/utils/SafeTransferLib.sol";
 
 // Uniswap
 import {IUniswapV3Pool} from

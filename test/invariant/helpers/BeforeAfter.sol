@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 
 import {Setup} from "../Setup.sol";
 
-import {Veecode} from "@axis-core-1.0.1/modules/Keycode.sol";
-import {ICallback} from "@axis-core-1.0.1/interfaces/ICallback.sol";
+import {Veecode} from "@axis-core-1.0.4/modules/Keycode.sol";
+import {ICallback} from "@axis-core-1.0.4/interfaces/ICallback.sol";
 import {BaseDirectToLiquidity} from "../../../src/callbacks/liquidity/BaseDTL.sol";
-import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
+import {LinearVesting} from "@axis-core-1.0.4/modules/derivatives/LinearVesting.sol";
 
 abstract contract BeforeAfter is Setup {
     struct Vars {

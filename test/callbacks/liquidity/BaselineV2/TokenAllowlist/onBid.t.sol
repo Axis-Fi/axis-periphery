@@ -3,7 +3,7 @@ pragma solidity 0.8.19;
 
 import {BaselineTokenAllowlistTest} from "./BaselineTokenAllowlistTest.sol";
 
-import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 
 contract BaselineTokenAllowlistOnBidTest is BaselineTokenAllowlistTest {
     uint64 internal constant _BID_ID = 1;

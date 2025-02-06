@@ -2,17 +2,17 @@
 pragma solidity 0.8.19;
 
 import {Test} from "@forge-std-1.9.1/Test.sol";
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
-import {Permit2User} from "@axis-core-1.0.1-test/lib/permit2/Permit2User.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
+import {Permit2User} from "@axis-core-1.0.4-test/lib/permit2/Permit2User.sol";
 
-import {IAuctionHouse} from "@axis-core-1.0.1/interfaces/IAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
+import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.4/BatchAuctionHouse.sol";
 
-import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 
 import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
 
-import {toVeecode} from "@axis-core-1.0.1/modules/Keycode.sol";
+import {toVeecode} from "@axis-core-1.0.4/modules/Keycode.sol";
 import {WithSalts} from "../lib/WithSalts.sol";
 import {TestConstants} from "../Constants.sol";
 

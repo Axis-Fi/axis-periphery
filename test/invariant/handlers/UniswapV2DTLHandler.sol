@@ -6,17 +6,17 @@ import {Assertions} from "../helpers/Assertions.sol";
 
 import {UniswapV2DirectToLiquidity} from "../../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
 import {BaseDirectToLiquidity} from "../../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.sol";
-import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
+import {ERC20} from "@solmate-6.8.0/tokens/ERC20.sol";
 
-import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.1/modules/Keycode.sol";
-import {IAuctionHouse} from "@axis-core-1.0.1/interfaces/IAuctionHouse.sol";
-import {IAuction} from "@axis-core-1.0.1/interfaces/modules/IAuction.sol";
-import {ILinearVesting} from "@axis-core-1.0.1/interfaces/modules/derivatives/ILinearVesting.sol";
+import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.sol";
+import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
+import {IAuction} from "@axis-core-1.0.4/interfaces/modules/IAuction.sol";
+import {ILinearVesting} from "@axis-core-1.0.4/interfaces/modules/derivatives/ILinearVesting.sol";
 import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.sol";
-import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
-import {LinearVesting} from "@axis-core-1.0.1/modules/derivatives/LinearVesting.sol";
+import {FixedPointMathLib} from "@solmate-6.8.0/utils/FixedPointMathLib.sol";
+import {LinearVesting} from "@axis-core-1.0.4/modules/derivatives/LinearVesting.sol";
 
 abstract contract UniswapV2DTLHandler is BeforeAfter, Assertions {
     /*//////////////////////////////////////////////////////////////////////////

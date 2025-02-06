@@ -3,11 +3,11 @@ pragma solidity 0.8.19;
 
 import {BaselineAxisLaunchTest} from "./BaselineAxisLaunchTest.sol";
 
-import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 import {Range} from "@baseline/modules/BPOOL.v1.sol";
-import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "@solmate-6.8.0/utils/FixedPointMathLib.sol";
 import {IUniswapV3Pool} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
