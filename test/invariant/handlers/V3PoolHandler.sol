@@ -7,7 +7,7 @@ import {Assertions} from "../helpers/Assertions.sol";
 import {IUniswapV3Pool} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Pool.sol";
 import {ISwapRouter} from "../modules/uniswapv3-periphery/interfaces/ISwapRouter.sol";
-import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
 abstract contract V3PoolHandler is BeforeAfter, Assertions {
     function V3PoolHandler_donate(uint256 tokenIndexSeed, uint256 amount) public {

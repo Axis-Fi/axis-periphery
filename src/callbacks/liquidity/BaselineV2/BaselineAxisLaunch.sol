@@ -2,18 +2,18 @@
 pragma solidity 0.8.19;
 
 // Axis dependencies
-import {ERC20} from "@solmate-6.7.0/tokens/ERC20.sol";
-import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
-import {IAuctionHouse} from "@axis-core-1.0.1/interfaces/IAuctionHouse.sol";
+import {ERC20} from "@solmate-6.8.0/tokens/ERC20.sol";
+import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
+import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
 import {
     Keycode as AxisKeycode,
     keycodeFromVeecode,
     fromKeycode as fromAxisKeycode
-} from "@axis-core-1.0.1/modules/Keycode.sol";
-import {Module as AxisModule} from "@axis-core-1.0.1/modules/Modules.sol";
-import {IFixedPriceBatch} from "@axis-core-1.0.1/interfaces/modules/auctions/IFixedPriceBatch.sol";
-import {Transfer} from "@axis-core-1.0.1/lib/Transfer.sol";
+} from "@axis-core-1.0.4/modules/Keycode.sol";
+import {Module as AxisModule} from "@axis-core-1.0.4/modules/Modules.sol";
+import {IFixedPriceBatch} from "@axis-core-1.0.4/interfaces/modules/auctions/IFixedPriceBatch.sol";
+import {Transfer} from "@axis-core-1.0.4/lib/Transfer.sol";
 
 // Baseline dependencies
 import {
@@ -31,7 +31,7 @@ import {ILOOPSv1} from "./lib/ILOOPS.sol";
 import {FixedPointMathLib} from "@solady-0.0.124/utils/FixedPointMathLib.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 import {SqrtPriceMath} from "../../../lib/uniswap-v3/SqrtPriceMath.sol";
-import {Owned} from "@solmate-6.7.0/auth/Owned.sol";
+import {Owned} from "@solmate-6.8.0/auth/Owned.sol";
 
 /// @notice     Axis auction callback to initialize a Baseline token using proceeds from a batch auction.
 /// @dev        This contract combines Baseline's InitializeProtocol Policy and Axis' Callback functionality to build an Axis auction callback specific to Baseline V2 token launches
