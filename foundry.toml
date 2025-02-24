@@ -6,7 +6,7 @@ fs_permissions = [
   {access = "read-write", path = "./bytecode/"},
   {access = "read", path = "./script/"},
   {access = "read-write", path = "./deployments/"},
-  {access = "read", path = "./dependencies/axis-core-1.0.1/script/env.json"},
+  {access = "read", path = "./dependencies/axis-core-1.0.4/script/env.json"},
 ]
 ffi = true
 solc_version = "0.8.19"
@@ -39,10 +39,11 @@ ignore = [
 
 [soldeer]
 remappings_generate = false # Disable replacing existing/custom remappings
+remappings_regenerate = false
 
 [dependencies]
 forge-std = { version = "1.9.1" }
-axis-core = { version = "1.0.1" }
+axis-core = { version = "1.0.4" }
 "@openzeppelin-contracts" = { version = "4.9.2" }
 "@openzeppelin-contracts-upgradeable" = { version = "4.9.2" }
 "@uniswap-v2-core" = { version = "1.0.1" }
@@ -50,6 +51,6 @@ axis-core = { version = "1.0.1" }
 g-uni-v1-core = { version = "0.9.9", git = "git@github.com:Axis-Fi/g-uni-v1-core.git", rev = "d6bcb6e811e86d36bc836c002eb2e9a2c73d29ca" }
 "@uniswap-v2-periphery" = { version = "1.0.1", git = "git@github.com:Axis-Fi/uniswap-v2-periphery.git", rev = "19be650786731dfe43cac3aac7a2d1f0731d18e2" }
 "@uniswap-v3-periphery" = { version = "1.4.2-solc-0.8", git = "git@github.com:Uniswap/v3-periphery.git", rev = "b325bb0905d922ae61fcc7df85ee802e8df5e96c" }
-solmate = { version = "6.7.0", git = "git@github.com:transmissions11/solmate.git", rev = "c892309933b25c03d32b1b0d674df7ae292ba925" }
+solmate = { version = "6.8.0" }
 clones-with-immutable-args = { version = "1.1.1", git = "git@github.com:wighawag/clones-with-immutable-args.git", rev = "f5ca191afea933d50a36d101009b5644dc28bc99" }
 solady = { version = "0.0.124" }

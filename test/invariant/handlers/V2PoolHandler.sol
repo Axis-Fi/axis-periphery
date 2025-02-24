@@ -6,7 +6,7 @@ import {Assertions} from "../helpers/Assertions.sol";
 
 import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.sol";
 
-import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
 abstract contract V2PoolHandler is BeforeAfter, Assertions {
     function V2PoolHandler_donate(uint256 tokenIndexSeed, uint256 amount) public {
