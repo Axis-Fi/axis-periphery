@@ -19,7 +19,7 @@ import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
 
 // Callbacks
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 
 /// @title      UniswapV3DirectToLiquidity
 /// @notice     This Callback contract deposits the proceeds from a batch auction into a Uniswap V3 pool

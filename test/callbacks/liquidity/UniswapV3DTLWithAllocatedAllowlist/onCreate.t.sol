@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import {UniswapV3DirectToLiquidityWithAllocatedAllowlistTest} from
     "./UniswapV3DTLWithAllocatedAllowlistTest.sol";
 
-import {BaseCallback} from "@axis-core-1.0.1/bases/BaseCallback.sol";
+import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
 import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 

@@ -5,7 +5,7 @@ import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/Merk
 
 import {UniswapV3DirectToLiquidity} from "./UniswapV3DTL.sol";
 import {BaseDirectToLiquidity} from "./BaseDTL.sol";
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 import {IUniswapV3DTLWithAllocatedAllowlist} from "./IUniswapV3DTLWithAllocatedAllowlist.sol";
 
 /// @notice Allocated allowlist version of the Uniswap V3 Direct To Liquidity callback.
