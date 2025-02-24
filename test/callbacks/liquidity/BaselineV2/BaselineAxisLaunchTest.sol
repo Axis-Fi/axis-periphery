@@ -4,28 +4,28 @@ pragma solidity 0.8.19;
 // Test scaffolding
 import {Test} from "@forge-std-1.9.1/Test.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
-import {Permit2User} from "@axis-core-1.0.1-test/lib/permit2/Permit2User.sol";
+import {Permit2User} from "@axis-core-1.0.4-test/lib/permit2/Permit2User.sol";
 import {WithSalts} from "../../../lib/WithSalts.sol";
-import {MockERC20} from "@solmate-6.7.0/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
 import {UniswapV3Factory} from "../../../lib/uniswap-v3/UniswapV3Factory.sol";
 import {ComputeAddress} from "../../../lib/ComputeAddress.sol";
-import {FixedPointMathLib} from "@solmate-6.7.0/utils/FixedPointMathLib.sol";
+import {FixedPointMathLib} from "@solmate-6.8.0/utils/FixedPointMathLib.sol";
 import {TestConstants} from "../../../Constants.sol";
 import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
 // Axis core
-import {IAuction} from "@axis-core-1.0.1/interfaces/modules/IAuction.sol";
-import {IAuctionHouse} from "@axis-core-1.0.1/interfaces/IAuctionHouse.sol";
-import {BatchAuctionHouse} from "@axis-core-1.0.1/BatchAuctionHouse.sol";
-import {EncryptedMarginalPrice} from "@axis-core-1.0.1/modules/auctions/batch/EMP.sol";
-import {IFixedPriceBatch} from "@axis-core-1.0.1/interfaces/modules/auctions/IFixedPriceBatch.sol";
-import {FixedPriceBatch} from "@axis-core-1.0.1/modules/auctions/batch/FPB.sol";
+import {IAuction} from "@axis-core-1.0.4/interfaces/modules/IAuction.sol";
+import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
+import {BatchAuctionHouse} from "@axis-core-1.0.4/BatchAuctionHouse.sol";
+import {EncryptedMarginalPrice} from "@axis-core-1.0.4/modules/auctions/batch/EMP.sol";
+import {IFixedPriceBatch} from "@axis-core-1.0.4/interfaces/modules/auctions/IFixedPriceBatch.sol";
+import {FixedPriceBatch} from "@axis-core-1.0.4/modules/auctions/batch/FPB.sol";
 
 // Callbacks
-import {Callbacks} from "@axis-core-1.0.1/lib/Callbacks.sol";
+import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 import {BaselineAxisLaunch} from
     "../../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 
