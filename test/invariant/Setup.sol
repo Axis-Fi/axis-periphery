@@ -195,9 +195,22 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _quoteToken = new MockERC20("Quote Token", "QT", 18);
         _baseToken = new MockERC20("Base Token", "BT", 18);
 
+        Callbacks.Permissions memory permissions = Callbacks.Permissions({
+            onCreate: true,
+            onCancel: true,
+            onCurate: true,
+            onPurchase: false,
+            onBid: false,
+            onSettle: true,
+            receiveQuoteTokens: true,
+            sendBaseTokens: false
+        });
+
         bytes memory constructorArgs = abi.encodePacked(
             type(UniswapV2DirectToLiquidity).creationCode,
-            abi.encode(address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router))
+            abi.encode(
+                address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router), permissions
+            )
         );
 
         string[] memory uniswapV2Inputs = new string[](7);
@@ -213,7 +226,7 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         bytes32 uniswapV2Salt = abi.decode(uniswapV2Res, (bytes32));
 
         _dtlV2 = new UniswapV2DirectToLiquidity{salt: uniswapV2Salt}(
-            address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router)
+            address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router), permissions
         );
 
         _dtlV2Address = address(_dtlV2);
@@ -232,7 +245,9 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
 
         bytes memory v3SaltArgs = abi.encodePacked(
             type(UniswapV3DirectToLiquidity).creationCode,
-            abi.encode(address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory))
+            abi.encode(
+                address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory), permissions
+            )
         );
 
         string[] memory uniswapV3Inputs = new string[](7);
@@ -248,7 +263,7 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         bytes32 uniswapV3Salt = abi.decode(uniswapV3Res, (bytes32));
 
         _dtlV3 = new UniswapV3DirectToLiquidity{salt: uniswapV3Salt}(
-            address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory)
+            address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory), permissions
         );
 
         _dtlV3Address = address(_dtlV3);

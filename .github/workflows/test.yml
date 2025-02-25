@@ -33,8 +33,6 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
 
       # Providing the SSH key to the checkout action does not work with our config.
       # It likely is because of the install script wiping the lib/ directory.

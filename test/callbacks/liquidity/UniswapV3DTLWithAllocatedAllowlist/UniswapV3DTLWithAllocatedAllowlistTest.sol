@@ -9,14 +9,17 @@ import {IAuction} from "@axis-core-1.0.4/interfaces/modules/IAuction.sol";
 import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
 import {BatchAuctionHouse} from "@axis-core-1.0.4/BatchAuctionHouse.sol";
 
-import {IUniswapV2Factory} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Factory.sol";
-import {UniswapV2FactoryClone} from "../../../lib/uniswap-v2/UniswapV2FactoryClone.sol";
+import {GUniFactory} from "@g-uni-v1-core-0.9.9/GUniFactory.sol";
+import {GUniPool} from "@g-uni-v1-core-0.9.9/GUniPool.sol";
+import {IUniswapV3Factory} from
+    "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
 
-import {IUniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/interfaces/IUniswapV2Router02.sol";
-import {UniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/UniswapV2Router02.sol";
+import {UniswapV3Factory} from "../../../lib/uniswap-v3/UniswapV3Factory.sol";
 
 import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV2DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
+import {UniswapV3DTLWithAllocatedAllowlist} from
+    "../../../../src/callbacks/liquidity/UniswapV3DTLWithAllocatedAllowlist.sol";
 import {LinearVesting} from "@axis-core-1.0.4/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-1.0.4-test/modules/Auction/MockBatchAuctionModule.sol";
@@ -26,60 +29,76 @@ import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.so
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
 import {WithSalts} from "../../../lib/WithSalts.sol";
-import {TestConstants} from "../../../Constants.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
+import {TestConstants} from "../../../Constants.sol";
 
-abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
-    using Callbacks for UniswapV2DirectToLiquidity;
+// solhint-disable max-states-count
+
+abstract contract UniswapV3DirectToLiquidityWithAllocatedAllowlistTest is
+    Test,
+    Permit2User,
+    WithSalts,
+    TestConstants
+{
+    using Callbacks for UniswapV3DirectToLiquidity;
 
     address internal constant _PROTOCOL = address(0x3);
     address internal constant _BUYER = address(0x4);
     address internal constant _NOT_SELLER = address(0x20);
 
     uint96 internal constant _LOT_CAPACITY = 10e18;
-    uint24 internal constant _MAX_SLIPPAGE = 1; // 0.01%
 
     uint48 internal constant _START = 1_000_000;
     uint48 internal constant _DURATION = 1 days;
     uint48 internal constant _AUCTION_START = _START + 1;
     uint48 internal constant _AUCTION_CONCLUSION = _AUCTION_START + _DURATION;
 
+    // Values:
+    // 0x0000000000000000000000000000000000000004, 5e18
+    // 0x0000000000000000000000000000000000000020, 0
+    bytes32 internal constant _MERKLE_ROOT =
+        0x0fdc3942d9af344db31ff2e80c06bc4e558dc967ca5b4d421d741870f5ea40df;
+    bytes32[] internal _merkleProof;
+    uint256 internal constant _BUYER_ALLOCATED_AMOUNT = 5e18;
+
     uint96 internal _lotId = 1;
 
     BatchAuctionHouse internal _auctionHouse;
-    UniswapV2DirectToLiquidity internal _dtl;
+    UniswapV3DTLWithAllocatedAllowlist internal _dtl;
     address internal _dtlAddress;
-    IUniswapV2Factory internal _uniV2Factory;
-    IUniswapV2Router02 internal _uniV2Router;
+    IUniswapV3Factory internal _uniV3Factory;
+    GUniFactory internal _gUniFactory;
     LinearVesting internal _linearVesting;
     MockBatchAuctionModule internal _batchAuctionModule;
 
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
 
-    uint96 internal _lotCapacity = _LOT_CAPACITY;
     uint96 internal _proceeds;
     uint96 internal _refund;
-
-    // TODO consider setting floor of max slippage to 0.01%
+    uint24 internal _maxSlippage = 1; // 0.01%
 
     // Inputs
-    UniswapV2DirectToLiquidity.UniswapV2OnCreateParams internal _uniswapV2CreateParams =
-        UniswapV2DirectToLiquidity.UniswapV2OnCreateParams({maxSlippage: uint24(_MAX_SLIPPAGE)});
+    uint24 internal _poolFee = 500;
+    UniswapV3DirectToLiquidity.UniswapV3OnCreateParams internal _uniswapV3CreateParams =
+    UniswapV3DirectToLiquidity.UniswapV3OnCreateParams({
+        poolFee: _poolFee,
+        maxSlippage: 1 // 0.01%, to handle rounding errors
+    });
     BaseDirectToLiquidity.OnCreateParams internal _dtlCreateParams = BaseDirectToLiquidity
         .OnCreateParams({
         poolPercent: 100e2,
         vestingStart: 0,
         vestingExpiry: 0,
         recipient: _SELLER,
-        implParams: abi.encode(_uniswapV2CreateParams)
+        implParams: abi.encode(_uniswapV3CreateParams)
     });
 
     function setUp() public {
         // Set reasonable timestamp
         vm.warp(_START);
 
-        // Create an BatchAuctionHouse at a deterministic address, since it is used as input to callbacks
+        // Create an AuctionHouse at a deterministic address, since it is used as input to callbacks
         BatchAuctionHouse auctionHouse = new BatchAuctionHouse(_OWNER, _PROTOCOL, _permit2Address);
         _auctionHouse = BatchAuctionHouse(_AUCTION_HOUSE);
         vm.etch(address(_auctionHouse), address(auctionHouse).code);
@@ -87,26 +106,33 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Create a UniswapV2Factory at a deterministic address
-        UniswapV2FactoryClone uniV2Factory = new UniswapV2FactoryClone();
-        _uniV2Factory = UniswapV2FactoryClone(_UNISWAP_V2_FACTORY);
-        vm.etch(address(_uniV2Factory), address(uniV2Factory).code);
-        // No storage slots to set
-
-        // Create a UniswapV2Router at a deterministic address
-        vm.startBroadcast();
-        bytes32 uniswapV2RouterSalt = _getTestSalt(
-            "UniswapV2Router",
-            type(UniswapV2Router02).creationCode,
-            abi.encode(address(_uniV2Factory), address(0))
-        );
-        _uniV2Router =
-            new UniswapV2Router02{salt: uniswapV2RouterSalt}(address(_uniV2Factory), address(0));
+        // Create a UniswapV3Factory at a deterministic address
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        bytes32 uniswapV3Salt =
+            _getTestSalt("UniswapV3Factory", type(UniswapV3Factory).creationCode, abi.encode());
+        _uniV3Factory = new UniswapV3Factory{salt: uniswapV3Salt}();
         vm.stopBroadcast();
-        if (address(_uniV2Router) != _UNISWAP_V2_ROUTER) {
-            console2.log("UniswapV2Router address: {}", address(_uniV2Router));
-            revert("UniswapV2Router address mismatch");
+        if (address(_uniV3Factory) != _UNISWAP_V3_FACTORY) {
+            console2.log("UniswapV3Factory address: ", address(_uniV3Factory));
+            revert("UniswapV3Factory address mismatch");
         }
+
+        // Create a GUniFactory at a deterministic address
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        bytes32 gUniFactorySalt = _getTestSalt(
+            "GUniFactory", type(GUniFactory).creationCode, abi.encode(address(_uniV3Factory))
+        );
+        _gUniFactory = new GUniFactory{salt: gUniFactorySalt}(address(_uniV3Factory));
+        vm.stopBroadcast();
+        if (address(_gUniFactory) != _GUNI_FACTORY) {
+            console2.log("GUniFactory address: ", address(_gUniFactory));
+            revert("GUniFactory address mismatch");
+        }
+
+        // Initialize the GUniFactory
+        address payable gelatoAddress = payable(address(0x10));
+        GUniPool poolImplementation = new GUniPool(gelatoAddress);
+        _gUniFactory.initialize(address(poolImplementation), address(0), address(this));
 
         _linearVesting = new LinearVesting(address(_auctionHouse));
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
@@ -117,6 +143,10 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
 
         _quoteToken = new MockERC20("Quote Token", "QT", 18);
         _baseToken = new MockERC20("Base Token", "BT", 18);
+
+        _merkleProof.push(
+            bytes32(0x2eac7b0cadd960cd4457012a5e232aa3532d9365ba6df63c1b5a9c7846f77760)
+        ); // Corresponds to _BUYER
     }
 
     // ========== MODIFIERS ========== //
@@ -128,30 +158,20 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     }
 
     modifier givenCallbackIsCreated() {
-        Callbacks.Permissions memory permissions = Callbacks.Permissions({
-            onCreate: true,
-            onCancel: true,
-            onCurate: true,
-            onPurchase: false,
-            onBid: false,
-            onSettle: true,
-            receiveQuoteTokens: true,
-            sendBaseTokens: false
-        });
-
         // Get the salt
-        bytes memory args = abi.encode(
-            address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router), permissions
-        );
+        bytes memory args =
+            abi.encode(address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory));
         bytes32 salt = _getTestSalt(
-            "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args
+            "UniswapV3DTLWithAllocatedAllowlist",
+            type(UniswapV3DTLWithAllocatedAllowlist).creationCode,
+            args
         );
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test
         // Source: https://github.com/foundry-rs/foundry/issues/6402
         vm.startBroadcast();
-        _dtl = new UniswapV2DirectToLiquidity{salt: salt}(
-            address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router), permissions
+        _dtl = new UniswapV3DTLWithAllocatedAllowlist{salt: salt}(
+            address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory)
         );
         vm.stopBroadcast();
 
@@ -181,42 +201,11 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _setMaxSlippage(
-        uint24 maxSlippage_
-    ) internal {
-        _uniswapV2CreateParams.maxSlippage = maxSlippage_;
-        _dtlCreateParams.implParams = abi.encode(_uniswapV2CreateParams);
-    }
-
-    modifier givenMaxSlippage(
-        uint24 maxSlippage_
-    ) {
-        _setMaxSlippage(maxSlippage_);
-        _;
-    }
-
-    modifier givenQuoteTokenDecimals(
-        uint8 decimals_
-    ) {
-        _quoteToken = new MockERC20("Quote Token", "QT", decimals_);
-        _;
-    }
-
-    modifier givenBaseTokenDecimals(
-        uint8 decimals_
-    ) {
-        _baseToken = new MockERC20("Base Token", "BT", decimals_);
-
-        // Scale the capacity
-        _lotCapacity = uint96(_LOT_CAPACITY * 10 ** decimals_ / 10 ** 18);
-        _;
-    }
-
     function _createLot(address seller_, bytes memory err_) internal returns (uint96 lotId) {
         // Mint and approve the capacity to the owner
-        _baseToken.mint(seller_, _lotCapacity);
+        _baseToken.mint(seller_, _LOT_CAPACITY);
         vm.prank(seller_);
-        _baseToken.approve(address(_auctionHouse), _lotCapacity);
+        _baseToken.approve(address(_auctionHouse), _LOT_CAPACITY);
 
         // Prep the lot arguments
         IAuctionHouse.RoutingParams memory routingParams = IAuctionHouse.RoutingParams({
@@ -236,7 +225,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
             start: _AUCTION_START,
             duration: _DURATION,
             capacityInQuote: false,
-            capacity: _lotCapacity,
+            capacity: _LOT_CAPACITY,
             implParams: abi.encode("")
         });
 
@@ -269,7 +258,7 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
             seller_,
             address(_baseToken),
             address(_quoteToken),
-            _lotCapacity,
+            _LOT_CAPACITY,
             false,
             abi.encode(_dtlCreateParams)
         );
@@ -326,6 +315,32 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
+    modifier givenPoolFee(
+        uint24 fee_
+    ) {
+        _uniswapV3CreateParams.poolFee = fee_;
+
+        // Update the callback data
+        _dtlCreateParams.implParams = abi.encode(_uniswapV3CreateParams);
+        _;
+    }
+
+    function _setMaxSlippage(
+        uint24 maxSlippage_
+    ) internal {
+        _uniswapV3CreateParams.maxSlippage = maxSlippage_;
+
+        // Update the callback data
+        _dtlCreateParams.implParams = abi.encode(_uniswapV3CreateParams);
+    }
+
+    modifier givenMaxSlippage(
+        uint24 maxSlippage_
+    ) {
+        _setMaxSlippage(maxSlippage_);
+        _;
+    }
+
     modifier givenVestingStart(
         uint48 start_
     ) {
@@ -342,6 +357,12 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
 
     modifier whenRecipientIsNotSeller() {
         _dtlCreateParams.recipient = _NOT_SELLER;
+        _;
+    }
+
+    modifier givenMerkleRootIsSet() {
+        vm.prank(_SELLER);
+        _dtl.setMerkleRoot(_lotId, _MERKLE_ROOT);
         _;
     }
 
