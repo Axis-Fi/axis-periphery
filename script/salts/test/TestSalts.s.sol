@@ -12,10 +12,6 @@ import {TestConstants} from "../../../test/Constants.sol";
 import {Permit2User} from "@axis-core-1.0.4-test/lib/permit2/Permit2User.sol";
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
-// Uniswap
-import {UniswapV3Factory} from "../../../test/lib/uniswap-v3/UniswapV3Factory.sol";
-import {GUniFactory} from "@g-uni-v1-core-0.9.9/GUniFactory.sol";
-
 // import {BaselineAxisLaunch} from
 //     "../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 // import {BALwithAllocatedAllowlist} from
@@ -50,63 +46,25 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
         require(success, string.concat("Failed to generate ", saltKey_));
     }
 
-    function generateGUniFactory() public {
-        // Generate a salt for a GUniFactory
-        bytes memory args = abi.encode(_UNISWAP_V3_FACTORY);
-        bytes memory contractCode = type(GUniFactory).creationCode;
-        (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode("GUniFactory", contractCode, args);
-        _setTestSaltWithDeployer(bytecodePath, "AA", "GUniFactory", bytecodeHash, _CREATE2_DEPLOYER);
+    // function generateBaselineQuoteToken() public {
+    //     // Generate a salt for a MockERC20 quote token
+    //     bytes memory qtArgs = abi.encode("Quote Token", "QT", 18);
+    //     bytes memory qtContractCode = type(MockERC20).creationCode;
+    //     (string memory qtBytecodePath, bytes32 qtBytecodeHash) =
+    //         _writeBytecode("QuoteToken", qtContractCode, qtArgs);
+    //     _setTestSaltWithDeployer(
+    //         qtBytecodePath, "AA", "QuoteToken", qtBytecodeHash, _CREATE2_DEPLOYER
+    //     );
 
-        // Fetch the salt that was set
-        bytes32 gUniFactorySalt = _getSalt("Test_GUniFactory", contractCode, args);
+    //     // Fetch the salt that was set
+    //     bytes32 quoteTokenSalt = _getSalt("Test_QuoteToken", qtContractCode, qtArgs);
 
-        // Get the address of the GUniFactory
-        // Update the `_GUNI_FACTORY` constant with this value
-        vm.prank(_CREATE2_DEPLOYER);
-        GUniFactory gUniFactory = new GUniFactory{salt: gUniFactorySalt}(_UNISWAP_V3_FACTORY);
-        console2.log("GUniFactory address: ", address(gUniFactory));
-    }
-
-    function generateUniswapV3Factory() public {
-        // Generate a salt for a GUniFactory
-        bytes memory args = abi.encode();
-        bytes memory contractCode = type(UniswapV3Factory).creationCode;
-        (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode("UniswapV3Factory", contractCode, args);
-        _setTestSaltWithDeployer(
-            bytecodePath, "AA", "UniswapV3Factory", bytecodeHash, _CREATE2_DEPLOYER
-        );
-
-        // Fetch the salt that was set
-        bytes32 uniswapV3FactorySalt = _getSalt("Test_UniswapV3Factory", contractCode, args);
-
-        // Get the address of the UniswapV3Factory
-        // Update the `_UNISWAP_V3_FACTORY` constant with this value
-        vm.prank(_CREATE2_DEPLOYER);
-        UniswapV3Factory uniswapV3Factory = new UniswapV3Factory{salt: uniswapV3FactorySalt}();
-        console2.log("UniswapV3Factory address: ", address(uniswapV3Factory));
-    }
-
-    function generateBaselineQuoteToken() public {
-        // Generate a salt for a MockERC20 quote token
-        bytes memory qtArgs = abi.encode("Quote Token", "QT", 18);
-        bytes memory qtContractCode = type(MockERC20).creationCode;
-        (string memory qtBytecodePath, bytes32 qtBytecodeHash) =
-            _writeBytecode("QuoteToken", qtContractCode, qtArgs);
-        _setTestSaltWithDeployer(
-            qtBytecodePath, "AA", "QuoteToken", qtBytecodeHash, _CREATE2_DEPLOYER
-        );
-
-        // Fetch the salt that was set
-        bytes32 quoteTokenSalt = _getSalt("Test_QuoteToken", qtContractCode, qtArgs);
-
-        // Get the address of the quote token
-        // Update the `_BASELINE_QUOTE_TOKEN` constants with this value
-        vm.prank(_CREATE2_DEPLOYER);
-        MockERC20 quoteToken = new MockERC20{salt: quoteTokenSalt}("Quote Token", "QT", 18);
-        console2.log("Quote Token address: ", address(quoteToken));
-    }
+    //     // Get the address of the quote token
+    //     // Update the `_BASELINE_QUOTE_TOKEN` constants with this value
+    //     vm.prank(_CREATE2_DEPLOYER);
+    //     MockERC20 quoteToken = new MockERC20{salt: quoteTokenSalt}("Quote Token", "QT", 18);
+    //     console2.log("Quote Token address: ", address(quoteToken));
+    // }
 
     // function generateBaselineAxisLaunch() public {
     //     // Get the salt

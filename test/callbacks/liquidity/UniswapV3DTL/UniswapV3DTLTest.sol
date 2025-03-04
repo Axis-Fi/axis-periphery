@@ -91,28 +91,15 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Create a UniswapV3Factory at a deterministic address
+        // Create a UniswapV3Factory
         vm.startBroadcast(_CREATE2_DEPLOYER);
-        bytes32 uniswapV3Salt =
-            _getTestSalt("UniswapV3Factory", type(UniswapV3Factory).creationCode, abi.encode());
-        _uniV3Factory = new UniswapV3Factory{salt: uniswapV3Salt}();
+        _uniV3Factory = new UniswapV3Factory();
         vm.stopBroadcast();
-        if (address(_uniV3Factory) != _UNISWAP_V3_FACTORY) {
-            console2.log("UniswapV3Factory address: ", address(_uniV3Factory));
-            revert("UniswapV3Factory address mismatch");
-        }
 
-        // Create a GUniFactory at a deterministic address
+        // Create a GUniFactory
         vm.startBroadcast(_CREATE2_DEPLOYER);
-        bytes32 gUniFactorySalt = _getTestSalt(
-            "GUniFactory", type(GUniFactory).creationCode, abi.encode(address(_uniV3Factory))
-        );
-        _gUniFactory = new GUniFactory{salt: gUniFactorySalt}(address(_uniV3Factory));
+        _gUniFactory = new GUniFactory(address(_uniV3Factory));
         vm.stopBroadcast();
-        if (address(_gUniFactory) != _GUNI_FACTORY) {
-            console2.log("GUniFactory address: ", address(_gUniFactory));
-            revert("GUniFactory address mismatch");
-        }
 
         // Initialize the GUniFactory
         address payable gelatoAddress = payable(address(0x10));

@@ -86,17 +86,15 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Create a UniswapV2Factory at a deterministic address
-        UniswapV2FactoryClone uniV2Factory = new UniswapV2FactoryClone();
-        _uniV2Factory = UniswapV2FactoryClone(_UNISWAP_V2_FACTORY);
-        vm.etch(address(_uniV2Factory), address(uniV2Factory).code);
-        // No storage slots to set
+        // Create a UniswapV2Factory
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        _uniV2Factory = new UniswapV2FactoryClone();
+        vm.stopBroadcast();
 
-        // Create a UniswapV2Router at a deterministic address
-        UniswapV2Router02 uniV2Router = new UniswapV2Router02(address(_uniV2Factory), address(0));
-        _uniV2Router = UniswapV2Router02(payable(_UNISWAP_V2_ROUTER));
-        vm.etch(address(_uniV2Router), address(uniV2Router).code);
-        // No storage slots to set
+        // Create a UniswapV2Router
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        _uniV2Router = new UniswapV2Router02(address(_uniV2Factory), address(0));
+        vm.stopBroadcast();
 
         _linearVesting = new LinearVesting(address(_auctionHouse));
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
