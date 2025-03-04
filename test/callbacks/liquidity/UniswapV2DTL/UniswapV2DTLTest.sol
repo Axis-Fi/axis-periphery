@@ -25,7 +25,7 @@ import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.so
 
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
-import {WithSalts} from "../../../lib/WithSalts.sol";
+import {WithSalts} from "../../../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../../../Constants.sol";
 import {console2} from "@forge-std-1.9.1/console2.sol";
 
@@ -119,11 +119,11 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     }
 
     modifier givenCallbackIsCreated() {
-        // Get the salt
+        // Generate a salt for the contract
         bytes memory args =
             abi.encode(address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router));
-        bytes32 salt = _getTestSalt(
-            "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args
+        bytes32 salt = _generateSalt(
+            "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args, "E6"
         );
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test
