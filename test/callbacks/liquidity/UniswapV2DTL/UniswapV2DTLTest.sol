@@ -94,19 +94,10 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         // No storage slots to set
 
         // Create a UniswapV2Router at a deterministic address
-        vm.startBroadcast();
-        bytes32 uniswapV2RouterSalt = _getTestSalt(
-            "UniswapV2Router",
-            type(UniswapV2Router02).creationCode,
-            abi.encode(address(_uniV2Factory), address(0))
-        );
-        _uniV2Router =
-            new UniswapV2Router02{salt: uniswapV2RouterSalt}(address(_uniV2Factory), address(0));
-        vm.stopBroadcast();
-        if (address(_uniV2Router) != _UNISWAP_V2_ROUTER) {
-            console2.log("UniswapV2Router address: {}", address(_uniV2Router));
-            revert("UniswapV2Router address mismatch");
-        }
+        UniswapV2Router02 uniV2Router = new UniswapV2Router02(address(_uniV2Factory), address(0));
+        _uniV2Router = UniswapV2Router02(payable(_UNISWAP_V2_ROUTER));
+        vm.etch(address(_uniV2Router), address(uniV2Router).code);
+        // No storage slots to set
 
         _linearVesting = new LinearVesting(address(_auctionHouse));
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));

@@ -5,9 +5,9 @@ import {TestConstants as TestConstantsCore} from "@axis-core-1.0.4-test/Constant
 
 abstract contract TestConstants is TestConstantsCore {
     address internal constant _UNISWAP_V2_FACTORY =
-        address(0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f);
+        address(0x222222);
     address internal constant _UNISWAP_V2_ROUTER =
-        address(0xAA063dB6d010722f4d29c000a8832f101b944570);
+        address(0x222333);
     address internal constant _UNISWAP_V3_FACTORY =
         address(0xAA3023F92819f02180b25795a5797f69F3627Cb7);
     address internal constant _GUNI_FACTORY = address(0xAA19F2E4084fd3e49C198e616e181B82332000D5);
