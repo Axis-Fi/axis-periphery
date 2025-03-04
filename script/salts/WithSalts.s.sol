@@ -20,7 +20,9 @@ contract WithSalts is Script {
         string memory name_,
         bytes32 bytecodeHash_
     ) internal pure returns (string memory) {
-        return string.concat(_getBytecodeDirectory(), "/", name_, "-", vm.toString(bytecodeHash_), ".bin");
+        return string.concat(
+            _getBytecodeDirectory(), "/", name_, "-", vm.toString(bytecodeHash_), ".bin"
+        );
     }
 
     function _createBytecodeDirectory() internal {

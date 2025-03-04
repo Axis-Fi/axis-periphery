@@ -10,21 +10,11 @@ import {TestConstants} from "../../../test/Constants.sol";
 
 // Libraries
 import {Permit2User} from "@axis-core-1.0.4-test/lib/permit2/Permit2User.sol";
-import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
 // Uniswap
 import {UniswapV3Factory} from "../../../test/lib/uniswap-v3/UniswapV3Factory.sol";
 import {GUniFactory} from "@g-uni-v1-core-0.9.9/GUniFactory.sol";
-import {UniswapV2Router02} from "@uniswap-v2-periphery-1.0.1/UniswapV2Router02.sol";
-
-// Callbacks
-import {CappedMerkleAllowlist} from "../../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
-import {AllocatedMerkleAllowlist} from
-    "../../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
-import {TokenAllowlist} from "../../../src/callbacks/allowlists/TokenAllowlist.sol";
-import {UniswapV2DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV2DTL.sol";
-import {UniswapV3DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 
 // import {BaselineAxisLaunch} from
 //     "../../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
@@ -58,22 +48,6 @@ contract TestSalts is Script, WithEnvironment, Permit2User, WithSalts, TestConst
         // Call the generate function for the salt key
         (bool success,) = address(this).call(abi.encodeWithSelector(selector));
         require(success, string.concat("Failed to generate ", saltKey_));
-    }
-
-    function generateUniswapV2DirectToLiquidity() public {
-        bytes memory args = abi.encode(_AUCTION_HOUSE, _UNISWAP_V2_FACTORY, _UNISWAP_V2_ROUTER);
-        bytes memory contractCode = type(UniswapV2DirectToLiquidity).creationCode;
-        (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode("UniswapV2DirectToLiquidity", contractCode, args);
-        _setTestSalt(bytecodePath, "E6", "UniswapV2DirectToLiquidity", bytecodeHash);
-    }
-
-    function generateUniswapV3DirectToLiquidity() public {
-        bytes memory args = abi.encode(_AUCTION_HOUSE, _UNISWAP_V3_FACTORY, _GUNI_FACTORY);
-        bytes memory contractCode = type(UniswapV3DirectToLiquidity).creationCode;
-        (string memory bytecodePath, bytes32 bytecodeHash) =
-            _writeBytecode("UniswapV3DirectToLiquidity", contractCode, args);
-        _setTestSalt(bytecodePath, "E6", "UniswapV3DirectToLiquidity", bytecodeHash);
     }
 
     function generateGUniFactory() public {

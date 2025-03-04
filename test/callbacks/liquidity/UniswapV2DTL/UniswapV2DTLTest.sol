@@ -27,7 +27,6 @@ import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
 import {WithSalts} from "../../../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../../../Constants.sol";
-import {console2} from "@forge-std-1.9.1/console2.sol";
 
 abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV2DirectToLiquidity;
