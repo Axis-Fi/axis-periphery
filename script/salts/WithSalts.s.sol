@@ -28,13 +28,7 @@ contract WithSalts is Script {
     function _createBytecodeDirectory() internal {
         // Create the bytecode folder if it doesn't exist
         if (!vm.isDir(_getBytecodeDirectory())) {
-            console2.log("Creating bytecode directory");
-
-            string[] memory inputs = new string[](2);
-            inputs[0] = "mkdir";
-            inputs[1] = _BYTECODE_DIR;
-
-            vm.ffi(inputs);
+            vm.createDir(_getBytecodeDirectory(), true);
         }
     }
 
@@ -55,6 +49,7 @@ contract WithSalts is Script {
             return (bytecodePath, bytecodeHash);
         }
 
+        _createBytecodeDirectory();
         vm.writeFile(bytecodePath, vm.toString(bytecode));
 
         return (bytecodePath, bytecodeHash);
