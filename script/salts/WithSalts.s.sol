@@ -50,6 +50,41 @@ contract WithSalts is Script {
         return (bytecodePath, bytecodeHash);
     }
 
+    function _generateSalt(
+        string memory contractName_,
+        bytes memory creationCode_,
+        bytes memory contractArgs_,
+        string memory prefix_
+    ) internal returns (bytes32) {
+        // Write the bytecode
+        (string memory bytecodePath, bytes32 bytecodeHash) =
+            _writeBytecode(contractName_, creationCode_, contractArgs_);
+
+        // Call the salts script to generate and return the salt
+        string[] memory inputs = new string[](9);
+        inputs[0] = "./script/salts/generate_salt.sh";
+        inputs[1] = "--bytecodeFile";
+        inputs[2] = bytecodePath;
+        inputs[3] = "--bytecodeHash";
+        inputs[4] = vm.toString(bytecodeHash);
+        inputs[5] = "--prefix";
+        inputs[6] = prefix_;
+
+        bytes memory output = vm.ffi(inputs);
+        console2.log("Salt generated for", contractName_, "with prefix", prefix_);
+        console2.logBytes32(bytes32(output));
+
+        return bytes32(output);
+    }
+
+    function _getTestSalt(
+        string memory contractName_,
+        bytes memory creationCode_,
+        bytes memory contractArgs_
+    ) internal returns (bytes32) {
+        return _getSalt(string.concat("Test_", contractName_), creationCode_, contractArgs_);
+    }
+
     /// @notice Gets the salt for a given key
     /// @dev    If the key is not found, the function will return `bytes32(0)`.
     ///
