@@ -11,7 +11,7 @@ import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 
 import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
 
-import {WithSalts} from "../lib/WithSalts.sol";
+import {WithSalts} from "../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../Constants.sol";
 
 contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestConstants {
@@ -58,9 +58,12 @@ contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestCon
             receiveQuoteTokens: false,
             sendBaseTokens: false
         });
-        bytes memory args = abi.encode(address(_auctionHouse), permissions);
-        bytes32 salt =
-            _getTestSalt("CappedMerkleAllowlist", type(CappedMerkleAllowlist).creationCode, args);
+        bytes32 salt = _generateSalt(
+            "BatchCappedMerkleAllowlist",
+            type(CappedMerkleAllowlist).creationCode,
+            abi.encode(address(_auctionHouse), permissions),
+            "88"
+        );
 
         vm.broadcast();
         _allowlist = new CappedMerkleAllowlist{salt: salt}(address(_auctionHouse), permissions);
