@@ -17,9 +17,10 @@ contract WithSalts is Script {
     }
 
     function _getBytecodePath(
-        string memory name_
+        string memory name_,
+        bytes32 bytecodeHash_
     ) internal pure returns (string memory) {
-        return string.concat(_getBytecodeDirectory(), "/", name_, ".bin");
+        return string.concat(_getBytecodeDirectory(), "/", name_, "-", vm.toString(bytecodeHash_), ".bin");
     }
 
     function _createBytecodeDirectory() internal {
@@ -44,7 +45,14 @@ contract WithSalts is Script {
         bytes memory bytecode = abi.encodePacked(creationCode_, contractArgs_);
         bytecodeHash = keccak256(bytecode);
 
-        bytecodePath = _getBytecodePath(contractName_);
+        bytecodePath = _getBytecodePath(contractName_, bytecodeHash);
+
+        // Don't write the bytecode if it already exists
+        if (vm.isFile(bytecodePath)) {
+            console2.log("Skipping bytecode write for ", contractName_);
+            return (bytecodePath, bytecodeHash);
+        }
+
         vm.writeFile(bytecodePath, vm.toString(bytecode));
 
         return (bytecodePath, bytecodeHash);
