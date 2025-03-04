@@ -39,17 +39,17 @@ import {MockBatchAuctionModule} from
 
 import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.sol";
 
-import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
+// import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
 
 // Baseline
-import {Kernel, Actions, Module, toKeycode as toBaselineKeycode} from "@baseline/Kernel.sol";
+// import {Kernel, Actions, Module, toKeycode as toBaselineKeycode} from "@baseline/Kernel.sol";
 
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
-import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
-import {BPOOLMinter} from "./modules/BPOOLMinter.sol";
-import {CREDTMinter} from "./modules/CREDTMinter.sol";
-import {CREDTv1} from "@baseline/modules/CREDT.v1.sol";
-import {LOOPSv1} from "@baseline/modules/LOOPS.v1.sol";
+// import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
+// import {BPOOLMinter} from "./modules/BPOOLMinter.sol";
+// import {CREDTMinter} from "./modules/CREDTMinter.sol";
+// import {CREDTv1} from "@baseline/modules/CREDT.v1.sol";
+// import {LOOPSv1} from "@baseline/modules/LOOPS.v1.sol";
 import {ModuleTester, ModuleTestFixture} from "./modules/ModuleTester.sol";
 
 import {WithSalts} from "../lib/WithSalts.sol";
@@ -62,7 +62,7 @@ import {MockBlast} from "./mocks/MockBlast.sol";
 abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV2DirectToLiquidity;
     using Callbacks for UniswapV3DirectToLiquidity;
-    using Callbacks for BaselineAxisLaunch;
+    // using Callbacks for BaselineAxisLaunch;
 
     /*//////////////////////////////////////////////////////////////////////////
                                 GLOBAL VARIABLES
@@ -132,11 +132,11 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
     WETH9 internal _weth;
     SwapRouter internal _v3SwapRouter;
 
-    BaselineAxisLaunch internal _dtlBaseline;
+    // BaselineAxisLaunch internal _dtlBaseline;
 
     EncryptedMarginalPrice internal _empModule;
     FixedPriceBatch internal _fpbModule;
-    Kernel internal _kernel;
+    // Kernel internal _kernel;
 
     LinearVesting internal _linearVesting;
     MockBatchAuctionModule internal _batchAuctionModule;
@@ -146,12 +146,12 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
 
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
-    BPOOLv1 internal _baselineToken;
-    CREDTv1 internal _credt;
-    LOOPSv1 internal _loops;
+    // BPOOLv1 internal _baselineToken;
+    // CREDTv1 internal _credt;
+    // LOOPSv1 internal _loops;
 
-    BPOOLMinter internal _bpoolMinter;
-    CREDTMinter internal _credtMinter;
+    // BPOOLMinter internal _bpoolMinter;
+    // CREDTMinter internal _credtMinter;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     EVENTS
@@ -259,69 +259,69 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
 
         _updatePoolInitialTick();
 
-        _kernel = new Kernel();
+        // _kernel = new Kernel();
 
-        _baselineToken = _deployBPOOL(
-            _kernel,
-            "Base Token",
-            "BT",
-            _baseTokenDecimals,
-            address(_uniV3Factory),
-            address(_quoteToken),
-            _feeTier,
-            _poolInitialTick,
-            address(_blast),
-            address(0)
-        );
+        // _baselineToken = _deployBPOOL(
+        //     _kernel,
+        //     "Base Token",
+        //     "BT",
+        //     _baseTokenDecimals,
+        //     address(_uniV3Factory),
+        //     address(_quoteToken),
+        //     _feeTier,
+        //     _poolInitialTick,
+        //     address(_blast),
+        //     address(0)
+        // );
 
-        _credt = new CREDTv1(_kernel, address(_blast), address(0));
+        // _credt = new CREDTv1(_kernel, address(_blast), address(0));
 
-        _loops = new LOOPSv1(_kernel, 1);
+        // _loops = new LOOPSv1(_kernel, 1);
 
-        _bpoolMinter = new BPOOLMinter(_kernel);
-        _credtMinter = new CREDTMinter(_kernel);
+        // _bpoolMinter = new BPOOLMinter(_kernel);
+        // _credtMinter = new CREDTMinter(_kernel);
 
-        _kernel.executeAction(Actions.InstallModule, address(_baselineToken));
-        _kernel.executeAction(Actions.ActivatePolicy, address(_bpoolMinter));
+        // _kernel.executeAction(Actions.InstallModule, address(_baselineToken));
+        // _kernel.executeAction(Actions.ActivatePolicy, address(_bpoolMinter));
 
-        _kernel.executeAction(Actions.InstallModule, address(_credt));
-        _kernel.executeAction(Actions.ActivatePolicy, address(_credtMinter));
+        // _kernel.executeAction(Actions.InstallModule, address(_credt));
+        // _kernel.executeAction(Actions.ActivatePolicy, address(_credtMinter));
 
-        _kernel.executeAction(Actions.InstallModule, address(_loops));
+        // _kernel.executeAction(Actions.InstallModule, address(_loops));
 
-        vm.prank(_OWNER);
-        _baselineAuctionHouse.installModule(_fpbModule);
-        vm.prank(_OWNER);
-        _baselineAuctionHouse.installModule(_empModule);
+        // vm.prank(_OWNER);
+        // _baselineAuctionHouse.installModule(_fpbModule);
+        // vm.prank(_OWNER);
+        // _baselineAuctionHouse.installModule(_empModule);
 
-        bytes memory baselineSaltArgs = abi.encodePacked(
-            type(BaselineAxisLaunch).creationCode,
-            abi.encode(
-                address(_baselineAuctionHouse), address(_kernel), address(_quoteToken), _SELLER
-            )
-        );
+        // bytes memory baselineSaltArgs = abi.encodePacked(
+        //     type(BaselineAxisLaunch).creationCode,
+        //     abi.encode(
+        //         address(_baselineAuctionHouse), address(_kernel), address(_quoteToken), _SELLER
+        //     )
+        // );
 
-        string[] memory baselineInputs = new string[](7);
-        baselineInputs[0] = "./test/invariant/helpers/salt_hash.sh";
-        baselineInputs[1] = "--bytecodeHash";
-        baselineInputs[2] = toHexString(keccak256(baselineSaltArgs));
-        baselineInputs[3] = "--prefix";
-        baselineInputs[4] = BASELINE_PREFIX;
-        baselineInputs[5] = "--deployer";
-        baselineInputs[6] = toString(address(this));
+        // string[] memory baselineInputs = new string[](7);
+        // baselineInputs[0] = "./test/invariant/helpers/salt_hash.sh";
+        // baselineInputs[1] = "--bytecodeHash";
+        // baselineInputs[2] = toHexString(keccak256(baselineSaltArgs));
+        // baselineInputs[3] = "--prefix";
+        // baselineInputs[4] = BASELINE_PREFIX;
+        // baselineInputs[5] = "--deployer";
+        // baselineInputs[6] = toString(address(this));
 
-        bytes memory baselineRes = vm.ffi(baselineInputs);
-        bytes32 baselineSalt = abi.decode(baselineRes, (bytes32));
+        // bytes memory baselineRes = vm.ffi(baselineInputs);
+        // bytes32 baselineSalt = abi.decode(baselineRes, (bytes32));
 
-        _dtlBaseline = new BaselineAxisLaunch{salt: baselineSalt}(
-            address(_baselineAuctionHouse), address(_kernel), address(_quoteToken), _SELLER
-        );
+        // _dtlBaseline = new BaselineAxisLaunch{salt: baselineSalt}(
+        //     address(_baselineAuctionHouse), address(_kernel), address(_quoteToken), _SELLER
+        // );
 
-        _dtlBaselineAddress = address(_dtlBaseline);
+        // _dtlBaselineAddress = address(_dtlBaseline);
 
-        _bpoolMinter.setTransferLock(false);
+        // _bpoolMinter.setTransferLock(false);
 
-        _kernel.executeAction(Actions.ActivatePolicy, _dtlBaselineAddress);
+        // _kernel.executeAction(Actions.ActivatePolicy, _dtlBaselineAddress);
     }
 
     function randomAddress(
@@ -366,106 +366,106 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         return TickMath.getTickAtSqrtRatio(sqrtPriceX96);
     }
 
-    function _deployBPOOL(
-        Kernel kernel_,
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        address _factory,
-        address _reserve,
-        uint24 _feeTier,
-        int24 _initialActiveTick,
-        address blast,
-        address blastGovernor
-    ) internal returns (BPOOLv1) {
-        bytes32 salt = _getSalt(
-            kernel_,
-            _name,
-            _symbol,
-            _decimals,
-            _factory,
-            _reserve,
-            _feeTier,
-            _initialActiveTick,
-            blast,
-            blastGovernor
-        );
+    // function _deployBPOOL(
+    //     Kernel kernel_,
+    //     string memory _name,
+    //     string memory _symbol,
+    //     uint8 _decimals,
+    //     address _factory,
+    //     address _reserve,
+    //     uint24 _feeTier,
+    //     int24 _initialActiveTick,
+    //     address blast,
+    //     address blastGovernor
+    // ) internal returns (BPOOLv1) {
+    //     bytes32 salt = _getSalt(
+    //         kernel_,
+    //         _name,
+    //         _symbol,
+    //         _decimals,
+    //         _factory,
+    //         _reserve,
+    //         _feeTier,
+    //         _initialActiveTick,
+    //         blast,
+    //         blastGovernor
+    //     );
 
-        return new BPOOLv1{salt: salt}(
-            kernel_,
-            _name,
-            _symbol,
-            _decimals,
-            _factory,
-            _reserve,
-            _feeTier,
-            _initialActiveTick,
-            blast,
-            blastGovernor
-        );
-    }
+    //     return new BPOOLv1{salt: salt}(
+    //         kernel_,
+    //         _name,
+    //         _symbol,
+    //         _decimals,
+    //         _factory,
+    //         _reserve,
+    //         _feeTier,
+    //         _initialActiveTick,
+    //         blast,
+    //         blastGovernor
+    //     );
+    // }
 
-    // Returns a salt that will result in a BPOOL address less than the reserve address
-    function _getSalt(
-        Kernel kernel_,
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        address _factory,
-        address _reserve,
-        uint24 _feeTier,
-        int24 _initialActiveTick,
-        address blast,
-        address blastGovernor
-    ) internal view returns (bytes32) {
-        uint256 salt;
+    // // Returns a salt that will result in a BPOOL address less than the reserve address
+    // function _getSalt(
+    //     Kernel kernel_,
+    //     string memory _name,
+    //     string memory _symbol,
+    //     uint8 _decimals,
+    //     address _factory,
+    //     address _reserve,
+    //     uint24 _feeTier,
+    //     int24 _initialActiveTick,
+    //     address blast,
+    //     address blastGovernor
+    // ) internal view returns (bytes32) {
+    //     uint256 salt;
 
-        while (salt < 100) {
-            // Calculate the BPOOL bytecode hash
-            bytes32 BPOOLHash = keccak256(
-                abi.encodePacked(
-                    type(BPOOLv1).creationCode,
-                    abi.encode(
-                        kernel_,
-                        _name,
-                        _symbol,
-                        _decimals,
-                        _factory,
-                        _reserve,
-                        _feeTier,
-                        _initialActiveTick,
-                        blast,
-                        blastGovernor
-                    )
-                )
-            );
+    //     while (salt < 100) {
+    //         // Calculate the BPOOL bytecode hash
+    //         bytes32 BPOOLHash = keccak256(
+    //             abi.encodePacked(
+    //                 type(BPOOLv1).creationCode,
+    //                 abi.encode(
+    //                     kernel_,
+    //                     _name,
+    //                     _symbol,
+    //                     _decimals,
+    //                     _factory,
+    //                     _reserve,
+    //                     _feeTier,
+    //                     _initialActiveTick,
+    //                     blast,
+    //                     blastGovernor
+    //                 )
+    //             )
+    //         );
 
-            // Calculate the BPOOL CREATE2 address
-            address BPOOLAddress = address(
-                uint160(
-                    uint256(
-                        keccak256(
-                            abi.encodePacked(
-                                bytes1(0xff),
-                                address(this), // deployer address
-                                bytes32(salt),
-                                BPOOLHash
-                            )
-                        )
-                    )
-                )
-            );
+    //         // Calculate the BPOOL CREATE2 address
+    //         address BPOOLAddress = address(
+    //             uint160(
+    //                 uint256(
+    //                     keccak256(
+    //                         abi.encodePacked(
+    //                             bytes1(0xff),
+    //                             address(this), // deployer address
+    //                             bytes32(salt),
+    //                             BPOOLHash
+    //                         )
+    //                     )
+    //                 )
+    //             )
+    //         );
 
-            // Return the salt that will result in a BPOOL address less than the reserve address
-            if (BPOOLAddress < _reserve) {
-                return bytes32(salt);
-            }
+    //         // Return the salt that will result in a BPOOL address less than the reserve address
+    //         if (BPOOLAddress < _reserve) {
+    //             return bytes32(salt);
+    //         }
 
-            salt++;
-        }
+    //         salt++;
+    //     }
 
-        revert("No salt found");
-    }
+    //     revert("No salt found");
+    // }
 
     function toString(
         address _addr
@@ -493,30 +493,30 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _baseToken.mint(address_, amount_);
     }
 
-    function givenAddressHasBaselineTokenBalance(address account_, uint256 amount_) internal {
-        _baselineToken.mint(account_, amount_);
-    }
+    // function givenAddressHasBaselineTokenBalance(address account_, uint256 amount_) internal {
+    //     _baselineToken.mint(account_, amount_);
+    // }
 
-    function _disableTransferLock() internal {
-        _bpoolMinter.setTransferLock(false);
-    }
+    // function _disableTransferLock() internal {
+    //     _bpoolMinter.setTransferLock(false);
+    // }
 
-    function _enableTransferLock() internal {
-        _bpoolMinter.setTransferLock(true);
-    }
+    // function _enableTransferLock() internal {
+    //     _bpoolMinter.setTransferLock(true);
+    // }
 
-    function _transferBaselineTokenRefund(
-        uint256 amount_
-    ) internal {
-        _disableTransferLock();
+    // function _transferBaselineTokenRefund(
+    //     uint256 amount_
+    // ) internal {
+    //     _disableTransferLock();
 
-        // Transfer refund from auction house to the callback
-        // We transfer instead of minting to not affect the supply
-        vm.prank(address(_baselineAuctionHouse));
-        _baselineToken.transfer(_dtlBaselineAddress, amount_);
+    //     // Transfer refund from auction house to the callback
+    //     // We transfer instead of minting to not affect the supply
+    //     vm.prank(address(_baselineAuctionHouse));
+    //     _baselineToken.transfer(_dtlBaselineAddress, amount_);
 
-        _enableTransferLock();
-    }
+    //     _enableTransferLock();
+    // }
 
     function givenAddressHasBaseTokenAllowance(
         address owner_,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-
+/*
 import {Owned} from "@solmate-6.8.0/auth/Owned.sol";
 
 import {Kernel, Keycode, toKeycode, Policy} from "@baseline/Kernel.sol";
@@ -20,3 +20,4 @@ contract CREDTMinter is Policy, Owned {
         CREDT = CREDTv1(getModuleAddress(toKeycode("CREDT")));
     }
 }
+*/

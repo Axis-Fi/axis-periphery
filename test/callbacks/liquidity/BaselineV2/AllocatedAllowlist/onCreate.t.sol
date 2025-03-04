@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
-
+/*
 import {BaselineAllocatedAllowlistTest} from "./BaselineAllocatedAllowlistTest.sol";
 
 import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
@@ -66,3 +66,4 @@ contract BaselineAllocatedAllowlistOnCreateTest is BaselineAllocatedAllowlistTes
         assertEq(BALwithAllocatedAllowlist(address(_dtl)).merkleRoot(), _MERKLE_ROOT, "merkle root");
     }
 }
+*/

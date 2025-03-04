@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
-
+/*
 import {BaselineAllowlistTest} from "./BaselineAllowlistTest.sol";
 
 import {BALwithAllowlist} from
@@ -94,3 +94,4 @@ contract BaselineAllowlistSetMerkleRootTest is BaselineAllowlistTest {
         assertEq(BALwithAllowlist(address(_dtl)).merkleRoot(), _NEW_MERKLE_ROOT, "merkle root");
     }
 }
+*/

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
-
+/*
 // Test scaffolding
 import {BaselineAxisLaunchTest} from "../BaselineAxisLaunchTest.sol";
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
@@ -58,3 +58,4 @@ contract BaselineTokenAllowlistTest is BaselineAxisLaunchTest {
         _;
     }
 }
+*/

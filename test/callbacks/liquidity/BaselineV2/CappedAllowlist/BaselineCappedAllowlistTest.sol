@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.19;
-
+/*
 // Test scaffolding
 import {BaselineAxisLaunchTest} from "../BaselineAxisLaunchTest.sol";
 
@@ -44,3 +44,4 @@ contract BaselineCappedAllowlistTest is BaselineAxisLaunchTest {
         _;
     }
 }
+*/

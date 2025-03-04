@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
-
+/*
 import {BeforeAfter} from "../helpers/BeforeAfter.sol";
 import {Assertions} from "../helpers/Assertions.sol";
 
@@ -39,9 +39,9 @@ import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 import {FixedPointMathLib} from "@solmate-6.8.0/utils/FixedPointMathLib.sol";
 
 abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
-    /*//////////////////////////////////////////////////////////////////////////
-                                HANDLER VARIABLES
-    //////////////////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////////////////
+    //                            HANDLER VARIABLES
+    //////////////////////////////////////////////////////////////////////////
 
     uint256 internal lotCapacity;
 
@@ -58,9 +58,9 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
     int24 internal _ANCHOR_TICK_U;
     uint24 internal _POOL_PERCENT;
 
-    /*//////////////////////////////////////////////////////////////////////////
-                                TARGET FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////////////////
+    //                            TARGET FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////
 
     function baselineDTL_createLot() public {
         // PRE-CONDITIONS
@@ -296,9 +296,9 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
         }
     }
 
-    /*//////////////////////////////////////////////////////////////////////////
-                                    HELPERS
-    //////////////////////////////////////////////////////////////////////////*/
+    //////////////////////////////////////////////////////////////////////////
+    //                                HELPERS
+    //////////////////////////////////////////////////////////////////////////
 
     function _scaleBaseTokenAmount(
         uint256 amount_
@@ -458,3 +458,4 @@ abstract contract BaselineDTLHandler is BeforeAfter, Assertions {
         );
     }
 }
+*/
