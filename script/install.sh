@@ -20,13 +20,7 @@ echo "    Done"
 echo ""
 echo "*** Restoring submodule commits"
 
-# echo ""
-# echo "baseline"
-# cd lib/baseline-v2/ && git checkout 8950018baec27d6497fba409cb361a596535447d && cd ../..
-
-# echo ""
-# echo "*** Applying patch to Baseline submodule"
-# patch -d lib/baseline-v2/ -p1 < script/patch/baseline.patch
+# Nothing to do
 
 echo ""
 echo "*** Installing soldeer dependencies"

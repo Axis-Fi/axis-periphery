@@ -6,7 +6,6 @@ import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 import {Permit2User} from "@axis-core-1.0.4-test/lib/permit2/Permit2User.sol";
 
 import {IAuction} from "@axis-core-1.0.4/interfaces/modules/IAuction.sol";
-import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
 import {BatchAuctionHouse} from "@axis-core-1.0.4/BatchAuctionHouse.sol";
 import {EncryptedMarginalPrice} from "@axis-core-1.0.4/modules/auctions/batch/EMP.sol";
 import {IFixedPriceBatch} from "@axis-core-1.0.4/interfaces/modules/auctions/IFixedPriceBatch.sol";
@@ -26,43 +25,25 @@ import {IUniswapV3Factory} from
 import {UniswapV3Factory} from "../lib/uniswap-v3/UniswapV3Factory.sol";
 import {WETH9} from "./modules/WETH.sol";
 import {SwapRouter} from "./modules/uniswapv3-periphery/SwapRouter.sol";
-import {FixedPointMathLib} from "@solmate-6.8.0/utils/FixedPointMathLib.sol";
 import {SqrtPriceMath} from "../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 import {TickMath} from "@uniswap-v3-core-1.0.1-solc-0.8-simulate/libraries/TickMath.sol";
 
-import {BaseDirectToLiquidity} from "../../src/callbacks/liquidity/BaseDTL.sol";
 import {UniswapV2DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV2DTL.sol";
 import {UniswapV3DirectToLiquidity} from "../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-1.0.4/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-1.0.4-test/modules/Auction/MockBatchAuctionModule.sol";
 
-import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.sol";
-
-// import {BaselineAxisLaunch} from "../../src/callbacks/liquidity/BaselineV2/BaselineAxisLaunch.sol";
-
-// Baseline
-// import {Kernel, Actions, Module, toKeycode as toBaselineKeycode} from "@baseline/Kernel.sol";
-
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
-// import {BPOOLv1, Range, Position} from "@baseline/modules/BPOOL.v1.sol";
-// import {BPOOLMinter} from "./modules/BPOOLMinter.sol";
-// import {CREDTMinter} from "./modules/CREDTMinter.sol";
-// import {CREDTv1} from "@baseline/modules/CREDT.v1.sol";
-// import {LOOPSv1} from "@baseline/modules/LOOPS.v1.sol";
-import {ModuleTester, ModuleTestFixture} from "./modules/ModuleTester.sol";
 
 import {WithSalts} from "../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../Constants.sol";
-import {console2} from "@forge-std-1.9.1/console2.sol";
 
-import {MockBatchAuctionHouse} from "./mocks/MockBatchAuctionHouse.sol";
 import {MockBlast} from "./mocks/MockBlast.sol";
 
 abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV2DirectToLiquidity;
     using Callbacks for UniswapV3DirectToLiquidity;
-    // using Callbacks for BaselineAxisLaunch;
 
     /*//////////////////////////////////////////////////////////////////////////
                                 GLOBAL VARIABLES
@@ -104,11 +85,9 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
     uint96 internal _lotId = 1;
 
     string internal constant UNISWAP_PREFIX = "E6";
-    string internal constant BASELINE_PREFIX = "EF";
 
     address internal _dtlV2Address;
     address internal _dtlV3Address;
-    address internal _dtlBaselineAddress;
 
     IFixedPriceBatch.AuctionDataParams internal _fpbParams =
         IFixedPriceBatch.AuctionDataParams({price: _FIXED_PRICE, minFillPercent: 100e2});
@@ -118,7 +97,6 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
     //////////////////////////////////////////////////////////////////////////*/
 
     BatchAuctionHouse internal _auctionHouse;
-    MockBatchAuctionHouse internal _baselineAuctionHouse;
 
     UniswapV2DirectToLiquidity internal _dtlV2;
 
@@ -132,11 +110,8 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
     WETH9 internal _weth;
     SwapRouter internal _v3SwapRouter;
 
-    // BaselineAxisLaunch internal _dtlBaseline;
-
     EncryptedMarginalPrice internal _empModule;
     FixedPriceBatch internal _fpbModule;
-    // Kernel internal _kernel;
 
     LinearVesting internal _linearVesting;
     MockBatchAuctionModule internal _batchAuctionModule;
@@ -146,12 +121,6 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
 
     MockERC20 internal _quoteToken;
     MockERC20 internal _baseToken;
-    // BPOOLv1 internal _baselineToken;
-    // CREDTv1 internal _credt;
-    // LOOPSv1 internal _loops;
-
-    // BPOOLMinter internal _bpoolMinter;
-    // CREDTMinter internal _credtMinter;
 
     /*//////////////////////////////////////////////////////////////////////////
                                     EVENTS
@@ -173,7 +142,6 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
 
         // Create an BatchAuctionHouse at a deterministic address, since it is used as input to callbacks
         _auctionHouse = new BatchAuctionHouse(_OWNER, _PROTOCOL, _permit2Address);
-        _baselineAuctionHouse = new MockBatchAuctionHouse(_OWNER, _PROTOCOL, _permit2Address);
 
         _uniV2Factory = new UniswapV2FactoryClone();
 
@@ -181,10 +149,6 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
 
         _linearVesting = new LinearVesting(address(_auctionHouse));
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
-        _empModule = new EncryptedMarginalPrice(address(_baselineAuctionHouse));
-        _fpbModule = new FixedPriceBatch(address(_baselineAuctionHouse));
-
-        _auctionModule = _fpbModule;
 
         // Install a mock batch auction module
         vm.prank(_OWNER);
@@ -258,70 +222,6 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
         _blast = new MockBlast();
 
         _updatePoolInitialTick();
-
-        // _kernel = new Kernel();
-
-        // _baselineToken = _deployBPOOL(
-        //     _kernel,
-        //     "Base Token",
-        //     "BT",
-        //     _baseTokenDecimals,
-        //     address(_uniV3Factory),
-        //     address(_quoteToken),
-        //     _feeTier,
-        //     _poolInitialTick,
-        //     address(_blast),
-        //     address(0)
-        // );
-
-        // _credt = new CREDTv1(_kernel, address(_blast), address(0));
-
-        // _loops = new LOOPSv1(_kernel, 1);
-
-        // _bpoolMinter = new BPOOLMinter(_kernel);
-        // _credtMinter = new CREDTMinter(_kernel);
-
-        // _kernel.executeAction(Actions.InstallModule, address(_baselineToken));
-        // _kernel.executeAction(Actions.ActivatePolicy, address(_bpoolMinter));
-
-        // _kernel.executeAction(Actions.InstallModule, address(_credt));
-        // _kernel.executeAction(Actions.ActivatePolicy, address(_credtMinter));
-
-        // _kernel.executeAction(Actions.InstallModule, address(_loops));
-
-        // vm.prank(_OWNER);
-        // _baselineAuctionHouse.installModule(_fpbModule);
-        // vm.prank(_OWNER);
-        // _baselineAuctionHouse.installModule(_empModule);
-
-        // bytes memory baselineSaltArgs = abi.encodePacked(
-        //     type(BaselineAxisLaunch).creationCode,
-        //     abi.encode(
-        //         address(_baselineAuctionHouse), address(_kernel), address(_quoteToken), _SELLER
-        //     )
-        // );
-
-        // string[] memory baselineInputs = new string[](7);
-        // baselineInputs[0] = "./test/invariant/helpers/salt_hash.sh";
-        // baselineInputs[1] = "--bytecodeHash";
-        // baselineInputs[2] = toHexString(keccak256(baselineSaltArgs));
-        // baselineInputs[3] = "--prefix";
-        // baselineInputs[4] = BASELINE_PREFIX;
-        // baselineInputs[5] = "--deployer";
-        // baselineInputs[6] = toString(address(this));
-
-        // bytes memory baselineRes = vm.ffi(baselineInputs);
-        // bytes32 baselineSalt = abi.decode(baselineRes, (bytes32));
-
-        // _dtlBaseline = new BaselineAxisLaunch{salt: baselineSalt}(
-        //     address(_baselineAuctionHouse), address(_kernel), address(_quoteToken), _SELLER
-        // );
-
-        // _dtlBaselineAddress = address(_dtlBaseline);
-
-        // _bpoolMinter.setTransferLock(false);
-
-        // _kernel.executeAction(Actions.ActivatePolicy, _dtlBaselineAddress);
     }
 
     function randomAddress(
@@ -492,31 +392,6 @@ abstract contract Setup is Test, Permit2User, WithSalts, TestConstants {
     function givenAddressHasBaseTokenBalance(address address_, uint256 amount_) internal {
         _baseToken.mint(address_, amount_);
     }
-
-    // function givenAddressHasBaselineTokenBalance(address account_, uint256 amount_) internal {
-    //     _baselineToken.mint(account_, amount_);
-    // }
-
-    // function _disableTransferLock() internal {
-    //     _bpoolMinter.setTransferLock(false);
-    // }
-
-    // function _enableTransferLock() internal {
-    //     _bpoolMinter.setTransferLock(true);
-    // }
-
-    // function _transferBaselineTokenRefund(
-    //     uint256 amount_
-    // ) internal {
-    //     _disableTransferLock();
-
-    //     // Transfer refund from auction house to the callback
-    //     // We transfer instead of minting to not affect the supply
-    //     vm.prank(address(_baselineAuctionHouse));
-    //     _baselineToken.transfer(_dtlBaselineAddress, amount_);
-
-    //     _enableTransferLock();
-    // }
 
     function givenAddressHasBaseTokenAllowance(
         address owner_,
