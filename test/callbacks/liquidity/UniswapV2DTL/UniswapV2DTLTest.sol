@@ -25,9 +25,8 @@ import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.so
 
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
-import {WithSalts} from "../../../lib/WithSalts.sol";
+import {WithSalts} from "../../../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../../../Constants.sol";
-import {console2} from "@forge-std-1.9.1/console2.sol";
 
 abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV2DirectToLiquidity;
@@ -87,26 +86,15 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Create a UniswapV2Factory at a deterministic address
-        UniswapV2FactoryClone uniV2Factory = new UniswapV2FactoryClone();
-        _uniV2Factory = UniswapV2FactoryClone(_UNISWAP_V2_FACTORY);
-        vm.etch(address(_uniV2Factory), address(uniV2Factory).code);
-        // No storage slots to set
-
-        // Create a UniswapV2Router at a deterministic address
-        vm.startBroadcast();
-        bytes32 uniswapV2RouterSalt = _getTestSalt(
-            "UniswapV2Router",
-            type(UniswapV2Router02).creationCode,
-            abi.encode(address(_uniV2Factory), address(0))
-        );
-        _uniV2Router =
-            new UniswapV2Router02{salt: uniswapV2RouterSalt}(address(_uniV2Factory), address(0));
+        // Create a UniswapV2Factory
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        _uniV2Factory = new UniswapV2FactoryClone();
         vm.stopBroadcast();
-        if (address(_uniV2Router) != _UNISWAP_V2_ROUTER) {
-            console2.log("UniswapV2Router address: {}", address(_uniV2Router));
-            revert("UniswapV2Router address mismatch");
-        }
+
+        // Create a UniswapV2Router
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        _uniV2Router = new UniswapV2Router02(address(_uniV2Factory), address(0));
+        vm.stopBroadcast();
 
         _linearVesting = new LinearVesting(address(_auctionHouse));
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
@@ -128,11 +116,11 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     }
 
     modifier givenCallbackIsCreated() {
-        // Get the salt
+        // Generate a salt for the contract
         bytes memory args =
             abi.encode(address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router));
-        bytes32 salt = _getTestSalt(
-            "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args
+        bytes32 salt = _generateSalt(
+            "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args, "E6"
         );
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test

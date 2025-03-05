@@ -12,13 +12,9 @@ abstract contract BeforeAfter is Setup {
     struct Vars {
         address seller;
         uint256 sellerBaseBalance;
-        uint256 sellerBaselineBalance;
         uint256 sellerQuoteBalance;
         uint256 dtlBaseBalance;
-        uint256 dtlBaselineBalance;
         uint256 auctionHouseBaseBalance;
-        uint256 auctionHouseBaselineBalance;
-        uint256 baselineTotalSupply;
         BaseDirectToLiquidity.DTLConfiguration dtlConfigV2;
         BaseDirectToLiquidity.DTLConfiguration dtlConfigV3;
     }
@@ -34,11 +30,6 @@ abstract contract BeforeAfter is Setup {
         _before.sellerQuoteBalance = _quoteToken.balanceOf(seller);
         _before.dtlBaseBalance = _baseToken.balanceOf(_dtlAddress);
         _before.auctionHouseBaseBalance = _baseToken.balanceOf(address(_auctionHouse));
-        _before.sellerBaselineBalance = _baselineToken.balanceOf(seller);
-        _before.dtlBaselineBalance = _baselineToken.balanceOf(_dtlAddress);
-        _before.auctionHouseBaselineBalance =
-            _baselineToken.balanceOf(address(_baselineAuctionHouse));
-        _before.baselineTotalSupply = _baselineToken.totalSupply();
     }
 
     function __after(uint96 lotId, address seller, address _dtlAddress) internal {
@@ -49,11 +40,6 @@ abstract contract BeforeAfter is Setup {
         _after.sellerQuoteBalance = _quoteToken.balanceOf(seller);
         _after.dtlBaseBalance = _baseToken.balanceOf(_dtlAddress);
         _after.auctionHouseBaseBalance = _baseToken.balanceOf(address(_auctionHouse));
-        _after.sellerBaselineBalance = _baselineToken.balanceOf(seller);
-        _after.dtlBaselineBalance = _baselineToken.balanceOf(_dtlAddress);
-        _after.auctionHouseBaselineBalance =
-            _baselineToken.balanceOf(address(_baselineAuctionHouse));
-        _after.baselineTotalSupply = _baselineToken.totalSupply();
     }
 
     function _getDTLConfigurationV2(

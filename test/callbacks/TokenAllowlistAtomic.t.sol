@@ -11,7 +11,7 @@ import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 
 import {TokenAllowlist, ITokenBalance} from "../../src/callbacks/allowlists/TokenAllowlist.sol";
 
-import {WithSalts} from "../lib/WithSalts.sol";
+import {WithSalts} from "../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../Constants.sol";
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
@@ -56,8 +56,12 @@ contract TokenAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstants
             receiveQuoteTokens: false,
             sendBaseTokens: false
         });
-        bytes memory args = abi.encode(address(_auctionHouse), permissions);
-        bytes32 salt = _getTestSalt("TokenAllowlist", type(TokenAllowlist).creationCode, args);
+        bytes32 salt = _generateSalt(
+            "AtomicTokenAllowlist",
+            type(TokenAllowlist).creationCode,
+            abi.encode(address(_auctionHouse), permissions),
+            "90"
+        );
 
         vm.broadcast();
         _allowlist = new TokenAllowlist{salt: salt}(address(_auctionHouse), permissions);

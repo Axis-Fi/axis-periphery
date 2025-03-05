@@ -26,8 +26,7 @@ import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.so
 
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
-import {WithSalts} from "../../../lib/WithSalts.sol";
-import {console2} from "@forge-std-1.9.1/console2.sol";
+import {WithSalts} from "../../../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../../../Constants.sol";
 
 // solhint-disable max-states-count
@@ -91,28 +90,15 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Create a UniswapV3Factory at a deterministic address
+        // Create a UniswapV3Factory
         vm.startBroadcast(_CREATE2_DEPLOYER);
-        bytes32 uniswapV3Salt =
-            _getTestSalt("UniswapV3Factory", type(UniswapV3Factory).creationCode, abi.encode());
-        _uniV3Factory = new UniswapV3Factory{salt: uniswapV3Salt}();
+        _uniV3Factory = new UniswapV3Factory();
         vm.stopBroadcast();
-        if (address(_uniV3Factory) != _UNISWAP_V3_FACTORY) {
-            console2.log("UniswapV3Factory address: ", address(_uniV3Factory));
-            revert("UniswapV3Factory address mismatch");
-        }
 
-        // Create a GUniFactory at a deterministic address
+        // Create a GUniFactory
         vm.startBroadcast(_CREATE2_DEPLOYER);
-        bytes32 gUniFactorySalt = _getTestSalt(
-            "GUniFactory", type(GUniFactory).creationCode, abi.encode(address(_uniV3Factory))
-        );
-        _gUniFactory = new GUniFactory{salt: gUniFactorySalt}(address(_uniV3Factory));
+        _gUniFactory = new GUniFactory(address(_uniV3Factory));
         vm.stopBroadcast();
-        if (address(_gUniFactory) != _GUNI_FACTORY) {
-            console2.log("GUniFactory address: ", address(_gUniFactory));
-            revert("GUniFactory address mismatch");
-        }
 
         // Initialize the GUniFactory
         address payable gelatoAddress = payable(address(0x10));
@@ -139,11 +125,11 @@ abstract contract UniswapV3DirectToLiquidityTest is Test, Permit2User, WithSalts
     }
 
     modifier givenCallbackIsCreated() {
-        // Get the salt
+        // Generate a salt for the contract
         bytes memory args =
             abi.encode(address(_auctionHouse), address(_uniV3Factory), address(_gUniFactory));
-        bytes32 salt = _getTestSalt(
-            "UniswapV3DirectToLiquidity", type(UniswapV3DirectToLiquidity).creationCode, args
+        bytes32 salt = _generateSalt(
+            "UniswapV3DirectToLiquidity", type(UniswapV3DirectToLiquidity).creationCode, args, "E6"
         );
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test
