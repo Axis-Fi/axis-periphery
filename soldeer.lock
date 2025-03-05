@@ -22,7 +22,7 @@ integrity = "fda4e18a2a0c21eeddd8b6af36439f394e4ff74eb75705409a87b8952c9e2972"
 [[dependencies]]
 name = "@uniswap-v2-periphery"
 version = "1.0.1"
-git = "git@github.com:Axis-Fi/uniswap-v2-periphery.git"
+git = "https://github.com/Axis-Fi/uniswap-v2-periphery.git"
 rev = "19be650786731dfe43cac3aac7a2d1f0731d18e2"
 
 [[dependencies]]
@@ -35,7 +35,7 @@ integrity = "75f26f8cb2cd8179eace9cdc4b248fa75faae799fc19c3e5a1f8f1b9d58d3188"
 [[dependencies]]
 name = "@uniswap-v3-periphery"
 version = "1.4.2-solc-0.8"
-git = "git@github.com:Uniswap/v3-periphery.git"
+git = "https://github.com/Uniswap/v3-periphery.git"
 rev = "b325bb0905d922ae61fcc7df85ee802e8df5e96c"
 
 [[dependencies]]
@@ -48,7 +48,7 @@ integrity = "f4e2264ccfcdd763dcc0d73f7deb893da3f99afe0279e4d39dae508734b1c7fa"
 [[dependencies]]
 name = "clones-with-immutable-args"
 version = "1.1.1"
-git = "git@github.com:wighawag/clones-with-immutable-args.git"
+git = "https://github.com/wighawag/clones-with-immutable-args.git"
 rev = "f5ca191afea933d50a36d101009b5644dc28bc99"
 
 [[dependencies]]
@@ -61,7 +61,7 @@ integrity = "389f8bfe6b6aad01915b1e38e6d4839f8189e8d4792b42be4e10d0a96a358e3f"
 [[dependencies]]
 name = "g-uni-v1-core"
 version = "0.9.9"
-git = "git@github.com:Axis-Fi/g-uni-v1-core.git"
+git = "https://github.com/Axis-Fi/g-uni-v1-core.git"
 rev = "d6bcb6e811e86d36bc836c002eb2e9a2c73d29ca"
 
 [[dependencies]]

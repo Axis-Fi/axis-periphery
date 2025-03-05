@@ -154,7 +154,9 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _performOnCreate();
     }
 
-    function test_poolPercent_fuzz(uint24 poolPercent_) public givenCallbackIsCreated {
+    function test_poolPercent_fuzz(
+        uint24 poolPercent_
+    ) public givenCallbackIsCreated {
         uint24 poolPercent = uint24(bound(poolPercent_, 10e2, 100e2));
 
         _setPoolPercent(poolPercent);
@@ -446,7 +448,9 @@ contract UniswapV3DirectToLiquidityOnCreateTest is UniswapV3DirectToLiquidityTes
         _assertBaseTokenBalances();
     }
 
-    function test_maxSlippage_fuzz(uint24 maxSlippage_) public givenCallbackIsCreated {
+    function test_maxSlippage_fuzz(
+        uint24 maxSlippage_
+    ) public givenCallbackIsCreated {
         uint24 maxSlippage = uint24(bound(maxSlippage_, 0, 100e2));
         _setMaxSlippage(maxSlippage);
 

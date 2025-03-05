@@ -41,7 +41,9 @@ contract WETH9 {
         emit Deposit(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 wad) public {
+    function withdraw(
+        uint256 wad
+    ) public {
         require(balanceOf[msg.sender] >= wad);
         balanceOf[msg.sender] -= wad;
         msg.sender.call{value: wad}("");

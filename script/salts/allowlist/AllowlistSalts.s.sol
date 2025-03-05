@@ -25,7 +25,9 @@ contract AllowlistSalts is Script, WithDeploySequence, WithSalts {
         _createBytecodeDirectory();
     }
 
-    function _getContractArgs(address auctionHouse_) internal pure returns (bytes memory) {
+    function _getContractArgs(
+        address auctionHouse_
+    ) internal pure returns (bytes memory) {
         return abi.encode(
             auctionHouse_,
             Callbacks.Permissions({
@@ -41,7 +43,9 @@ contract AllowlistSalts is Script, WithDeploySequence, WithSalts {
         );
     }
 
-    function _getAuctionHouse(bool atomic_) internal view returns (address) {
+    function _getAuctionHouse(
+        bool atomic_
+    ) internal view returns (address) {
         return atomic_
             ? _envAddressNotZero("deployments.AtomicAuctionHouse")
             : _envAddressNotZero("deployments.BatchAuctionHouse");

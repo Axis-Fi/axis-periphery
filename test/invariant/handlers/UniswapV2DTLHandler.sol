@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import {BeforeAfter} from "../helpers/BeforeAfter.sol";
 import {Assertions} from "../helpers/Assertions.sol";
 
-import {UniswapV2DirectToLiquidity} from "../../../../../src/callbacks/liquidity/UniswapV2DTL.sol";
-import {BaseDirectToLiquidity} from "../../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV2DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV2DTL.sol";
+import {BaseDirectToLiquidity} from "../../../src/callbacks/liquidity/BaseDTL.sol";
 import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {IUniswapV2Pair} from "@uniswap-v2-core-1.0.1/interfaces/IUniswapV2Pair.sol";
 import {ERC20} from "@solmate-6.8.0/tokens/ERC20.sol";

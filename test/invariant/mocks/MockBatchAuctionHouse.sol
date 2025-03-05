@@ -12,7 +12,9 @@ contract MockBatchAuctionHouse is BatchAuctionHouse {
         address permit2_
     ) BatchAuctionHouse(owner_, protocol_, permit2_) {}
 
-    function setLotCounter(uint96 newLotCounter) public {
+    function setLotCounter(
+        uint96 newLotCounter
+    ) public {
         lotCounter = newLotCounter;
     }
 
