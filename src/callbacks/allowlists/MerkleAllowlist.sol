@@ -7,16 +7,12 @@ import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 
 import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
+import {IMerkleAllowlist} from "./interfaces/IMerkleAllowlist.sol";
 
 /// @title  MerkleAllowlist
 /// @notice This contract implements a merkle tree-based allowlist for buyers to participate in an auction.
 ///         In this implementation, buyers do not have a limit on the amount they can purchase/bid.
-contract MerkleAllowlist is BaseCallback {
-    // ========== EVENTS ========== //
-
-    /// @notice Emitted when the merkle root is set
-    event MerkleRootSet(uint96 lotId, bytes32 merkleRoot);
-
+contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
     // ========== STATE VARIABLES ========== //
 
     /// @notice The root of the merkle tree that represents the allowlist for a lot
@@ -206,7 +202,7 @@ contract MerkleAllowlist is BaseCallback {
     ///         - The auction has not been registered
     ///
     /// @param  merkleRoot_ The new merkle root
-    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external onlyRegisteredLot(lotId_) {
+    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external override onlyRegisteredLot(lotId_) {
         // We check that the lot is registered on this callback
 
         // Check that the caller is the lot's seller
