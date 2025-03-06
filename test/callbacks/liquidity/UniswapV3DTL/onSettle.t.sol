@@ -65,7 +65,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
 
     // ========== Assertions ========== //
 
-    function _assertPoolState(uint160 sqrtPriceX96_) internal view {
+    function _assertPoolState(
+        uint160 sqrtPriceX96_
+    ) internal view {
         // Get the pool
         IUniswapV3Pool pool = _getPool();
 
@@ -201,7 +203,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _;
     }
 
-    modifier givenPoolIsCreatedAndInitialized(uint160 sqrtPriceX96_) {
+    modifier givenPoolIsCreatedAndInitialized(
+        uint160 sqrtPriceX96_
+    ) {
         address pool = _createPool();
         _initializePool(pool, sqrtPriceX96_);
         _;
@@ -236,7 +240,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _;
     }
 
-    modifier givenUnboundedPoolPercent(uint24 percent_) {
+    modifier givenUnboundedPoolPercent(
+        uint24 percent_
+    ) {
         // Bound the percent
         uint24 percent = uint24(bound(percent_, 10e2, 100e2));
 
@@ -245,7 +251,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _;
     }
 
-    modifier givenUnboundedOnCurate(uint96 curationPayout_) {
+    modifier givenUnboundedOnCurate(
+        uint96 curationPayout_
+    ) {
         // Bound the value
         _curatorPayout = uint96(bound(curationPayout_, 1e17, _LOT_CAPACITY));
 
@@ -254,7 +262,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         _;
     }
 
-    modifier whenRefundIsBounded(uint96 refund_) {
+    modifier whenRefundIsBounded(
+        uint96 refund_
+    ) {
         // Bound the refund
         _refund = uint96(bound(refund_, 1e17, 5e18));
         _;
@@ -834,7 +844,9 @@ contract UniswapV3DirectToLiquidityOnSettleTest is UniswapV3DirectToLiquidityTes
         return;
     }
 
-    function _swap(uint160 sqrtPrice_) internal {
+    function _swap(
+        uint160 sqrtPrice_
+    ) internal {
         IUniswapV3Pool pool = _getPool();
 
         pool.swap(address(this), true, 1, sqrtPrice_, "");

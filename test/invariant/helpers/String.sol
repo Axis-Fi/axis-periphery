@@ -8,7 +8,9 @@ pragma solidity ^0.8.0;
 library String {
     bytes16 internal constant HEX_DIGITS = "0123456789abcdef";
 
-    function toString(int256 value) internal pure returns (string memory str) {
+    function toString(
+        int256 value
+    ) internal pure returns (string memory str) {
         uint256 absValue = value >= 0 ? uint256(value) : uint256(-value);
         str = toString(absValue);
 
@@ -17,7 +19,9 @@ library String {
         }
     }
 
-    function toString(uint256 value) internal pure returns (string memory str) {
+    function toString(
+        uint256 value
+    ) internal pure returns (string memory str) {
         /// @solidity memory-safe-assembly
         assembly {
             // The maximum value of a uint256 contains 78 digits (1 byte per digit), but we allocate 160 bytes
@@ -66,7 +70,9 @@ library String {
         }
     }
 
-    function toString(address value) internal pure returns (string memory str) {
+    function toString(
+        address value
+    ) internal pure returns (string memory str) {
         bytes memory s = new bytes(40);
         for (uint256 i = 0; i < 20; i++) {
             bytes1 b = bytes1(uint8(uint256(uint160(value)) / (2 ** (8 * (19 - i)))));
@@ -78,14 +84,18 @@ library String {
         return string(s);
     }
 
-    function char(bytes1 b) internal pure returns (bytes1 c) {
+    function char(
+        bytes1 b
+    ) internal pure returns (bytes1 c) {
         if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);
         else return bytes1(uint8(b) + 0x57);
     }
 
     // based on OZ's toHexString
     // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/Strings.sol
-    function toHexString(bytes memory value) internal pure returns (string memory) {
+    function toHexString(
+        bytes memory value
+    ) internal pure returns (string memory) {
         bytes memory buffer = new bytes(2 * value.length + 2);
         buffer[0] = "0";
         buffer[1] = "x";
@@ -98,7 +108,9 @@ library String {
     }
 
     // https://ethereum.stackexchange.com/a/83577
-    function getRevertMsg(bytes memory returnData) internal pure returns (string memory) {
+    function getRevertMsg(
+        bytes memory returnData
+    ) internal pure returns (string memory) {
         // Check that the data has the right size: 4 bytes for signature + 32 bytes for panic code
         if (returnData.length == 4 + 32) {
             // Check that the data starts with the Panic signature

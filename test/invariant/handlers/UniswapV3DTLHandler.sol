@@ -19,12 +19,12 @@ import {IUniswapV3Pool} from
 import {ISwapRouter} from "../modules/uniswapv3-periphery/interfaces/ISwapRouter.sol";
 import {IUniswapV3Factory} from
     "@uniswap-v3-core-1.0.1-solc-0.8-simulate/interfaces/IUniswapV3Factory.sol";
-import {SqrtPriceMath} from "../../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
+import {SqrtPriceMath} from "../../../src/lib/uniswap-v3/SqrtPriceMath.sol";
 
-import {BaseDirectToLiquidity} from "../../../../../src/callbacks/liquidity/BaseDTL.sol";
+import {BaseDirectToLiquidity} from "../../../src/callbacks/liquidity/BaseDTL.sol";
 import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
-import {BaseDirectToLiquidity} from "../../../../src/callbacks/liquidity/BaseDTL.sol";
-import {UniswapV3DirectToLiquidity} from "../../../../src/callbacks/liquidity/UniswapV3DTL.sol";
+import {BaseDirectToLiquidity} from "../../../src/callbacks/liquidity/BaseDTL.sol";
+import {UniswapV3DirectToLiquidity} from "../../../src/callbacks/liquidity/UniswapV3DTL.sol";
 import {LinearVesting} from "@axis-core-1.0.4/modules/derivatives/LinearVesting.sol";
 import {MockBatchAuctionModule} from
     "@axis-core-1.0.4-test/modules/Auction/MockBatchAuctionModule.sol";
@@ -436,7 +436,9 @@ abstract contract UniswapV3DTLHandler is BeforeAfter, Assertions {
         );
     }
 
-    function _assertPoolState(uint160 sqrtPriceX96_) internal {
+    function _assertPoolState(
+        uint160 sqrtPriceX96_
+    ) internal {
         // Get the pool
         address pool = _getPool();
 

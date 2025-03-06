@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Baseline: Add additional `poolTargetTick` parameter to callbacks.
+- Baseline: Adjust maximum floorReservesPercent to 99%.
+
 ## 1.0.0
 
 - Introduces direct-to-liquidity callbacks. Multi-use, permissionless versions are available for UniswapV2 and UniswapV3 pools. Permissioned launches are available for Baseline pools on Blast.

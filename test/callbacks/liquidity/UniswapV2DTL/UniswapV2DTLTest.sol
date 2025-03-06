@@ -25,9 +25,8 @@ import {keycodeFromVeecode, toKeycode} from "@axis-core-1.0.4/modules/Keycode.so
 
 import {MockERC20} from "@solmate-6.8.0/test/utils/mocks/MockERC20.sol";
 
-import {WithSalts} from "../../../lib/WithSalts.sol";
+import {WithSalts} from "../../../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../../../Constants.sol";
-import {console2} from "@forge-std-1.9.1/console2.sol";
 
 abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts, TestConstants {
     using Callbacks for UniswapV2DirectToLiquidity;
@@ -87,26 +86,15 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Create a UniswapV2Factory at a deterministic address
-        UniswapV2FactoryClone uniV2Factory = new UniswapV2FactoryClone();
-        _uniV2Factory = UniswapV2FactoryClone(_UNISWAP_V2_FACTORY);
-        vm.etch(address(_uniV2Factory), address(uniV2Factory).code);
-        // No storage slots to set
-
-        // Create a UniswapV2Router at a deterministic address
-        vm.startBroadcast();
-        bytes32 uniswapV2RouterSalt = _getTestSalt(
-            "UniswapV2Router",
-            type(UniswapV2Router02).creationCode,
-            abi.encode(address(_uniV2Factory), address(0))
-        );
-        _uniV2Router =
-            new UniswapV2Router02{salt: uniswapV2RouterSalt}(address(_uniV2Factory), address(0));
+        // Create a UniswapV2Factory
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        _uniV2Factory = new UniswapV2FactoryClone();
         vm.stopBroadcast();
-        if (address(_uniV2Router) != _UNISWAP_V2_ROUTER) {
-            console2.log("UniswapV2Router address: {}", address(_uniV2Router));
-            revert("UniswapV2Router address mismatch");
-        }
+
+        // Create a UniswapV2Router
+        vm.startBroadcast(_CREATE2_DEPLOYER);
+        _uniV2Router = new UniswapV2Router02(address(_uniV2Factory), address(0));
+        vm.stopBroadcast();
 
         _linearVesting = new LinearVesting(address(_auctionHouse));
         _batchAuctionModule = new MockBatchAuctionModule(address(_auctionHouse));
@@ -128,11 +116,11 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
     }
 
     modifier givenCallbackIsCreated() {
-        // Get the salt
+        // Generate a salt for the contract
         bytes memory args =
             abi.encode(address(_auctionHouse), address(_uniV2Factory), address(_uniV2Router));
-        bytes32 salt = _getTestSalt(
-            "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args
+        bytes32 salt = _generateSalt(
+            "UniswapV2DirectToLiquidity", type(UniswapV2DirectToLiquidity).creationCode, args, "E6"
         );
 
         // Required for CREATE2 address to work correctly. doesn't do anything in a test
@@ -169,22 +157,30 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _setMaxSlippage(uint24 maxSlippage_) internal {
+    function _setMaxSlippage(
+        uint24 maxSlippage_
+    ) internal {
         _uniswapV2CreateParams.maxSlippage = maxSlippage_;
         _dtlCreateParams.implParams = abi.encode(_uniswapV2CreateParams);
     }
 
-    modifier givenMaxSlippage(uint24 maxSlippage_) {
+    modifier givenMaxSlippage(
+        uint24 maxSlippage_
+    ) {
         _setMaxSlippage(maxSlippage_);
         _;
     }
 
-    modifier givenQuoteTokenDecimals(uint8 decimals_) {
+    modifier givenQuoteTokenDecimals(
+        uint8 decimals_
+    ) {
         _quoteToken = new MockERC20("Quote Token", "QT", decimals_);
         _;
     }
 
-    modifier givenBaseTokenDecimals(uint8 decimals_) {
+    modifier givenBaseTokenDecimals(
+        uint8 decimals_
+    ) {
         _baseToken = new MockERC20("Base Token", "BT", decimals_);
 
         // Scale the capacity
@@ -229,7 +225,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         return _auctionHouse.auction(routingParams, auctionParams, "");
     }
 
-    function _createLot(address seller_) internal returns (uint96 lotId) {
+    function _createLot(
+        address seller_
+    ) internal returns (uint96 lotId) {
         return _createLot(seller_, "");
     }
 
@@ -238,7 +236,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _;
     }
 
-    function _performOnCreate(address seller_) internal {
+    function _performOnCreate(
+        address seller_
+    ) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCreate(
             _lotId,
@@ -255,12 +255,16 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnCreate(_SELLER);
     }
 
-    function _performOnCurate(uint96 curatorPayout_) internal {
+    function _performOnCurate(
+        uint96 curatorPayout_
+    ) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onCurate(_lotId, curatorPayout_, false, abi.encode(""));
     }
 
-    modifier givenOnCurate(uint96 curatorPayout_) {
+    modifier givenOnCurate(
+        uint96 curatorPayout_
+    ) {
         _performOnCurate(curatorPayout_);
         _;
     }
@@ -274,7 +278,9 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnCancel(_lotId, 0);
     }
 
-    function _performOnSettle(uint96 lotId_) internal {
+    function _performOnSettle(
+        uint96 lotId_
+    ) internal {
         vm.prank(address(_auctionHouse));
         _dtl.onSettle(lotId_, _proceeds, _refund, abi.encode(""));
     }
@@ -283,21 +289,29 @@ abstract contract UniswapV2DirectToLiquidityTest is Test, Permit2User, WithSalts
         _performOnSettle(_lotId);
     }
 
-    function _setPoolPercent(uint24 percent_) internal {
+    function _setPoolPercent(
+        uint24 percent_
+    ) internal {
         _dtlCreateParams.poolPercent = percent_;
     }
 
-    modifier givenPoolPercent(uint24 percent_) {
+    modifier givenPoolPercent(
+        uint24 percent_
+    ) {
         _setPoolPercent(percent_);
         _;
     }
 
-    modifier givenVestingStart(uint48 start_) {
+    modifier givenVestingStart(
+        uint48 start_
+    ) {
         _dtlCreateParams.vestingStart = start_;
         _;
     }
 
-    modifier givenVestingExpiry(uint48 end_) {
+    modifier givenVestingExpiry(
+        uint48 end_
+    ) {
         _dtlCreateParams.vestingExpiry = end_;
         _;
     }

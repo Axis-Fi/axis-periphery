@@ -13,7 +13,7 @@ import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {AllocatedMerkleAllowlist} from "../../src/callbacks/allowlists/AllocatedMerkleAllowlist.sol";
 
 import {toVeecode} from "@axis-core-1.0.4/modules/Keycode.sol";
-import {WithSalts} from "../lib/WithSalts.sol";
+import {WithSalts} from "../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../Constants.sol";
 
 contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestConstants {
@@ -50,7 +50,7 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Get the salt
+        // Generate a salt for the contract
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -61,9 +61,11 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
             receiveQuoteTokens: false,
             sendBaseTokens: false
         });
-        bytes memory args = abi.encode(address(_auctionHouse), permissions);
-        bytes32 salt = _getTestSalt(
-            "AllocatedMerkleAllowlist", type(AllocatedMerkleAllowlist).creationCode, args
+        bytes32 salt = _generateSalt(
+            "BatchAllocatedMerkleAllowlist",
+            type(AllocatedMerkleAllowlist).creationCode,
+            abi.encode(address(_auctionHouse), permissions),
+            "88"
         );
 
         vm.broadcast();
@@ -287,7 +289,9 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
         _onBid(_lotId, _BUYER, 1, _BUYER_ALLOCATED_AMOUNT);
     }
 
-    function test_onBid(uint256 amount_) public givenBatchOnCreate {
+    function test_onBid(
+        uint256 amount_
+    ) public givenBatchOnCreate {
         uint256 amount = bound(amount_, 1, _BUYER_ALLOCATED_AMOUNT);
 
         _onBid(_lotId, _BUYER, amount, _BUYER_ALLOCATED_AMOUNT);

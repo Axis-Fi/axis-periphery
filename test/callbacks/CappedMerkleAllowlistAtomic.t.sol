@@ -11,7 +11,7 @@ import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 
 import {CappedMerkleAllowlist} from "../../src/callbacks/allowlists/CappedMerkleAllowlist.sol";
 
-import {WithSalts} from "../lib/WithSalts.sol";
+import {WithSalts} from "../../script/salts/WithSalts.s.sol";
 import {TestConstants} from "../Constants.sol";
 
 contract CappedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstants {
@@ -47,7 +47,7 @@ contract CappedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestCo
         vm.store(address(_auctionHouse), bytes32(uint256(6)), bytes32(abi.encode(1))); // Reentrancy
         vm.store(address(_auctionHouse), bytes32(uint256(10)), bytes32(abi.encode(_PROTOCOL))); // Protocol
 
-        // Get the salt
+        // Generate a salt for the contract
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -58,9 +58,12 @@ contract CappedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestCo
             receiveQuoteTokens: false,
             sendBaseTokens: false
         });
-        bytes memory args = abi.encode(address(_auctionHouse), permissions);
-        bytes32 salt =
-            _getTestSalt("CappedMerkleAllowlist", type(CappedMerkleAllowlist).creationCode, args);
+        bytes32 salt = _generateSalt(
+            "AtomicCappedMerkleAllowlist",
+            type(CappedMerkleAllowlist).creationCode,
+            abi.encode(address(_auctionHouse), permissions),
+            "90"
+        );
 
         vm.broadcast();
         _allowlist = new CappedMerkleAllowlist{salt: salt}(address(_auctionHouse), permissions);
@@ -233,7 +236,9 @@ contract CappedMerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestCo
         _onPurchase(_lotId, _BUYER, 1);
     }
 
-    function test_onPurchase(uint256 amount_) public givenAtomicOnCreate {
+    function test_onPurchase(
+        uint256 amount_
+    ) public givenAtomicOnCreate {
         uint256 amount = bound(amount_, 1, _BUYER_LIMIT);
 
         _onPurchase(_lotId, _BUYER, amount);
