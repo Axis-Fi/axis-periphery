@@ -15,7 +15,9 @@ interface IMerkleAllowlist {
     ///
     /// @param  lotId_      The ID of the lot
     /// @return merkleRoot  The merkle root for the allowlist
-    function lotMerkleRoot(uint96 lotId_) external view returns (bytes32 merkleRoot);
+    function lotMerkleRoot(
+        uint96 lotId_
+    ) external view returns (bytes32 merkleRoot);
 
     /// @notice Sets the merkle root for the allowlist
     ///         This function can be called by the lot's seller to update the merkle root after `onCreate()`.

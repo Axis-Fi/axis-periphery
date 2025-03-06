@@ -87,6 +87,20 @@ contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestCon
         _;
     }
 
+    modifier givenBatchOnCreateMerkleRootZero() {
+        vm.prank(address(_auctionHouse));
+        _allowlist.onCreate(
+            _lotId,
+            _SELLER,
+            _BASE_TOKEN,
+            _QUOTE_TOKEN,
+            _LOT_CAPACITY,
+            false,
+            abi.encode(bytes32(0), _BUYER_LIMIT)
+        );
+        _;
+    }
+
     function _onBid(uint96 lotId_, address buyer_, uint256 amount_) internal {
         vm.prank(address(_auctionHouse));
         _allowlist.onBid(lotId_, 1, buyer_, amount_, abi.encode(_merkleProof));
@@ -97,6 +111,8 @@ contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestCon
     //  [X] it reverts
     // [X] if the caller is not the auction house
     //  [X] it reverts
+    // [X] if the merkle root is zero
+    //  [X] it sets the merkle root to zero
     // [X] if the seller is not the seller for the allowlist
     //  [X] it sets the merkle root and buyer limit
     // [X] if the lot is already registered
@@ -170,6 +186,25 @@ contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestCon
         );
     }
 
+    function test_onCreate_merkleRootZero() public {
+        // Call function
+        vm.prank(address(_auctionHouse));
+        _allowlist.onCreate(
+            _lotId,
+            _SELLER,
+            _BASE_TOKEN,
+            _QUOTE_TOKEN,
+            _LOT_CAPACITY,
+            false,
+            abi.encode(bytes32(0), _BUYER_LIMIT)
+        );
+
+        // Assert
+        assertEq(_allowlist.lotIdRegistered(_lotId), true, "lotIdRegistered");
+        assertEq(_allowlist.lotMerkleRoot(_lotId), bytes32(0), "lotMerkleRoot");
+        assertEq(_allowlist.lotBuyerLimit(_lotId), _BUYER_LIMIT, "lotBuyerLimit");
+    }
+
     function test_onCreate() public givenBatchOnCreate {
         assertEq(_allowlist.lotIdRegistered(_lotId), true, "lotIdRegistered");
         assertEq(_allowlist.lotMerkleRoot(_lotId), _MERKLE_ROOT, "lotMerkleRoot");
@@ -181,6 +216,8 @@ contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestCon
     //  [X] it reverts
     // [X] if the lot is not registered
     //  [X] it reverts
+    // [X] if the merkle root is zero
+    //  [X] it succeeds for any buyer and any amount
     // [X] if the buyer is not in the merkle tree
     //  [X] it reverts
     // [X] if the amount is greater than the buyer limit
@@ -203,6 +240,21 @@ contract CappedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, TestCon
         vm.expectRevert(err);
 
         _onBid(_lotId, _BUYER, 1e18);
+    }
+
+    function test_onBid_merkleRootZero(
+        address buyer_,
+        uint256 amount_
+    ) public givenBatchOnCreateMerkleRootZero {
+        vm.assume(buyer_ != _BUYER && buyer_ != _BUYER_TWO);
+        uint256 amount = bound(amount_, 1, _LOT_CAPACITY);
+
+        // Call function
+        vm.prank(address(_auctionHouse));
+        _allowlist.onBid(_lotId, 1, buyer_, amount, "");
+
+        // Assert
+        assertEq(_allowlist.lotBuyerSpent(_lotId, buyer_), amount, "lotBuyerSpent");
     }
 
     function test_onBid_buyerNotInMerkleTree_reverts() public givenBatchOnCreate {

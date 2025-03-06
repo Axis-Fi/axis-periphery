@@ -86,6 +86,14 @@ contract MerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstant
         _;
     }
 
+    modifier givenAtomicOnCreateMerkleRootZero() {
+        vm.prank(address(_auctionHouse));
+        _allowlist.onCreate(
+            _lotId, _SELLER, _BASE_TOKEN, _QUOTE_TOKEN, _LOT_CAPACITY, false, abi.encode(bytes32(0))
+        );
+        _;
+    }
+
     function _onPurchase(uint96 lotId_, address buyer_, uint256 amount_) internal {
         vm.prank(address(_auctionHouse));
         _allowlist.onPurchase(lotId_, buyer_, amount_, 0, false, abi.encode(_merkleProof));
@@ -96,8 +104,8 @@ contract MerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstant
     //  [X] it reverts
     // [X] if the caller is not the auction house
     //  [X] it reverts
-    // [ ] if the merkle root is zero
-    //  [ ] it sets the merkle root to zero
+    // [X] if the merkle root is zero
+    //  [X] it sets the merkle root to zero
     // [X] if the seller is not the seller for the allowlist
     //  [X] it sets the merkle root
     // [X] if the lot is already registered
@@ -170,6 +178,18 @@ contract MerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstant
         );
     }
 
+    function test_onCreate_merkleRootZero() public {
+        // Call function
+        vm.prank(address(_auctionHouse));
+        _allowlist.onCreate(
+            _lotId, _SELLER, _BASE_TOKEN, _QUOTE_TOKEN, _LOT_CAPACITY, false, abi.encode(bytes32(0))
+        );
+
+        // Assert
+        assertEq(_allowlist.lotIdRegistered(_lotId), true, "lotIdRegistered");
+        assertEq(_allowlist.lotMerkleRoot(_lotId), bytes32(0), "lotMerkleRoot");
+    }
+
     function test_onCreate() public givenAtomicOnCreate {
         assertEq(_allowlist.lotIdRegistered(_lotId), true, "lotIdRegistered");
         assertEq(_allowlist.lotMerkleRoot(_lotId), _MERKLE_ROOT, "lotMerkleRoot");
@@ -180,8 +200,8 @@ contract MerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstant
     //  [X] it reverts
     // [X] if the lot is not registered
     //  [X] it reverts
-    // [ ] if the merkle root is zero
-    //  [ ] it succeeds for any buyer
+    // [X] if the merkle root is zero
+    //  [X] it succeeds for any buyer
     // [X] if the buyer is not in the merkle tree
     //  [X] it reverts
     // [X] it succeeds
@@ -208,6 +228,16 @@ contract MerkleAllowlistAtomicTest is Test, Permit2User, WithSalts, TestConstant
         vm.expectRevert(err);
 
         _onPurchase(_lotId, _BUYER_THREE, 1e18);
+    }
+
+    function test_onPurchase_merkleRootZero(
+        address buyer_
+    ) public givenAtomicOnCreateMerkleRootZero {
+        vm.assume(buyer_ != _BUYER && buyer_ != _BUYER_TWO);
+
+        // Call function
+        vm.prank(address(_auctionHouse));
+        _allowlist.onPurchase(_lotId, buyer_, 1e18, 0, false, "");
     }
 
     function test_onPurchase(

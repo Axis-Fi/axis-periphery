@@ -95,6 +95,14 @@ contract CappedMerkleAllowlist is MerkleAllowlist {
     // ========== INTERNAL FUNCTIONS ========== //
 
     function _canBuy(uint96 lotId_, address buyer_, uint256 amount_) internal {
+        // If the merkle root is zero, anyone can participate
+        if (lotMerkleRoot[lotId_] == bytes32(0)) {
+            // Update the buyer spent amount
+            // Given anyone can spin up a new wallet, it also doesn't make sense to have a buyer limit
+            lotBuyerSpent[lotId_][buyer_] += amount_;
+            return;
+        }
+
         // Check if the buyer has already spent their limit
         if (lotBuyerSpent[lotId_][buyer_] + amount_ > lotBuyerLimit[lotId_]) {
             revert Callback_ExceedsLimit();

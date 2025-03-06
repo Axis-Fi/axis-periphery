@@ -176,6 +176,11 @@ contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
         address buyer_,
         bytes calldata callbackData_
     ) internal view virtual {
+        // If the merkle root is zero, anyone can participate
+        if (lotMerkleRoot[lotId_] == bytes32(0)) {
+            return;
+        }
+
         // Decode the merkle proof from the callback data
         bytes32[] memory proof = abi.decode(callbackData_, (bytes32[]));
 
@@ -202,7 +207,10 @@ contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
     ///         - The auction has not been registered
     ///
     /// @param  merkleRoot_ The new merkle root
-    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external override onlyRegisteredLot(lotId_) {
+    function setMerkleRoot(
+        uint96 lotId_,
+        bytes32 merkleRoot_
+    ) external override onlyRegisteredLot(lotId_) {
         // We check that the lot is registered on this callback
 
         // Check that the caller is the lot's seller
