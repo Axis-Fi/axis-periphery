@@ -20,6 +20,10 @@ contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
     ///         In particular, leaf values (such as `(address)` or `(address,uint256)`) should be double-hashed.
     mapping(uint96 lotId => bytes32 merkleRoot) public lotMerkleRoot;
 
+    /// @notice The admin for the given lot id
+    /// @dev    The admin is permitted to set the merkle root
+    mapping(uint96 lotId => address admin) public lotAdmin;
+
     // ========== CONSTRUCTOR ========== //
 
     // PERMISSIONS
@@ -50,10 +54,11 @@ contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
     ///             - The callback data is of an invalid length
     ///
     /// @param      lotId_          The id of the lot
+    /// @param      seller_         The address of the seller
     /// @param      callbackData_   abi-encoded data: (bytes32) representing the merkle root
     function _onCreate(
         uint96 lotId_,
-        address,
+        address seller_,
         address,
         address,
         uint256,
@@ -71,6 +76,10 @@ contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
         // Set the merkle root
         lotMerkleRoot[lotId_] = merkleRoot;
         emit MerkleRootSet(lotId_, merkleRoot);
+
+        // Set the lot admin to the seller address
+        lotAdmin[lotId_] = seller_;
+        emit LotAdminSet(lotId_, seller_);
     }
 
     /// @inheritdoc BaseCallback
@@ -211,17 +220,33 @@ contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
         uint96 lotId_,
         bytes32 merkleRoot_
     ) external override onlyRegisteredLot(lotId_) {
-        // We check that the lot is registered on this callback
-
-        // Check that the caller is the lot's seller
-        (address seller,,,,,,,,) = IAuctionHouse(AUCTION_HOUSE).lotRouting(lotId_);
-        if (msg.sender != seller) {
+        // Check that the caller is the lot's admin
+        if (lotAdmin[lotId_] != msg.sender) {
             revert Callback_NotAuthorized();
         }
 
         // Set the new merkle root and emit an event
         lotMerkleRoot[lotId_] = merkleRoot_;
-
         emit MerkleRootSet(lotId_, merkleRoot_);
+    }
+
+    /// @inheritdoc IMerkleAllowlist
+    function setLotAdmin(
+        uint96 lotId_,
+        address admin_
+    ) external override onlyRegisteredLot(lotId_) {
+        // Validate that the caller is the lot's current admin
+        if (lotAdmin[lotId_] != msg.sender) {
+            revert Callback_NotAuthorized();
+        }
+
+        // Validate that the address is not the zero address
+        if (admin_ == address(0)) {
+            revert Callback_InvalidParams();
+        }
+
+        // Set the new admin
+        lotAdmin[lotId_] = admin_;
+        emit LotAdminSet(lotId_, admin_);
     }
 }

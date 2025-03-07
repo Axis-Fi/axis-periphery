@@ -48,7 +48,7 @@ contract CappedMerkleAllowlist is MerkleAllowlist {
     /// @param callbackData_    abi-encoded data: (bytes32, uint256) representing the merkle root and buyer limit
     function _onCreate(
         uint96 lotId_,
-        address,
+        address seller_,
         address,
         address,
         uint256,
@@ -67,6 +67,10 @@ contract CappedMerkleAllowlist is MerkleAllowlist {
         lotMerkleRoot[lotId_] = merkleRoot;
         lotBuyerLimit[lotId_] = buyerLimit;
         emit MerkleRootSet(lotId_, merkleRoot);
+
+        // Set the lot admin to the seller address
+        lotAdmin[lotId_] = seller_;
+        emit LotAdminSet(lotId_, seller_);
     }
 
     /// @inheritdoc MerkleAllowlist

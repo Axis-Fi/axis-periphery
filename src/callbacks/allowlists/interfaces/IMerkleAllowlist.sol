@@ -9,6 +9,9 @@ interface IMerkleAllowlist {
     /// @notice Emitted when the merkle root is set
     event MerkleRootSet(uint96 lotId, bytes32 merkleRoot);
 
+    /// @notice Emitted when the lot admin is set
+    event LotAdminSet(uint96 lotId, address admin);
+
     // ========== FUNCTIONS ========== //
 
     /// @notice Gets the merkle root for the allowlist
@@ -30,4 +33,23 @@ interface IMerkleAllowlist {
     /// @param  lotId_      The ID of the lot
     /// @param  merkleRoot_ The new merkle root
     function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external;
+
+    /// @notice Gets the admin for the given lot id
+    ///         The admin is permitted to set the merkle root
+    ///
+    /// @param  lotId_  The ID of the lot
+    /// @return admin   The lot admin
+    function lotAdmin(
+        uint96 lotId_
+    ) external view returns (address admin);
+
+    /// @notice Sets the lot admin
+    /// @dev    This function performs the following:
+    ///         - Performs validation
+    ///         - Sets the new admin
+    ///         - Emits a LotAdminSet event
+    ///
+    /// @param  lotId_  The ID of the lot
+    /// @param  admin_  The new admin
+    function setLotAdmin(uint96 lotId_, address admin_) external;
 }
