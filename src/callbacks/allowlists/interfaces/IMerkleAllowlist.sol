@@ -21,6 +21,7 @@ interface IMerkleAllowlist {
 
     /// @notice Sets the merkle root for the allowlist
     ///         This function can be called by the lot's seller to update the merkle root after `onCreate()`.
+    ///         Setting the merkle root to zero indicates that the allowlist is disabled and anyone can participate.
     /// @dev    This function performs the following:
     ///         - Performs validation
     ///         - Sets the merkle root
