@@ -83,6 +83,14 @@ contract AllocatedMerkleAllowlist is MerkleAllowlist {
     ) internal {
         // Validate that the buyer is allowed to participate
 
+        // If the merkle root is zero, anyone can participate
+        // Given anyone can spin up a new wallet, it also doesn't make sense to have a buyer limit
+        if (lotMerkleRoot[lotId_] == bytes32(0)) {
+            // Update the buyer's spent amount
+            lotBuyerSpent[lotId_][buyer_] += amount_;
+            return;
+        }
+
         // Decode the merkle proof and allocated amount from buyer submitted callback data
         (bytes32[] memory proof, uint256 allocatedAmount) =
             abi.decode(callbackData_, (bytes32[], uint256));

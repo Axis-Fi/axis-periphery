@@ -48,7 +48,7 @@ contract CappedMerkleAllowlist is MerkleAllowlist {
     /// @param callbackData_    abi-encoded data: (bytes32, uint256) representing the merkle root and buyer limit
     function _onCreate(
         uint96 lotId_,
-        address,
+        address seller_,
         address,
         address,
         uint256,
@@ -67,6 +67,10 @@ contract CappedMerkleAllowlist is MerkleAllowlist {
         lotMerkleRoot[lotId_] = merkleRoot;
         lotBuyerLimit[lotId_] = buyerLimit;
         emit MerkleRootSet(lotId_, merkleRoot);
+
+        // Set the lot admin to the seller address
+        lotAdmin[lotId_] = seller_;
+        emit LotAdminSet(lotId_, seller_);
     }
 
     /// @inheritdoc MerkleAllowlist
@@ -95,6 +99,14 @@ contract CappedMerkleAllowlist is MerkleAllowlist {
     // ========== INTERNAL FUNCTIONS ========== //
 
     function _canBuy(uint96 lotId_, address buyer_, uint256 amount_) internal {
+        // If the merkle root is zero, anyone can participate
+        if (lotMerkleRoot[lotId_] == bytes32(0)) {
+            // Update the buyer spent amount
+            // Given anyone can spin up a new wallet, it also doesn't make sense to have a buyer limit
+            lotBuyerSpent[lotId_][buyer_] += amount_;
+            return;
+        }
+
         // Check if the buyer has already spent their limit
         if (lotBuyerSpent[lotId_][buyer_] + amount_ > lotBuyerLimit[lotId_]) {
             revert Callback_ExceedsLimit();

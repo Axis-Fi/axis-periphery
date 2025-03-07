@@ -1,0 +1,55 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.19;
+
+/// @title  IMerkleAllowlist
+/// @notice Defines the interface for the MerkleAllowlist contract, which provides a merkle tree-based allowlist for buyers to participate in an auction.
+interface IMerkleAllowlist {
+    // ========== EVENTS ========== //
+
+    /// @notice Emitted when the merkle root is set
+    event MerkleRootSet(uint96 lotId, bytes32 merkleRoot);
+
+    /// @notice Emitted when the lot admin is set
+    event LotAdminSet(uint96 lotId, address admin);
+
+    // ========== FUNCTIONS ========== //
+
+    /// @notice Gets the merkle root for the allowlist
+    ///
+    /// @param  lotId_      The ID of the lot
+    /// @return merkleRoot  The merkle root for the allowlist
+    function lotMerkleRoot(
+        uint96 lotId_
+    ) external view returns (bytes32 merkleRoot);
+
+    /// @notice Sets the merkle root for the allowlist
+    ///         This function can be called by the lot's seller to update the merkle root after `onCreate()`.
+    ///         Setting the merkle root to zero indicates that the allowlist is disabled and anyone can participate.
+    /// @dev    This function performs the following:
+    ///         - Performs validation
+    ///         - Sets the merkle root
+    ///         - Emits a MerkleRootSet event
+    ///
+    /// @param  lotId_      The ID of the lot
+    /// @param  merkleRoot_ The new merkle root
+    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external;
+
+    /// @notice Gets the admin for the given lot id
+    ///         The admin is permitted to set the merkle root
+    ///
+    /// @param  lotId_  The ID of the lot
+    /// @return admin   The lot admin
+    function lotAdmin(
+        uint96 lotId_
+    ) external view returns (address admin);
+
+    /// @notice Sets the lot admin
+    /// @dev    This function performs the following:
+    ///         - Performs validation
+    ///         - Sets the new admin
+    ///         - Emits a LotAdminSet event
+    ///
+    /// @param  lotId_  The ID of the lot
+    /// @param  admin_  The new admin
+    function setLotAdmin(uint96 lotId_, address admin_) external;
+}
