@@ -6,7 +6,6 @@ import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/Merk
 import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 
-import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
 import {IMerkleAllowlist} from "./interfaces/IMerkleAllowlist.sol";
 
 /// @title  MerkleAllowlist
