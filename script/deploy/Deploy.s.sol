@@ -439,6 +439,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -451,10 +453,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(CappedMerkleAllowlist).creationCode,
-            abi.encode(atomicAuctionHouse, permissions)
+            abi.encode(atomicAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
@@ -482,6 +485,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -494,10 +499,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(CappedMerkleAllowlist).creationCode,
-            abi.encode(batchAuctionHouse, permissions)
+            abi.encode(batchAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
@@ -525,6 +531,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -537,10 +545,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(MerkleAllowlist).creationCode,
-            abi.encode(atomicAuctionHouse, permissions)
+            abi.encode(atomicAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
@@ -568,6 +577,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -580,10 +591,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(MerkleAllowlist).creationCode,
-            abi.encode(batchAuctionHouse, permissions)
+            abi.encode(batchAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
@@ -611,6 +623,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -623,10 +637,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(TokenAllowlist).creationCode,
-            abi.encode(atomicAuctionHouse, permissions)
+            abi.encode(atomicAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
@@ -654,6 +669,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -666,10 +683,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(TokenAllowlist).creationCode,
-            abi.encode(batchAuctionHouse, permissions)
+            abi.encode(batchAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
@@ -697,6 +715,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address atomicAuctionHouse = _getAddressNotZero("deployments.AtomicAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -709,10 +729,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(AllocatedMerkleAllowlist).creationCode,
-            abi.encode(atomicAuctionHouse, permissions)
+            abi.encode(atomicAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
@@ -740,6 +761,8 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         address batchAuctionHouse = _getAddressNotZero("deployments.BatchAuctionHouse");
         string memory deploymentKey = _getDeploymentKey(sequenceName_);
         console2.log("    deploymentKey:", deploymentKey);
+
+        // 10011000 = 0x98
         Callbacks.Permissions memory permissions = Callbacks.Permissions({
             onCreate: true,
             onCancel: false,
@@ -752,10 +775,11 @@ contract Deploy is Script, WithDeploySequence, WithSalts {
         });
 
         // Get the salt
-        bytes32 salt_ = _getSalt(
+        bytes32 salt_ = _generateSalt(
             deploymentKey,
             type(AllocatedMerkleAllowlist).creationCode,
-            abi.encode(batchAuctionHouse, permissions)
+            abi.encode(batchAuctionHouse, permissions),
+            "98"
         );
 
         // Revert if the salt is not set
