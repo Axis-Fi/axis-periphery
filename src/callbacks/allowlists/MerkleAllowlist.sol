@@ -6,23 +6,22 @@ import {MerkleProof} from "@openzeppelin-contracts-4.9.2/utils/cryptography/Merk
 import {BaseCallback} from "@axis-core-1.0.4/bases/BaseCallback.sol";
 import {Callbacks} from "@axis-core-1.0.4/lib/Callbacks.sol";
 
-import {IAuctionHouse} from "@axis-core-1.0.4/interfaces/IAuctionHouse.sol";
+import {IMerkleAllowlist} from "./interfaces/IMerkleAllowlist.sol";
 
 /// @title  MerkleAllowlist
 /// @notice This contract implements a merkle tree-based allowlist for buyers to participate in an auction.
 ///         In this implementation, buyers do not have a limit on the amount they can purchase/bid.
-contract MerkleAllowlist is BaseCallback {
-    // ========== EVENTS ========== //
-
-    /// @notice Emitted when the merkle root is set
-    event MerkleRootSet(uint96 lotId, bytes32 merkleRoot);
-
+contract MerkleAllowlist is BaseCallback, IMerkleAllowlist {
     // ========== STATE VARIABLES ========== //
 
     /// @notice The root of the merkle tree that represents the allowlist for a lot
     /// @dev    The merkle tree should adhere to the format specified in the OpenZeppelin MerkleProof library at https://github.com/OpenZeppelin/merkle-tree
     ///         In particular, leaf values (such as `(address)` or `(address,uint256)`) should be double-hashed.
     mapping(uint96 lotId => bytes32 merkleRoot) public lotMerkleRoot;
+
+    /// @notice The admin for the given lot id
+    /// @dev    The admin is permitted to set the merkle root
+    mapping(uint96 lotId => address admin) public lotAdmin;
 
     // ========== CONSTRUCTOR ========== //
 
@@ -54,10 +53,11 @@ contract MerkleAllowlist is BaseCallback {
     ///             - The callback data is of an invalid length
     ///
     /// @param      lotId_          The id of the lot
+    /// @param      seller_         The address of the seller
     /// @param      callbackData_   abi-encoded data: (bytes32) representing the merkle root
     function _onCreate(
         uint96 lotId_,
-        address,
+        address seller_,
         address,
         address,
         uint256,
@@ -75,6 +75,10 @@ contract MerkleAllowlist is BaseCallback {
         // Set the merkle root
         lotMerkleRoot[lotId_] = merkleRoot;
         emit MerkleRootSet(lotId_, merkleRoot);
+
+        // Set the lot admin to the seller address
+        lotAdmin[lotId_] = seller_;
+        emit LotAdminSet(lotId_, seller_);
     }
 
     /// @inheritdoc BaseCallback
@@ -180,6 +184,11 @@ contract MerkleAllowlist is BaseCallback {
         address buyer_,
         bytes calldata callbackData_
     ) internal view virtual {
+        // If the merkle root is zero, anyone can participate
+        if (lotMerkleRoot[lotId_] == bytes32(0)) {
+            return;
+        }
+
         // Decode the merkle proof from the callback data
         bytes32[] memory proof = abi.decode(callbackData_, (bytes32[]));
 
@@ -206,18 +215,37 @@ contract MerkleAllowlist is BaseCallback {
     ///         - The auction has not been registered
     ///
     /// @param  merkleRoot_ The new merkle root
-    function setMerkleRoot(uint96 lotId_, bytes32 merkleRoot_) external onlyRegisteredLot(lotId_) {
-        // We check that the lot is registered on this callback
-
-        // Check that the caller is the lot's seller
-        (address seller,,,,,,,,) = IAuctionHouse(AUCTION_HOUSE).lotRouting(lotId_);
-        if (msg.sender != seller) {
+    function setMerkleRoot(
+        uint96 lotId_,
+        bytes32 merkleRoot_
+    ) external override onlyRegisteredLot(lotId_) {
+        // Check that the caller is the lot's admin
+        if (lotAdmin[lotId_] != msg.sender) {
             revert Callback_NotAuthorized();
         }
 
         // Set the new merkle root and emit an event
         lotMerkleRoot[lotId_] = merkleRoot_;
-
         emit MerkleRootSet(lotId_, merkleRoot_);
+    }
+
+    /// @inheritdoc IMerkleAllowlist
+    function setLotAdmin(
+        uint96 lotId_,
+        address admin_
+    ) external override onlyRegisteredLot(lotId_) {
+        // Validate that the caller is the lot's current admin
+        if (lotAdmin[lotId_] != msg.sender) {
+            revert Callback_NotAuthorized();
+        }
+
+        // Validate that the address is not the zero address
+        if (admin_ == address(0)) {
+            revert Callback_InvalidParams();
+        }
+
+        // Set the new admin
+        lotAdmin[lotId_] = admin_;
+        emit LotAdminSet(lotId_, admin_);
     }
 }

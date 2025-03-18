@@ -111,6 +111,14 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
         _;
     }
 
+    modifier givenBatchOnCreateMerkleRootZero() {
+        vm.prank(address(_auctionHouse));
+        _allowlist.onCreate(
+            _lotId, _SELLER, _BASE_TOKEN, _QUOTE_TOKEN, _LOT_CAPACITY, false, abi.encode(bytes32(0))
+        );
+        _;
+    }
+
     function _onBid(
         uint96 lotId_,
         address buyer_,
@@ -126,11 +134,14 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
     //  [X] it reverts
     // [X] if the caller is not the auction house
     //  [X] it reverts
+    // [X] if the merkle root is zero
+    //  [X] it sets the merkle root to zero
     // [X] if the seller is not the seller for the allowlist
     //  [X] it sets the merkle root
     // [X] if the lot is already registered
     //  [X] it reverts
     // [X] it sets the merkle root
+    // [X] it sets the lot admin to the seller
 
     function test_onCreate_allowlistParametersIncorrectFormat_reverts() public {
         // Expect revert
@@ -198,9 +209,22 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
         );
     }
 
+    function test_onCreate_merkleRootZero() public {
+        // Call function
+        vm.prank(address(_auctionHouse));
+        _allowlist.onCreate(
+            _lotId, _SELLER, _BASE_TOKEN, _QUOTE_TOKEN, _LOT_CAPACITY, false, abi.encode(bytes32(0))
+        );
+
+        // Assert
+        assertEq(_allowlist.lotIdRegistered(_lotId), true, "lotIdRegistered");
+        assertEq(_allowlist.lotMerkleRoot(_lotId), bytes32(0), "lotMerkleRoot");
+    }
+
     function test_onCreate() public givenBatchOnCreate {
         assertEq(_allowlist.lotIdRegistered(_lotId), true, "lotIdRegistered");
         assertEq(_allowlist.lotMerkleRoot(_lotId), _MERKLE_ROOT, "lotMerkleRoot");
+        assertEq(_allowlist.lotAdmin(_lotId), _SELLER, "lotAdmin");
     }
 
     // onBid
@@ -210,6 +234,8 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
     //  [X] it reverts
     // [X] if the lot is not registered
     //  [X] it reverts
+    // [X] if the merkle root is zero
+    //  [X] it succeeds for any buyer and any amount
     // [X] if the buyer is not in the merkle tree
     //  [X] it reverts
     // [X] if the amount is greater than the buyer limit
@@ -242,6 +268,21 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
         vm.expectRevert(err);
 
         _onBid(_lotId, _BUYER, 1e18, _BUYER_ALLOCATED_AMOUNT);
+    }
+
+    function test_onBid_merkleRootZero(
+        address buyer_,
+        uint256 amount_
+    ) public givenBatchOnCreateMerkleRootZero {
+        vm.assume(buyer_ != _BUYER && buyer_ != _BUYER_TWO);
+        uint256 amount = bound(amount_, 1, _LOT_CAPACITY);
+
+        // Call function
+        vm.prank(address(_auctionHouse));
+        _allowlist.onBid(_lotId, 1, buyer_, amount, "");
+
+        // Assert
+        assertEq(_allowlist.lotBuyerSpent(_lotId, buyer_), amount, "lotBuyerSpent");
     }
 
     function test_onBid_buyerNotInMerkleTree_reverts() public givenBatchOnCreate {
@@ -299,14 +340,58 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
         assertEq(_allowlist.lotBuyerSpent(_lotId, _BUYER), amount, "lotBuyerSpent");
     }
 
+    // setLotAdmin
+    // [X] when the caller is not the lot admin
+    //  [X] it reverts
+    // [X] given the lot is not registered
+    //  [X] it reverts
+    // [X] when the new admin is the zero address
+    //  [X] it reverts
+    // [X] it sets the lot admin
+
+    function test_setLotAdmin_callerNotAdmin() public givenBatchOnCreate {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
+        vm.expectRevert(err);
+
+        _allowlist.setLotAdmin(_lotId, _SELLER_TWO);
+    }
+
+    function test_setLotAdmin_lotNotRegistered_reverts() public {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
+        vm.expectRevert(err);
+
+        vm.prank(_SELLER);
+        _allowlist.setLotAdmin(_lotId, _SELLER_TWO);
+    }
+
+    function test_setLotAdmin_newAdminZeroAddress_reverts() public givenBatchOnCreate {
+        // Expect revert
+        bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_InvalidParams.selector);
+        vm.expectRevert(err);
+
+        vm.prank(_SELLER);
+        _allowlist.setLotAdmin(_lotId, address(0));
+    }
+
+    function test_setLotAdmin() public givenBatchOnCreate {
+        vm.prank(_SELLER);
+        _allowlist.setLotAdmin(_lotId, _SELLER_TWO);
+
+        assertEq(_allowlist.lotAdmin(_lotId), _SELLER_TWO, "lotAdmin");
+    }
+
     // setMerkleRoot
-    // [X] when the caller is not the lot seller
+    // [X] when the caller is not the lot admin
     //  [X] it reverts
-    // [X] when the lot is not registered
+    // [X] given the lot is not registered
     //  [X] it reverts
+    // [X] given the lot admin has been changed
+    //  [X] the merkle root is updated
     // [X] the merkle root is updated
 
-    function test_setMerkleRoot_callerNotSeller() public givenBatchOnCreate {
+    function test_setMerkleRoot_callerNotAdmin() public givenBatchOnCreate {
         // Expect revert
         bytes memory err = abi.encodeWithSelector(BaseCallback.Callback_NotAuthorized.selector);
         vm.expectRevert(err);
@@ -321,6 +406,16 @@ contract AllocatedMerkleAllowlistBatchTest is Test, Permit2User, WithSalts, Test
 
         vm.prank(_SELLER);
         _allowlist.setMerkleRoot(_lotId, _MERKLE_ROOT);
+    }
+
+    function test_setMerkleRoot_lotAdminChanged() public givenBatchOnCreate {
+        vm.prank(_SELLER);
+        _allowlist.setLotAdmin(_lotId, _SELLER_TWO);
+
+        vm.prank(_SELLER_TWO);
+        _allowlist.setMerkleRoot(_lotId, _MERKLE_ROOT);
+
+        assertEq(_allowlist.lotMerkleRoot(_lotId), _MERKLE_ROOT, "lotMerkleRoot");
     }
 
     function test_setMerkleRoot() public givenBatchOnCreate {
