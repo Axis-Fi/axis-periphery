@@ -1,0 +1,6 @@
+{
+  "deployments.callbacks.BatchCappedMerkleAllowlist": "0x9854F3dA1692E7b95C5bcF62b7f8D0413216a828",
+  "deployments.callbacks.BatchMerkleAllowlist": "0x989E0dA548D05c45ee0Ef1BEBa20472cDFFdEa22",
+  "deployments.callbacks.BatchTokenAllowlist": "0x98606a2A147DeEAAB12D60928C85d0c6B59621bD",
+  "deployments.callbacks.BatchAllocatedMerkleAllowlist": "0x980157254aD105A609C83482c2a473e924F077b2"
+}

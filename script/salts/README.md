@@ -4,6 +4,14 @@ This document provides instructions on how to generate and use salts for CREATE2
 
 ## Tasks
 
+### Generating Salts for Batch Allowlists
+
+The following command will generate salts for the batch allowlist sequence:
+
+```bash
+./script/salts/allowlist/allowlist_salts.sh --deployFile ./script/deploy/sequences/batch-allowlists.json
+```
+
 ### Generating Salts for Uniswap Direct to Liquidity
 
 The following command will generate salts for any Uniswap DTL callbacks in the specified deployment sequence file:
